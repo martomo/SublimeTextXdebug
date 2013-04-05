@@ -10,7 +10,7 @@ except:
     from xdebug import *
 
 
-class XdebugStartSessionCommand(sublime_plugin.TextCommand):
+class XdebugSessionStartCommand(sublime_plugin.TextCommand):
     """
     Start Xdebug session, listen for request response from debugger engine.
     """
@@ -35,6 +35,8 @@ class XdebugStartSessionCommand(sublime_plugin.TextCommand):
         # Get uri of current script file on server which is being debugged
         fileuri = init.getAttribute(dbgp.INIT_FILEURI)
 
+        #TODO: Set breakpoints for file
+
         # Tell script to run it's process
         self.view.run_command('xdebug_execute', {'command': 'run'})
 
@@ -44,7 +46,7 @@ class XdebugStartSessionCommand(sublime_plugin.TextCommand):
         return True
 
 
-class XdebugStopSessionCommand(sublime_plugin.TextCommand):
+class XdebugSessionStopCommand(sublime_plugin.TextCommand):
     """
     Stop Xdebug session, close connection and stop listening to debugger engine.
     """
@@ -140,7 +142,7 @@ class XdebugContinueCommand(sublime_plugin.TextCommand):
         if command == -1:
             return
         if isinstance(command, int):
-            command = self.command_index[position]
+            command = self.command_index[command]
 
         self.view.run_command('xdebug_execute', {'command': command})
 
