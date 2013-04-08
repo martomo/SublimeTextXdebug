@@ -4,13 +4,13 @@ import socket
 import sys
 from xml.dom.minidom import parseString
 
-# Helper class
+# Helper module
 try:
     from .helper import H
 except:
     from helper import H
 
-# Global variables
+# Settings variables
 try:
     from . import settings as S
 except:

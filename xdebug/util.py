@@ -1,15 +1,17 @@
 import sublime
 
+import json
 import os
 import re
+import sys
 
-# Helper class
+# Helper module
 try:
     from .helper import H
 except:
     from helper import H
 
-# Global variables
+# Settings variables
 try:
     from . import settings as S
 except:
@@ -79,3 +81,30 @@ def get_real_path(uri, server=False):
         return H.url_encode("file://" + uri)
 
     return uri
+
+
+def load_breakpoint_data():
+    data_path = os.path.join(S.PACKAGE_PATH, S.FILE_BREAKPOINT_DATA)
+    try:
+        data_file = open(data_path, 'rb')
+    except:
+        e = sys.exc_info()[1]
+        print('Failed to open %s.\n' % data_path, e)
+        return {}
+
+    try:
+        # TODO: Add Python 2.* support
+        data = json.loads(data_file.read().decode('utf-8'))
+    except:
+        e = sys.exc_info()[1]
+        print('Failed to parse %s.\n' % data_path, e)
+        return {}
+    return data
+
+
+def save_breakpoint_data():
+    #TODO: Make async
+    data_path = os.path.join(S.PACKAGE_PATH, S.FILE_BREAKPOINT_DATA)
+    with open(data_path, 'wb') as data:
+        # TODO: Add Python 2.* support
+        data.write(bytes(json.dumps(S.BREAKPOINT), 'UTF-8'))

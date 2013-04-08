@@ -1,13 +1,72 @@
 import sublime
 import sublime_plugin
 
+import os
 import threading
 
-# Load module
+
+# Load modules
 try:
     from .xdebug import *
 except:
     from xdebug import *
+
+
+# Define path variables
+try:
+    S.PACKAGE_PATH = os.path.dirname(os.path.realpath(__file__))
+    S.PACKAGE_FOLDER = os.path.basename(S.PACKAGE_PATH)
+except:
+    print("Unable to resolve current path for package.")
+
+
+# Load breakpoint data
+if S.BREAKPOINT is None:
+    S.BREAKPOINT = util.load_breakpoint_data()
+
+
+# Define event listener for view(s)
+class EventListener(sublime_plugin.EventListener):
+    def on_activated(self, view):
+        # Update breakpoint markers
+        V.update_regions()
+
+
+class XdebugBreakpointCommand(sublime_plugin.TextCommand):
+    """
+    Add/Remove breakpoint(s) for rows (line numbers) in selection.
+    """
+    def run(self, edit, **args):
+        # Get filename in current view
+        filename = self.view.file_name()
+
+        # Add entry for file in breakpoint data
+        if filename not in S.BREAKPOINT:
+            S.BREAKPOINT[filename] = {}
+
+        # Loop through selected rows (line numbers), filtering empty lines
+        for row in V.region_to_rows(self.view.sel(), filter_empty=True):
+            # Add breakpoint
+            if row not in S.BREAKPOINT[filename]:
+                S.BREAKPOINT[filename][row] = { 'id': None, 'enabled': True, 'expression': None }
+                if session.is_connected():
+                    S.SESSION.send('breakpoint_set', t='line', f=util.get_real_path(filename, True), n=row)
+                    response = S.SESSION.read().firstChild
+                    breakpoint_id = response.getAttribute('id')
+                    if breakpoint_id:
+                        S.BREAKPOINT[filename][row]['id'] = breakpoint_id
+            # Remove breakpoint
+            else:
+                if session.is_connected() and S.BREAKPOINT[filename][row]['id'] is not None:
+                    S.SESSION.send('breakpoint_remove', d=S.BREAKPOINT[filename][row]['id'])
+                    response = S.SESSION.read().firstChild
+                del S.BREAKPOINT[filename][row]
+
+        # Update breakpoint markers
+        V.update_regions()
+
+        # Save breakpoint data to file
+        util.save_breakpoint_data()
 
 
 class XdebugSessionStartCommand(sublime_plugin.TextCommand):
@@ -17,6 +76,7 @@ class XdebugSessionStartCommand(sublime_plugin.TextCommand):
     def run(self, edit):
         # Define new session with DBGp protocol
         S.SESSION = session.Protocol()
+        S.BREAKPOINT_ROW = None
 
         # Start thread which will run method that listens for response on configured port
         threading.Thread(target=self.listen).start()
@@ -35,7 +95,19 @@ class XdebugSessionStartCommand(sublime_plugin.TextCommand):
         # Get uri of current script file on server which is being debugged
         fileuri = init.getAttribute(dbgp.INIT_FILEURI)
 
-        #TODO: Set breakpoints for file
+        # Get path of local file which is linked to file on server
+        filename = util.get_real_path(fileuri)
+
+        # Set breakpoints for file
+        if filename in S.BREAKPOINT:
+            for lineno, bp in S.BREAKPOINT[filename].items():
+                if bp['enabled']:
+                    S.SESSION.send('breakpoint_set', t='line', f=fileuri, n=lineno, expression=bp['expression'])
+                    response = S.SESSION.read().firstChild
+                    breakpoint_id = response.getAttribute('id')
+                    if breakpoint_id:
+                        S.BREAKPOINT[filename][lineno]['id'] = breakpoint_id
+                    print('breakpoint_set:\n', response.toprettyxml())
 
         # Tell script to run it's process
         self.view.run_command('xdebug_execute', {'command': 'run'})
@@ -57,6 +129,7 @@ class XdebugSessionStopCommand(sublime_plugin.TextCommand):
             pass
         finally:
             S.SESSION = None
+            S.BREAKPOINT_ROW = None
 
     def is_enabled(self):
         if S.SESSION:
@@ -82,10 +155,18 @@ class XdebugExecuteCommand(sublime_plugin.TextCommand):
         response = S.SESSION.read().firstChild
 
         # Handle breakpoint hit
+        S.BREAKPOINT_ROW = None
         for child in response.childNodes:
             if child.nodeName == dbgp.ELEMENT_BREAKPOINT:
-                print('Break: ' + child.getAttribute(dbgp.BREAKPOINT_FILENAME) + ':' + child.getAttribute(dbgp.BREAKPOINT_LINENO))
                 sublime.status_message('Xdebug: Breakpoint')
+                # Get breakpoint attribute values
+                fileuri = child.getAttribute(dbgp.BREAKPOINT_FILENAME)
+                lineno = child.getAttribute(dbgp.BREAKPOINT_LINENO)
+                filename = util.get_real_path(fileuri)
+                # Show debug output
+                if S.DEBUG: print('Break: ' + filename + ':' + lineno)
+                # Store line number of breakpoint for displaying region marker
+                S.BREAKPOINT_ROW = { 'filename': filename, 'lineno': lineno }
 
         # On breakpoint get context variables and stack history
         if (response.getAttribute(dbgp.ATTRIBUTE_STATUS) == dbgp.STATUS_BREAK):
@@ -95,20 +176,25 @@ class XdebugExecuteCommand(sublime_plugin.TextCommand):
             context = session.get_context_values(response)
 
             #TODO: Get all variables by looping context_names
-            print("Context variables: ", context)
+            if S.DEBUG: print("Context variables: ", context)
+
+            #TODO: Store context variables in session
 
             # Stack history
             S.SESSION.send(dbgp.STACK_GET)
             response = S.SESSION.read().firstChild
             stack = session.get_stack_values(response)
 
-            print("Stack history: ", stack)
+            if S.DEBUG: print("Stack history: ", stack)
 
         # Reload session when session stopped, by reaching end of file or interruption
         if response.getAttribute(dbgp.ATTRIBUTE_STATUS) ==  dbgp.STATUS_STOPPING or response.getAttribute(dbgp.ATTRIBUTE_STATUS) == dbgp.STATUS_STOPPED:
-            self.view.run_command('xdebug_stop_session')
-            self.view.run_command('xdebug_start_session')
+            self.view.run_command('xdebug_session_stop')
+            self.view.run_command('xdebug_session_start')
             sublime.status_message('Xdebug: Finished executing file on server. Reload page to continue debugging.')
+
+        # Update breakpoint markers
+        V.update_regions()
 
     def is_enabled(self):
         return session.is_connected()
@@ -147,8 +233,7 @@ class XdebugContinueCommand(sublime_plugin.TextCommand):
         self.view.run_command('xdebug_execute', {'command': command})
 
     def is_enabled(self):
-        #TODO: Should only be enabled when breakpoint hit
-        return session.is_connected()
+        return S.BREAKPOINT_ROW is not None and session.is_connected()
 
 
 class XdebugStatusCommand(sublime_plugin.TextCommand):
@@ -169,7 +254,7 @@ class XdebugStatusCommand(sublime_plugin.TextCommand):
 class XdebugUserExecuteCommand(sublime_plugin.TextCommand):
     """
     Open input panel, allowing user to execute arbitrary command according to DBGp protocol.
-    Note: Transaction ID is automatically generated by session class.
+    Note: Transaction ID is automatically generated by session module.
     """
     def run(self, edit):
         self.view.window().show_input_panel('Xdebug execute', '', self.on_done, self.on_change, self.on_cancel)
