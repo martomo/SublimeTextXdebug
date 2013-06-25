@@ -28,11 +28,11 @@ def dictionary_keys(dictionary):
 def dictionary_values(dictionary):
 	return list(dictionary.values())
 
-def socket_recv(data):
+def data_read(data):
 	# Convert bytes to string
 	return data.decode('utf8')
 
-def socket_send(data):
+def data_write(data):
 	# Convert string to bytes
 	return bytes(data, 'utf8')
 
@@ -47,3 +47,7 @@ def base64_encode(data):
 def unicode_string(string):
 	# Python 3.* uses unicode by default
 	return string
+
+def is_digit(string):
+	# Check if string is digit
+	return isinstance(string, str) and string.isdigit()

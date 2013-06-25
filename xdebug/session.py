@@ -76,7 +76,7 @@ class Protocol(object):
         if self.connected:
             # Get result data from debugger engine
             while not '\x00' in self.buffer:
-                self.buffer += H.socket_recv(self.socket.recv(self.read_size))
+                self.buffer += H.data_read(self.socket.recv(self.read_size))
             data, self.buffer = self.buffer.split('\x00', 1)
             return data
         else:
@@ -136,7 +136,7 @@ class Protocol(object):
 
         # Send command to debugger engine
         try:
-            self.socket.send(H.socket_send(command + '\x00'))
+            self.socket.send(H.data_write(command + '\x00'))
             # Show debug output
             if S.DEBUG: print('[Send command] ', command)
         except:
@@ -214,13 +214,71 @@ def is_connected():
     return False
 
 
-def get_context_values(node):
-    values = H.unicode_string('')
-    for child in node.childNodes:
-        # Get property attribute values
+def get_context_values():
+    """
+    #TODO: Get all variables by looping context_names
+    """
+    # Only show first level variables
+    S.SESSION.send(dbgp.FEATURE_SET, n=dbgp.FEATURE_NAME_MAXCHILDREN, v='0')
+    response = S.SESSION.read().firstChild
+
+    # Local variables
+    S.SESSION.send(dbgp.CONTEXT_GET)
+    response = S.SESSION.read().firstChild
+
+    # Retrieve properties from response
+    context = get_response_properties(response)
+
+    # Store context variables in session
+    S.CONTEXT_DATA = context
+
+    return generate_context_output(context)
+
+
+def get_context_variable(context, variable_name):
+    """
+    Find a variable in the context data
+    """
+    if isinstance(context, dict):
+        if variable_name in context:
+            return context[variable_name]
+        for variable in context.values():
+            if isinstance(variable['children'], dict):
+                children = get_context_variable(variable['children'], variable_name)
+                if children:
+                    return children
+
+
+def get_property_children(property_name, numchildren):
+    # Set max children limit accordingly
+    S.SESSION.send(dbgp.FEATURE_SET, n=dbgp.FEATURE_NAME_MAXCHILDREN, v=numchildren)
+    response = S.SESSION.read().firstChild
+
+    # Get property and it's children
+    S.SESSION.send(dbgp.PROPERTY_GET, n=property_name)
+    response = S.SESSION.read().firstChild
+
+    # Walk through elements in response
+    for child in response.childNodes:
+        # Only read property elements
         if child.nodeName == dbgp.ELEMENT_PROPERTY:
+            # Return it's children when property matches property name
+            if property_name == H.unicode_string(child.getAttribute(dbgp.PROPERTY_FULLNAME)):
+                return get_response_properties(child)
+    return {}
+
+
+def get_response_properties(response):
+    properties = H.new_dictionary()
+    # Walk through elements in response
+    for child in response.childNodes:
+        # Only read property elements
+        if child.nodeName == dbgp.ELEMENT_PROPERTY:
+            # Get property attribute values
             property_name = H.unicode_string(child.getAttribute(dbgp.PROPERTY_FULLNAME))
             property_type = H.unicode_string(child.getAttribute(dbgp.PROPERTY_TYPE))
+            property_children = H.unicode_string(child.getAttribute(dbgp.PROPERTY_CHILDREN))
+            property_numchildren = H.unicode_string(child.getAttribute(dbgp.PROPERTY_NUMCHILDREN))
             property_value = None
             try:
                 # Try to base64 decode value
@@ -229,19 +287,26 @@ def get_context_values(node):
                 # Return raw value
                 property_value = H.unicode_string(' '.join(t.data for t in child.childNodes if t.nodeType == t.TEXT_NODE or t.nodeType == t.CDATA_SECTION_NODE))
             if property_name:
-                # Hide password values
+                # Filter password values
                 if property_name.lower().find('password') != -1:
                     property_value = H.unicode_string('*****')
 
-                # Append values and get values for child
-                values = values + H.unicode_string(property_name + ' [' + property_type + '] = ' + property_value + '\n')
-                values = values + get_context_values(child)
-    return values
+                # Store property
+                properties[property_name] = { 'name': property_name, 'type': property_type, 'value': property_value, 'children' : None }
+
+                # Get values for children
+                if property_children:
+                    properties[property_name]['children'] = get_property_children(property_name, property_numchildren)
+    return properties
 
 
-def get_stack_values(node):
+def get_stack_values():
+    # Get stack information
+    S.SESSION.send(dbgp.STACK_GET)
+    response = S.SESSION.read().firstChild
+
     values = H.unicode_string('')
-    for child in node.childNodes:
+    for child in response.childNodes:
         # Get stack attribute values
         if child.nodeName == dbgp.ELEMENT_STACK:
             stack_level = child.getAttribute(dbgp.STACK_LEVEL)
@@ -250,6 +315,23 @@ def get_stack_values(node):
             stack_line = child.getAttribute(dbgp.STACK_LINENO)
             stack_where = child.getAttribute(dbgp.STACK_WHERE)
             # Append values
-            values = values + H.unicode_string('{level:>3}: {type:<10} {where:<10} {filename}:{lineno}\n' \
+            values += H.unicode_string('[{level}] {filename}.{where}:{lineno}\n' \
                                       .format(level=stack_level, type=stack_type, where=stack_where, lineno=stack_line, filename=stack_file))
+    return values
+
+
+def generate_context_output(context, indent=0):
+    # Generate output text for values
+    values = H.unicode_string('')
+    for variable in context.values():
+        property_text = ''
+        for i in range(indent): property_text += '\t'
+        if variable['value']:
+            property_text += variable['name'] + ' = (' + variable['type'] + ') ' + variable['value'] + '\n'
+        elif isinstance(variable['children'], dict):
+            property_text += variable['name'] + ' = ' + variable['type'] + '[%d]\n' % len(variable['children'])
+            property_text += generate_context_output(variable['children'], indent+1)
+        else:
+            property_text += variable['name'] + ' = <' + variable['type'] + '>\n'
+        values += H.unicode_string(property_text)
     return values

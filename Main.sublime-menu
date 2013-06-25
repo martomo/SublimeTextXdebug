@@ -1,0 +1,106 @@
+[
+    {
+        "id": "tools",
+        "children":
+        [
+            {
+                "caption": "Xdebug",
+                "mnemonic": "X",
+                "id": "xdebug",
+                "children": [
+                    {
+                        "caption": "Start Debugging",
+                        "command": "xdebug_session_start"
+                    },
+                    {
+                        "caption": "Start Debugging (Launch Browser)",
+                        "command": "xdebug_session_start",
+                        "args"   : {"launch_browser" : true}
+                    },
+                    {
+                        "caption": "Stop Debugging",
+                        "command": "xdebug_session_stop"
+                    },
+                    {
+                        "caption": "Stop Debugging (Launch Browser)",
+                        "command": "xdebug_session_stop",
+                        "args"   : {"launch_browser" : true}
+                    },
+                    {
+                        "caption": "Stop Debugging (Close Windows)",
+                        "command": "xdebug_session_stop",
+                        "args"   : {"close_windows" : true}
+                    },
+                    {
+                        "caption": "-"
+                    },
+                    {
+                        "caption": "Add/Remove Breakpoint",
+                        "command": "xdebug_breakpoint"
+                    },
+                    {
+                        "caption": "Clear All Breakpoints",
+                        "command": "xdebug_clear_breakpoints"
+                    },
+                    {
+                        "caption": "-"
+                    },
+                    {
+                        "caption": "Execute",
+                        "command": "xdebug_user_execute"
+                    },
+                    {
+                        "caption": "Status",
+                        "command": "xdebug_status"
+                    },
+                    {
+                        "caption": "-"
+                    },
+                    {
+                        "caption": "Run",
+                        "command": "xdebug_continue",
+                        "args"   : {"command" : "run"}
+                    },
+                    {
+                        "caption": "Step Over",
+                        "command": "xdebug_continue",
+                        "args"   : {"command" : "step_over"}
+                    },
+                    {
+                        "caption": "Step Into",
+                        "command": "xdebug_continue",
+                        "args"   : {"command" : "step_into"}
+                    },
+                    {
+                        "caption": "Step Out",
+                        "command": "xdebug_continue",
+                        "args"   : {"command" : "step_out"}
+                    },
+                    {
+                        "caption": "Stop",
+                        "command": "xdebug_continue",
+                        "args"   : {"command" : "stop"}
+                    },
+                    {
+                        "caption": "Detach",
+                        "command": "xdebug_continue",
+                        "args"   : {"command" : "detach"}
+                    },
+                    {
+                        "caption": "-"
+                    },
+                    {
+                        "caption": "Reset Layout",
+                        "command": "xdebug_reset_layout",
+                        "args"   : {"keymap" : true}
+                    },
+                    {
+                        "caption": "Settings",
+                        "command": "open_file",
+                        "args"   : {"file": "${packages}/User/Xdebug.sublime-settings"}
+                    }
+                ]
+            }
+        ]
+    }
+]

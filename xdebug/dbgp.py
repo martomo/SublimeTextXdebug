@@ -4,6 +4,8 @@ Status and feature management commands
 STATUS = 'status';
 FEATURE_GET = 'feature_get';
 FEATURE_SET = 'feature_set';
+FEATURE_NAME_MAXCHILDREN = 'max_children'
+FEATURE_NAME_MAXDEPTH = 'max_depth'
 
 
 """
@@ -28,12 +30,15 @@ BREAKPOINT_LIST = 'breakpoint_list'
 
 
 """
-Context/Stack commands
+Context/Stack/Property commands
 """
 CONTEXT_NAMES = 'context_names'
 CONTEXT_GET = 'context_get'
 STACK_DEPTH = 'stack-depth'
 STACK_GET = 'stack_get'
+PROPERTY_GET = 'property_get'
+PROPERTY_SET = 'property_set'
+PROPERTY_VALUE = 'property_value'
 
 
 """

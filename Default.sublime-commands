@@ -1,0 +1,76 @@
+[
+    {
+        "caption": "Xdebug: Start Debugging",
+        "command": "xdebug_session_start"
+    },
+    {
+        "caption": "Xdebug: Start Debugging (Launch Browser)",
+        "command": "xdebug_session_start",
+        "args"   : {"launch_browser" : true}
+    },
+    {
+        "caption": "Xdebug: Stop Debugging",
+        "command": "xdebug_session_stop"
+    },
+    {
+        "caption": "Xdebug: Stop Debugging (Launch Browser)",
+        "command": "xdebug_session_stop",
+        "args"   : {"launch_browser" : true}
+    },
+    {
+        "caption": "Xdebug: Stop Debugging (Close Windows)",
+        "command": "xdebug_session_stop",
+        "args"   : {"close_windows" : true}
+    },
+    {
+        "caption": "Xdebug: Add/Remove Breakpoint",
+        "command": "xdebug_breakpoint"
+    },
+    {
+        "caption": "Xdebug: Clear All Breakpoints",
+        "command": "xdebug_clear_breakpoints"
+    },
+    {
+        "caption": "Xdebug: Session - Execute",
+        "command": "xdebug_user_execute"
+    },
+    {
+        "caption": "Xdebug: Session - Status",
+        "command": "xdebug_status"
+    },
+    {
+        "caption": "Xdebug: Breakpoint - Run",
+        "command": "xdebug_continue",
+        "args"   : {"command" : "run"}
+    },
+    {
+        "caption": "Xdebug: Breakpoint - Step Over",
+        "command": "xdebug_continue",
+        "args"   : {"command" : "step_over"}
+    },
+    {
+        "caption": "Xdebug: Breakpoint - Step Into",
+        "command": "xdebug_continue",
+        "args"   : {"command" : "step_into"}
+    },
+    {
+        "caption": "Xdebug: Breakpoint - Step Out",
+        "command": "xdebug_continue",
+        "args"   : {"command" : "step_out"}
+    },
+    {
+        "caption": "Xdebug: Breakpoint - Stop",
+        "command": "xdebug_continue",
+        "args"   : {"command" : "stop"}
+    },
+    {
+        "caption": "Xdebug: Breakpoint - Detach",
+        "command": "xdebug_continue",
+        "args"   : {"command" : "detach"}
+    },
+    {
+        "caption": "Xdebug: Reset Layout",
+        "command": "xdebug_reset_layout",
+        "args"   : {"keymap" : "true"}
+    }
+]

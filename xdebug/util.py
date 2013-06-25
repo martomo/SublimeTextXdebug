@@ -4,6 +4,7 @@ import json
 import os
 import re
 import sys
+import webbrowser
 
 # Helper module
 try:
@@ -16,6 +17,12 @@ try:
     from . import settings as S
 except:
     import settings as S
+
+# View module
+try:
+    from . import view as V
+except:
+    import view as V
 
 
 def get_real_path(uri, server=False):
@@ -83,28 +90,50 @@ def get_real_path(uri, server=False):
     return uri
 
 
+def launch_browser():
+    url = S.get_project_value('url') or S.get_package_value('url')
+    if not url:
+        sublime.status_message('Xdebug: No URL defined in (project) settings file.')
+        return
+    ide_key = S.get_project_value('ide_key') or S.get_package_value('ide_key') or DEFAULT_IDE_KEY
+
+    if S.SESSION and (S.SESSION.listening or not S.SESSION.connected):
+        webbrowser.open(url + '?XDEBUG_SESSION_START=' + ide_key)
+    else:
+        webbrowser.open(url + '?XDEBUG_SESSION_STOP=' + ide_key)
+
+
+def generate_settings():
+    settings = {}
+    settings["port"] = S.DEFAULT_PORT
+    settings["ide_key"] = S.DEFAULT_IDE_KEY
+    settings["url"] = ""
+    settings["path_mapping"] = {}
+    return json.dumps(settings, indent = 4)
+
+
 def load_breakpoint_data():
-    data_path = os.path.join(S.PACKAGE_PATH, S.FILE_BREAKPOINT_DATA)
+    data_path = os.path.join(sublime.packages_path(), 'User', S.FILE_BREAKPOINT_DATA)
+    data = {}
     try:
         data_file = open(data_path, 'rb')
     except:
         e = sys.exc_info()[1]
-        print('Failed to open %s.\n' % data_path, e)
-        return {}
+        if S.DEBUG: print('Failed to open %s.\n' % data_path, e)
 
     try:
-        # TODO: Add Python 2.* support
-        data = json.loads(data_file.read().decode('utf-8'))
+        data = json.loads(H.data_read(data_file.read()))
     except:
         e = sys.exc_info()[1]
-        print('Failed to parse %s.\n' % data_path, e)
-        return {}
-    return data
+        if S.DEBUG: print('Failed to parse %s.\n' % data_path, e)
+
+    # Set breakpoint data
+    S.BREAKPOINT = data
+    # Render breakpoint markers
+    V.render_regions()
 
 
 def save_breakpoint_data():
-    #TODO: Make async
-    data_path = os.path.join(S.PACKAGE_PATH, S.FILE_BREAKPOINT_DATA)
+    data_path = os.path.join(sublime.packages_path(), 'User', S.FILE_BREAKPOINT_DATA)
     with open(data_path, 'wb') as data:
-        # TODO: Add Python 2.* support
-        data.write(bytes(json.dumps(S.BREAKPOINT), 'UTF-8'))
+        data.write(H.data_write(json.dumps(S.BREAKPOINT)))

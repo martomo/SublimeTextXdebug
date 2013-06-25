@@ -1,0 +1,50 @@
+[
+    {
+        "caption": "Xdebug",
+        "mnemonic": "X",
+        "id": "xdebug",
+        "children": [
+            {
+                "caption": "Add/Remove Breakpoint",
+                "command": "xdebug_breakpoint"
+            },
+            {
+                "caption": "Clear All Breakpoints",
+                "command": "xdebug_clear_breakpoints"
+            },
+            {
+                "caption": "-"
+            },
+            {
+                "caption": "Run",
+                "command": "xdebug_continue",
+                "args"   : {"command" : "run"}
+            },
+            {
+                "caption": "Step Over",
+                "command": "xdebug_continue",
+                "args"   : {"command" : "step_over"}
+            },
+            {
+                "caption": "Step Into",
+                "command": "xdebug_continue",
+                "args"   : {"command" : "step_into"}
+            },
+            {
+                "caption": "Step Out",
+                "command": "xdebug_continue",
+                "args"   : {"command" : "step_out"}
+            },
+            {
+                "caption": "Stop",
+                "command": "xdebug_continue",
+                "args"   : {"command" : "stop"}
+            },
+            {
+                "caption": "Detach",
+                "command": "xdebug_continue",
+                "args"   : {"command" : "detach"}
+            }
+        ]
+    }
+]

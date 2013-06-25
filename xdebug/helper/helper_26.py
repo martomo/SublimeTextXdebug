@@ -28,12 +28,12 @@ def dictionary_keys(dictionary):
 def dictionary_values(dictionary):
 	return dictionary.values()
 
-def socket_recv(data):
-	# Receiving already a string in version 2.*
+def data_read(data):
+	# Data for reading/receiving already a string in version 2.*
 	return data
 
-def socket_send(data):
-	# Using string in version 2.* for sending data
+def data_write(data):
+	# Using string in version 2.* for sending/writing data
 	return data
 
 def base64_decode(data):
@@ -44,3 +44,7 @@ def base64_encode(data):
 
 def unicode_string(string):
 	return unicode(string)
+
+def is_digit(string):
+	# Check if basestring (str, unicode) is digit
+	return isinstance(string, basestring) and string.isdigit()
