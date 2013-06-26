@@ -127,6 +127,12 @@ def load_breakpoint_data():
         e = sys.exc_info()[1]
         if S.DEBUG: print('Failed to parse %s.\n' % data_path, e)
 
+    # Do not use deleted files or entries without breakpoints
+    if data:
+        for filename, breakpoint_data in data.copy().items():
+            if not breakpoint_data or not os.path.isfile(filename):
+                del data[filename]
+
     # Set breakpoint data
     S.BREAKPOINT = data
     # Render breakpoint markers

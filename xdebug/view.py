@@ -282,13 +282,15 @@ def render_regions(view=None):
     view.erase_regions(S.REGION_KEY_BREAKPOINT)
     view.erase_regions(S.REGION_KEY_CURRENT)
 
-    # Get filename of current view and check if it has any breakpoints
+    # Get filename of current view and check if is a valid filename
     filename = view.file_name()
-    if not filename or filename not in S.BREAKPOINT or not S.BREAKPOINT[filename]:
+    if not filename:
         return
 
     # Get all breakpoint rows (line numbers) for file
-    breakpoint_rows = H.dictionary_keys(S.BREAKPOINT[filename])
+    breakpoint_rows = {}
+    if filename in S.BREAKPOINT:
+        breakpoint_rows = H.dictionary_keys(S.BREAKPOINT[filename])
 
     # Get current line from breakpoint hit
     if S.BREAKPOINT_ROW is not None:
@@ -303,4 +305,5 @@ def render_regions(view=None):
             view.add_regions(S.REGION_KEY_CURRENT, rows_to_region(S.BREAKPOINT_ROW['lineno']), S.REGION_SCOPE_CURRENT, icon, sublime.HIDDEN)
 
     # Set breakpoint marker(s)
-    view.add_regions(S.REGION_KEY_BREAKPOINT, rows_to_region(breakpoint_rows), S.REGION_SCOPE_BREAKPOINT, S.ICON_BREAKPOINT, sublime.HIDDEN)
+    if breakpoint_rows:
+        view.add_regions(S.REGION_KEY_BREAKPOINT, rows_to_region(breakpoint_rows), S.REGION_SCOPE_BREAKPOINT, S.ICON_BREAKPOINT, sublime.HIDDEN)

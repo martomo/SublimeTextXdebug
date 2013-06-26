@@ -140,22 +140,21 @@ class XdebugSessionStartCommand(sublime_plugin.TextCommand):
         sublime.status_message('Xdebug: Connected')
         # Connection initialization
         init = S.SESSION.read().firstChild
-        # Get uri of current script file on server which is being debugged
-        fileuri = init.getAttribute(dbgp.INIT_FILEURI)
 
-        # Get path of local file which is linked to file on server
-        filename = util.get_real_path(fileuri)
-
-        # Set breakpoints for file
-        if filename in S.BREAKPOINT:
-            for lineno, bp in S.BREAKPOINT[filename].items():
-                if bp['enabled']:
-                    S.SESSION.send(dbgp.BREAKPOINT_SET, t='line', f=fileuri, n=lineno, expression=bp['expression'])
-                    response = S.SESSION.read().firstChild
-                    breakpoint_id = response.getAttribute('id')
-                    if breakpoint_id:
-                        S.BREAKPOINT[filename][lineno]['id'] = breakpoint_id
-                    if S.DEBUG: print('breakpoint_set: ' + filename + ':' + lineno)
+        # Set breakpoints for files
+        for filename, breakpoint_data in S.BREAKPOINT.items():
+            if breakpoint_data:
+                # Get path of file on server
+                fileuri = util.get_real_path(filename, True)
+                for lineno, bp in breakpoint_data.items():
+                    if bp['enabled']:
+                        S.SESSION.send(dbgp.BREAKPOINT_SET, t='line', f=fileuri, n=lineno, expression=bp['expression'])
+                        response = S.SESSION.read().firstChild
+                        # Update breakpoint id
+                        breakpoint_id = response.getAttribute('id')
+                        if breakpoint_id:
+                            S.BREAKPOINT[filename][lineno]['id'] = breakpoint_id
+                        if S.DEBUG: print('breakpoint_set: ' + filename + ':' + lineno)
 
         # Tell script to run it's process
         self.view.run_command('xdebug_execute', {'command': 'run'})
