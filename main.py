@@ -81,16 +81,24 @@ class XdebugBreakpointCommand(sublime_plugin.TextCommand):
             if row not in S.BREAKPOINT[filename]:
                 S.BREAKPOINT[filename][row] = { 'id': None, 'enabled': True, 'expression': expression }
                 if session.is_connected():
-                    S.SESSION.send(dbgp.BREAKPOINT_SET, t='line', f=util.get_real_path(filename, True), n=row)
-                    response = S.SESSION.read().firstChild
-                    breakpoint_id = response.getAttribute('id')
-                    if breakpoint_id:
-                        S.BREAKPOINT[filename][row]['id'] = breakpoint_id
+                    try:
+                        S.SESSION.send(dbgp.BREAKPOINT_SET, t='line', f=util.get_real_path(filename, True), n=row)
+                        response = S.SESSION.read().firstChild
+                        breakpoint_id = response.getAttribute('id')
+                        if breakpoint_id:
+                            S.BREAKPOINT[filename][row]['id'] = breakpoint_id
+                    except (ConnectionResetError, session.ProtocolConnectionException):
+                        e = sys.exc_info()[1]
+                        session.connection_error("%s" % e)
             # Remove breakpoint
             else:
                 if session.is_connected() and S.BREAKPOINT[filename][row]['id'] is not None:
-                    S.SESSION.send(dbgp.BREAKPOINT_REMOVE, d=S.BREAKPOINT[filename][row]['id'])
-                    response = S.SESSION.read().firstChild
+                    try:
+                        S.SESSION.send(dbgp.BREAKPOINT_REMOVE, d=S.BREAKPOINT[filename][row]['id'])
+                        response = S.SESSION.read().firstChild
+                    except (ConnectionResetError, session.ProtocolConnectionException):
+                        e = sys.exc_info()[1]
+                        session.connection_error("%s" % e)
                 del S.BREAKPOINT[filename][row]
 
         # Render breakpoint markers
@@ -138,26 +146,30 @@ class XdebugSessionStartCommand(sublime_plugin.TextCommand):
 
     def connected(self):
         sublime.status_message('Xdebug: Connected')
-        # Connection initialization
-        init = S.SESSION.read().firstChild
+        try:
+            # Connection initialization
+            init = S.SESSION.read().firstChild
 
-        # Set breakpoints for files
-        for filename, breakpoint_data in S.BREAKPOINT.items():
-            if breakpoint_data:
-                # Get path of file on server
-                fileuri = util.get_real_path(filename, True)
-                for lineno, bp in breakpoint_data.items():
-                    if bp['enabled']:
-                        S.SESSION.send(dbgp.BREAKPOINT_SET, t='line', f=fileuri, n=lineno, expression=bp['expression'])
-                        response = S.SESSION.read().firstChild
-                        # Update breakpoint id
-                        breakpoint_id = response.getAttribute('id')
-                        if breakpoint_id:
-                            S.BREAKPOINT[filename][lineno]['id'] = breakpoint_id
-                        if S.DEBUG: print('breakpoint_set: ' + filename + ':' + lineno)
+            # Set breakpoints for files
+            for filename, breakpoint_data in S.BREAKPOINT.items():
+                if breakpoint_data:
+                    # Get path of file on server
+                    fileuri = util.get_real_path(filename, True)
+                    for lineno, bp in breakpoint_data.items():
+                        if bp['enabled']:
+                            S.SESSION.send(dbgp.BREAKPOINT_SET, t='line', f=fileuri, n=lineno, expression=bp['expression'])
+                            response = S.SESSION.read().firstChild
+                            # Update breakpoint id
+                            breakpoint_id = response.getAttribute('id')
+                            if breakpoint_id:
+                                S.BREAKPOINT[filename][lineno]['id'] = breakpoint_id
+                            if S.DEBUG: print('breakpoint_set: ' + filename + ':' + lineno)
 
-        # Tell script to run it's process
-        self.view.run_command('xdebug_execute', {'command': 'run'})
+            # Tell script to run it's process
+            self.view.run_command('xdebug_execute', {'command': 'run'})
+        except (ConnectionResetError, session.ProtocolConnectionException):
+            e = sys.exc_info()[1]
+            session.connection_error("%s" % e)
 
     def is_enabled(self):
         if S.SESSION:
@@ -220,46 +232,51 @@ class XdebugExecuteCommand(sublime_plugin.TextCommand):
             sublime.status_message('Xdebug: No command')
             return
 
-        # Send command to debugger engine
-        S.SESSION.send(command)
-        response = S.SESSION.read().firstChild
+        try:
+            # Send command to debugger engine
+            S.SESSION.send(command)
+            response = S.SESSION.read().firstChild
 
-        # Reset previous breakpoint values
-        S.BREAKPOINT_ROW = None
-        S.CONTEXT_DATA.clear()
-        self.view.run_command('xdebug_reset_layout', {'layout': 'debug'})
+            # Reset previous breakpoint values
+            S.BREAKPOINT_ROW = None
+            S.CONTEXT_DATA.clear()
+            self.view.run_command('xdebug_reset_layout', {'layout': 'debug'})
 
-        # Handle breakpoint hit
-        for child in response.childNodes:
-            if child.nodeName == dbgp.ELEMENT_BREAKPOINT:
-                sublime.status_message('Xdebug: Breakpoint')
-                # Get breakpoint attribute values
-                fileuri = child.getAttribute(dbgp.BREAKPOINT_FILENAME)
-                lineno = child.getAttribute(dbgp.BREAKPOINT_LINENO)
-                filename = util.get_real_path(fileuri)
-                # Show debug output
-                if S.DEBUG: print('Break: ' + filename + ':' + lineno)
-                # Store line number of breakpoint for displaying region marker
-                S.BREAKPOINT_ROW = { 'filename': filename, 'lineno': lineno }
-                # Focus/Open file window view
-                V.show_file(filename, lineno)
+            # Handle breakpoint hit
+            for child in response.childNodes:
+                if child.nodeName == dbgp.ELEMENT_BREAKPOINT:
+                    sublime.status_message('Xdebug: Breakpoint')
+                    # Get breakpoint attribute values
+                    fileuri = child.getAttribute(dbgp.BREAKPOINT_FILENAME)
+                    lineno = child.getAttribute(dbgp.BREAKPOINT_LINENO)
+                    filename = util.get_real_path(fileuri)
+                    # Show debug output
+                    if S.DEBUG: print('Break: ' + filename + ':' + lineno)
+                    # Store line number of breakpoint for displaying region marker
+                    S.BREAKPOINT_ROW = { 'filename': filename, 'lineno': lineno }
+                    # Focus/Open file window view
+                    V.show_file(filename, lineno)
 
 
-        # On breakpoint get context variables and stack history
-        if (response.getAttribute(dbgp.ATTRIBUTE_STATUS) == dbgp.STATUS_BREAK):
-            # Context variables
-            context = session.get_context_values()
-            V.show_content(V.DATA_CONTEXT, context)
+            # On breakpoint get context variables and stack history
+            if (response.getAttribute(dbgp.ATTRIBUTE_STATUS) == dbgp.STATUS_BREAK):
+                # Context variables
+                context = session.get_context_values()
+                V.show_content(V.DATA_CONTEXT, context)
 
-            # Stack history
-            stack = session.get_stack_values()
-            V.show_content(V.DATA_STACK, stack)
+                # Stack history
+                stack = session.get_stack_values()
+                V.show_content(V.DATA_STACK, stack)
 
-        # Reload session when session stopped, by reaching end of file or interruption
-        if response.getAttribute(dbgp.ATTRIBUTE_STATUS) ==  dbgp.STATUS_STOPPING or response.getAttribute(dbgp.ATTRIBUTE_STATUS) == dbgp.STATUS_STOPPED:
-            self.view.run_command('xdebug_session_stop')
-            self.view.run_command('xdebug_session_start')
-            sublime.status_message('Xdebug: Finished executing file on server. Reload page to continue debugging.')
+            # Reload session when session stopped, by reaching end of file or interruption
+            if response.getAttribute(dbgp.ATTRIBUTE_STATUS) ==  dbgp.STATUS_STOPPING or response.getAttribute(dbgp.ATTRIBUTE_STATUS) == dbgp.STATUS_STOPPED:
+                self.view.run_command('xdebug_session_stop')
+                self.view.run_command('xdebug_session_start')
+                sublime.status_message('Xdebug: Finished executing file on server. Reload page to continue debugging.')
+
+        except (ConnectionResetError, session.ProtocolConnectionException):
+            e = sys.exc_info()[1]
+            session.connection_error("%s" % e)
 
         # Render breakpoint markers
         V.render_regions()
@@ -312,11 +329,15 @@ class XdebugStatusCommand(sublime_plugin.TextCommand):
     Get status from debugger engine.
     """
     def run(self, edit):
-        # Send 'status' command to debugger engine
-        S.SESSION.send(dbgp.STATUS)
-        response = S.SESSION.read().firstChild
-        # Show response in status bar
-        sublime.status_message("Xdebug status: " + response.getAttribute(dbgp.ATTRIBUTE_REASON) + ' - ' + response.getAttribute(dbgp.ATTRIBUTE_STATUS))
+        try:
+            # Send 'status' command to debugger engine
+            S.SESSION.send(dbgp.STATUS)
+            response = S.SESSION.read().firstChild
+            # Show response in status bar
+            sublime.status_message("Xdebug status: " + response.getAttribute(dbgp.ATTRIBUTE_REASON) + ' - ' + response.getAttribute(dbgp.ATTRIBUTE_STATUS))
+        except (ConnectionResetError, session.ProtocolConnectionException):
+            e = sys.exc_info()[1]
+            session.connection_error("%s" % e)
 
     def is_enabled(self):
         return session.is_connected()
@@ -340,21 +361,25 @@ class XdebugUserExecuteCommand(sublime_plugin.TextCommand):
         else:
             command, args = line, ''
 
-        # Send command to debugger engine
-        S.SESSION.send(command, args)
-        response = S.SESSION.read().firstChild
+        try:
+            # Send command to debugger engine
+            S.SESSION.send(command, args)
+            response = S.SESSION.read().firstChild
 
-        # Show output panel
-        window = self.view.window()
-        if window is None:
-            return
-        window.run_command('show_panel', {'panel': 'output.xdebug_execute'})
+            # Show output panel
+            window = self.view.window()
+            if window is None:
+                return
+            window.run_command('show_panel', {'panel': 'output.xdebug_execute'})
 
-        # Show response data in output panel
-        output = window.get_output_panel('xdebug_execute')
-        if output is None:
-            return
-        output.run_command('xdebug_view_update', {'data': response.toprettyxml()})
+            # Show response data in output panel
+            output = window.get_output_panel('xdebug_execute')
+            if output is None:
+                return
+            output.run_command('xdebug_view_update', {'data': response.toprettyxml()})
+        except (ConnectionResetError, session.ProtocolConnectionException):
+            e = sys.exc_info()[1]
+            session.connection_error("%s" % e)
 
     def on_change(self, line):
         pass
@@ -381,7 +406,7 @@ class XdebugViewUpdateCommand(sublime_plugin.TextCommand):
         view = self.view
         view.set_read_only(False)
         view.erase(edit, sublime.Region(0, view.size()))
-        if not data is None:
+        if data is not None:
             view.insert(edit, 0, data)
         if readonly:
             view.set_read_only(True)

@@ -214,25 +214,43 @@ def is_connected():
     return False
 
 
+def connection_error(message):
+    sublime.error_message("Please restart Xdebug debugging session.\nDisconnected from Xdebug debugger engine.\n"+message)
+    # Reset connection
+    try:
+        S.SESSION.clear()
+    except:
+        pass
+    finally:
+        S.SESSION = None
+        S.BREAKPOINT_ROW = None
+        S.CONTEXT_DATA.clear()
+
+
 def get_context_values():
     """
     #TODO: Get all variables by looping context_names
     """
-    # Only show first level variables
-    S.SESSION.send(dbgp.FEATURE_SET, n=dbgp.FEATURE_NAME_MAXCHILDREN, v='0')
-    response = S.SESSION.read().firstChild
+    if S.SESSION:
+        try:
+            # Only show first level variables
+            S.SESSION.send(dbgp.FEATURE_SET, n=dbgp.FEATURE_NAME_MAXCHILDREN, v='0')
+            response = S.SESSION.read().firstChild
 
-    # Local variables
-    S.SESSION.send(dbgp.CONTEXT_GET)
-    response = S.SESSION.read().firstChild
+            # Local variables
+            S.SESSION.send(dbgp.CONTEXT_GET)
+            response = S.SESSION.read().firstChild
 
-    # Retrieve properties from response
-    context = get_response_properties(response)
+            # Retrieve properties from response
+            context = get_response_properties(response)
 
-    # Store context variables in session
-    S.CONTEXT_DATA = context
+            # Store context variables in session
+            S.CONTEXT_DATA = context
 
-    return generate_context_output(context)
+            return generate_context_output(context)
+        except (ConnectionResetError, ProtocolConnectionException):
+            e = sys.exc_info()[1]
+            connection_error("%s" % e)
 
 
 def get_context_variable(context, variable_name):
@@ -250,21 +268,22 @@ def get_context_variable(context, variable_name):
 
 
 def get_property_children(property_name, numchildren):
-    # Set max children limit accordingly
-    S.SESSION.send(dbgp.FEATURE_SET, n=dbgp.FEATURE_NAME_MAXCHILDREN, v=numchildren)
-    response = S.SESSION.read().firstChild
+    if S.SESSION:
+        # Set max children limit accordingly
+        S.SESSION.send(dbgp.FEATURE_SET, n=dbgp.FEATURE_NAME_MAXCHILDREN, v=numchildren)
+        response = S.SESSION.read().firstChild
 
-    # Get property and it's children
-    S.SESSION.send(dbgp.PROPERTY_GET, n=property_name)
-    response = S.SESSION.read().firstChild
+        # Get property and it's children
+        S.SESSION.send(dbgp.PROPERTY_GET, n=property_name)
+        response = S.SESSION.read().firstChild
 
-    # Walk through elements in response
-    for child in response.childNodes:
-        # Only read property elements
-        if child.nodeName == dbgp.ELEMENT_PROPERTY:
-            # Return it's children when property matches property name
-            if property_name == H.unicode_string(child.getAttribute(dbgp.PROPERTY_FULLNAME)):
-                return get_response_properties(child)
+        # Walk through elements in response
+        for child in response.childNodes:
+            # Only read property elements
+            if child.nodeName == dbgp.ELEMENT_PROPERTY:
+                # Return it's children when property matches property name
+                if property_name == H.unicode_string(child.getAttribute(dbgp.PROPERTY_FULLNAME)):
+                    return get_response_properties(child)
     return {}
 
 
@@ -301,28 +320,35 @@ def get_response_properties(response):
 
 
 def get_stack_values():
-    # Get stack information
-    S.SESSION.send(dbgp.STACK_GET)
-    response = S.SESSION.read().firstChild
-
     values = H.unicode_string('')
-    for child in response.childNodes:
-        # Get stack attribute values
-        if child.nodeName == dbgp.ELEMENT_STACK:
-            stack_level = child.getAttribute(dbgp.STACK_LEVEL)
-            stack_type = child.getAttribute(dbgp.STACK_TYPE)
-            stack_file = H.url_decode(child.getAttribute(dbgp.STACK_FILENAME))
-            stack_line = child.getAttribute(dbgp.STACK_LINENO)
-            stack_where = child.getAttribute(dbgp.STACK_WHERE)
-            # Append values
-            values += H.unicode_string('[{level}] {filename}.{where}:{lineno}\n' \
-                                      .format(level=stack_level, type=stack_type, where=stack_where, lineno=stack_line, filename=stack_file))
+    if S.SESSION:
+        try:
+            # Get stack information
+            S.SESSION.send(dbgp.STACK_GET)
+            response = S.SESSION.read().firstChild
+
+            for child in response.childNodes:
+                # Get stack attribute values
+                if child.nodeName == dbgp.ELEMENT_STACK:
+                    stack_level = child.getAttribute(dbgp.STACK_LEVEL)
+                    stack_type = child.getAttribute(dbgp.STACK_TYPE)
+                    stack_file = H.url_decode(child.getAttribute(dbgp.STACK_FILENAME))
+                    stack_line = child.getAttribute(dbgp.STACK_LINENO)
+                    stack_where = child.getAttribute(dbgp.STACK_WHERE)
+                    # Append values
+                    values += H.unicode_string('[{level}] {filename}.{where}:{lineno}\n' \
+                                              .format(level=stack_level, type=stack_type, where=stack_where, lineno=stack_line, filename=stack_file))
+        except (ConnectionResetError, ProtocolConnectionException):
+            e = sys.exc_info()[1]
+            connection_error("%s" % e)
     return values
 
 
 def generate_context_output(context, indent=0):
     # Generate output text for values
     values = H.unicode_string('')
+    if not isinstance(context, dict):
+        return values
     for variable in context.values():
         property_text = ''
         for i in range(indent): property_text += '\t'

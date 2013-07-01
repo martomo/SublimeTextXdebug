@@ -73,7 +73,7 @@ def show_context_output(view):
             if sublime.score_selector(view.scope_name(point), 'variable'):
                 # Find variable in line which contains the point
                 line = view.substr(view.line(point))
-                pattern = re.compile('^\\s*\\($.*?)\\s+\\=')
+                pattern = re.compile('^\\s*(\\$.*?)\\s+\\=')
                 match = pattern.match(line)
                 if match:
                     # Get variable details from context data
