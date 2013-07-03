@@ -2,6 +2,7 @@ import sublime
 import sublime_plugin
 
 import os
+import socket
 import threading
 
 
@@ -87,7 +88,7 @@ class XdebugBreakpointCommand(sublime_plugin.TextCommand):
                         breakpoint_id = response.getAttribute('id')
                         if breakpoint_id:
                             S.BREAKPOINT[filename][row]['id'] = breakpoint_id
-                    except (ConnectionResetError, session.ProtocolConnectionException):
+                    except (socket.error, session.ProtocolConnectionException):
                         e = sys.exc_info()[1]
                         session.connection_error("%s" % e)
             # Remove breakpoint
@@ -96,7 +97,7 @@ class XdebugBreakpointCommand(sublime_plugin.TextCommand):
                     try:
                         S.SESSION.send(dbgp.BREAKPOINT_REMOVE, d=S.BREAKPOINT[filename][row]['id'])
                         response = S.SESSION.read().firstChild
-                    except (ConnectionResetError, session.ProtocolConnectionException):
+                    except (socket.error, session.ProtocolConnectionException):
                         e = sys.exc_info()[1]
                         session.connection_error("%s" % e)
                 del S.BREAKPOINT[filename][row]
@@ -167,7 +168,7 @@ class XdebugSessionStartCommand(sublime_plugin.TextCommand):
 
             # Tell script to run it's process
             self.view.run_command('xdebug_execute', {'command': 'run'})
-        except (ConnectionResetError, session.ProtocolConnectionException):
+        except (socket.error, session.ProtocolConnectionException):
             e = sys.exc_info()[1]
             session.connection_error("%s" % e)
 
@@ -274,7 +275,7 @@ class XdebugExecuteCommand(sublime_plugin.TextCommand):
                 self.view.run_command('xdebug_session_start')
                 sublime.status_message('Xdebug: Finished executing file on server. Reload page to continue debugging.')
 
-        except (ConnectionResetError, session.ProtocolConnectionException):
+        except (socket.error, session.ProtocolConnectionException):
             e = sys.exc_info()[1]
             session.connection_error("%s" % e)
 
@@ -335,7 +336,7 @@ class XdebugStatusCommand(sublime_plugin.TextCommand):
             response = S.SESSION.read().firstChild
             # Show response in status bar
             sublime.status_message("Xdebug status: " + response.getAttribute(dbgp.ATTRIBUTE_REASON) + ' - ' + response.getAttribute(dbgp.ATTRIBUTE_STATUS))
-        except (ConnectionResetError, session.ProtocolConnectionException):
+        except (socket.error, session.ProtocolConnectionException):
             e = sys.exc_info()[1]
             session.connection_error("%s" % e)
 
@@ -377,7 +378,7 @@ class XdebugUserExecuteCommand(sublime_plugin.TextCommand):
             if output is None:
                 return
             output.run_command('xdebug_view_update', {'data': response.toprettyxml()})
-        except (ConnectionResetError, session.ProtocolConnectionException):
+        except (socket.error, session.ProtocolConnectionException):
             e = sys.exc_info()[1]
             session.connection_error("%s" % e)
 

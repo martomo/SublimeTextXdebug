@@ -69,26 +69,24 @@ def show_context_output(view):
         try:
             # Get selected point in view
             point = view.sel()[0].a
-            # Check if selected point uses variable scope
-            if sublime.score_selector(view.scope_name(point), 'variable'):
-                # Find variable in line which contains the point
-                line = view.substr(view.line(point))
-                pattern = re.compile('^\\s*(\\$.*?)\\s+\\=')
-                match = pattern.match(line)
-                if match:
-                    # Get variable details from context data
-                    variable_name = match.group(1)
-                    variable = session.get_context_variable(S.CONTEXT_DATA, variable_name)
-                    if variable:
-                        # Convert details to text output
-                        variables = H.new_dictionary()
-                        variables[variable_name] = variable
-                        data = session.generate_context_output(variables)
-                        # Show context variables and children in output panel
-                        window = sublime.active_window()
-                        output = window.get_output_panel('xdebug_inspect')
-                        output.run_command("xdebug_view_update", {'data' : data} )
-                        window.run_command('show_panel', {"panel": 'output.xdebug_inspect'})
+            # Find variable in line which contains the point
+            line = view.substr(view.line(point))
+            pattern = re.compile('^\\s*(\\$.*?)\\s+\\=')
+            match = pattern.match(line)
+            if match:
+                # Get variable details from context data
+                variable_name = match.group(1)
+                variable = session.get_context_variable(S.CONTEXT_DATA, variable_name)
+                if variable:
+                    # Convert details to text output
+                    variables = H.new_dictionary()
+                    variables[variable_name] = variable
+                    data = session.generate_context_output(variables)
+                    # Show context variables and children in output panel
+                    window = sublime.active_window()
+                    output = window.get_output_panel('xdebug_inspect')
+                    output.run_command("xdebug_view_update", {'data' : data} )
+                    window.run_command('show_panel', {"panel": 'output.xdebug_inspect'})
         except:
             pass
 

@@ -248,7 +248,7 @@ def get_context_values():
             S.CONTEXT_DATA = context
 
             return generate_context_output(context)
-        except (ConnectionResetError, ProtocolConnectionException):
+        except (socket.error, ProtocolConnectionException):
             e = sys.exc_info()[1]
             connection_error("%s" % e)
 
@@ -298,7 +298,16 @@ def get_response_properties(response):
             property_type = H.unicode_string(child.getAttribute(dbgp.PROPERTY_TYPE))
             property_children = H.unicode_string(child.getAttribute(dbgp.PROPERTY_CHILDREN))
             property_numchildren = H.unicode_string(child.getAttribute(dbgp.PROPERTY_NUMCHILDREN))
+            property_classname = H.unicode_string(child.getAttribute(dbgp.PROPERTY_CLASSNAME))
             property_value = None
+
+            # Ignore following properties
+            if property_name == "::":
+                continue
+            # Avoid nasty static functions/variables from turning in an infinitive loop
+            if property_name.count("::") > 1:
+                continue
+
             try:
                 # Try to base64 decode value
                 property_value = H.unicode_string(' '.join(H.base64_decode(t.data) for t in child.childNodes if t.nodeType == t.TEXT_NODE or t.nodeType == t.CDATA_SECTION_NODE))
@@ -316,6 +325,10 @@ def get_response_properties(response):
                 # Get values for children
                 if property_children:
                     properties[property_name]['children'] = get_property_children(property_name, property_numchildren)
+
+                # Set classname, if available, as type for object
+                if property_classname and property_type == 'object':
+                    properties[property_name]['type'] = property_classname
     return properties
 
 
@@ -338,7 +351,7 @@ def get_stack_values():
                     # Append values
                     values += H.unicode_string('[{level}] {filename}.{where}:{lineno}\n' \
                                               .format(level=stack_level, type=stack_type, where=stack_where, lineno=stack_line, filename=stack_file))
-        except (ConnectionResetError, ProtocolConnectionException):
+        except (socket.error, ProtocolConnectionException):
             e = sys.exc_info()[1]
             connection_error("%s" % e)
     return values
