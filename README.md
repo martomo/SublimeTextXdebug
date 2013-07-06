@@ -81,7 +81,7 @@ Get the latest [source from GitHub](https://github.com/martomo/SublimeTextXdebug
 In order to be able to debug your PHP scripts, you will need have Xdebug extension installed on your server.
 [See here for installation instructions](http://xdebug.org/docs/install)
 
-Below is a configuration template for php.ini/xdebug.ini, be warned if you are on a Live environment, __remote_connect_back__ (since Xdebug version 2.1) allows every debug request from any source to be accepted.
+Below is a configuration template for php.ini/xdebug.ini, be warned if you are on a Live environment, __remote_connect_back__ allows every debug request from any source to be accepted.
 
 ```ini
 [xdebug]
@@ -99,21 +99,19 @@ For details about all available settings for configuring Xdebug, see [here](http
 ## Configuration
 The following settings can be configured in Xdebug.sublime-settings or under the `xdebug` key in *.sublime-project:
 
-*__path_mapping__*
+- *__path_mapping__*
 For remote debugging to resolve the file locations it is required to configure the path mapping with the server path as key and local path as value.
 
-*__ide_key__*
+- *__ide_key__*
 An IDE key is used to identify with debugger engine when Sublime Text will initiate or terminate a debugging session.
-
 _This package does not filter sessions by IDE key, it will accept any IDE key, also ones that do not match this configured IDE key. It is merely used when launching the default web browser with the configured URL._
 
-*__url__*
+- *__url__*
 Determine which URL to launch in the default web browser when starting/stopping a session.
 
-*__port__*
+- *__port__*
 Which port number Sublime Text should listen to connect with debugger engine.
 
----
 
 Below are examples how to configure your Xdebug.sublime-settings and *.sublime-project files.
 
@@ -157,10 +155,11 @@ __*.sublime-project__
 
 #### Can I have both [SublimeTextXdebug](https://github.com/martomo/SublimeTextXdebug) and [SublimeXdebug](https://github.com/Kindari/SublimeXdebug) installed?
 No. Having installed both packages can cause conflicts, because they might both listen to the same port for a debugger engine response and have similar keymapping.
+
 However (project) settings from SublimeXdebug are compatible with SublimeTextXdebug.
 
 #### How can I start a debugging session?
-SublimeTextXdebug can [start or stop a debugging session](#startstop-debugging-session) by launching the default web browser with the configured URL and parameter XDEBUG_SESSION_START/XDEBUG_SESSION_STOP which uses the IDE key as value.
+SublimeTextXdebug can [start or stop a debugging session](#startstop-debugging-session) by launching the default web browser with the configured URL and parameter `XDEBUG_SESSION_START` or `XDEBUG_SESSION_STOP` which uses the configured IDE key as value.
 
 If you do not configure the URL, the plugin will still listen for debugging connections from Xdebug, but you will need to trigger Xdebug [for a remote session](http://xdebug.org/docs/remote). By default the URL will use `sublime.xdebug` as IDE key.
 
