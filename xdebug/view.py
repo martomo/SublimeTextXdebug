@@ -69,24 +69,27 @@ def show_context_output(view):
         try:
             # Get selected point in view
             point = view.sel()[0].a
-            # Find variable in line which contains the point
-            line = view.substr(view.line(point))
-            pattern = re.compile('^\\s*(\\$.*?)\\s+\\=')
-            match = pattern.match(line)
-            if match:
-                # Get variable details from context data
-                variable_name = match.group(1)
-                variable = session.get_context_variable(S.CONTEXT_DATA, variable_name)
-                if variable:
-                    # Convert details to text output
-                    variables = H.new_dictionary()
-                    variables[variable_name] = variable
-                    data = session.generate_context_output(variables)
-                    # Show context variables and children in output panel
-                    window = sublime.active_window()
-                    output = window.get_output_panel('xdebug_inspect')
-                    output.run_command("xdebug_view_update", {'data' : data} )
-                    window.run_command('show_panel', {"panel": 'output.xdebug_inspect'})
+            # Check if selected point uses variable scope
+            if sublime.score_selector(view.scope_name(point), 'variable'):
+                # Find variable in line which contains the point
+                line = view.substr(view.line(point))
+                pattern = re.compile('^\\s*(\\$.*?)\\s+\\=')
+                match = pattern.match(line)
+                if match:
+                    # Get variable details from context data
+                    variable_name = match.group(1)
+                    variable = session.get_context_variable(S.CONTEXT_DATA, variable_name)
+                    if variable:
+                        # Convert details to text output
+                        variables = H.new_dictionary()
+                        variables[variable_name] = variable
+                        data = session.generate_context_output(variables)
+                        # Show context variables and children in output panel
+                        window = sublime.active_window()
+                        output = window.get_output_panel('xdebug_inspect')
+                        output.run_command("xdebug_view_update", {'data' : data} )
+                        output.run_command('set_setting', {"setting": 'word_wrap', "value": True})
+                        window.run_command('show_panel', {"panel": 'output.xdebug_inspect'})
         except:
             pass
 
@@ -110,6 +113,7 @@ def show_content(data, content=None):
     if data == DATA_BREAKPOINT:
         group = 2
         title = TITLE_WINDOW_BREAKPOINT
+        content = session.get_breakpoint_values()
 
     # Search for view assigned to data type
     found = False
@@ -128,9 +132,9 @@ def show_content(data, content=None):
         view.settings().set('word_wrap', False)
         if S.PACKAGE_FOLDER and os.path.exists(S.PACKAGE_PATH + "/Xdebug.tmLanguage"):
             view.set_syntax_file("Packages/" + S.PACKAGE_FOLDER + "/Xdebug.tmLanguage")
+        window.set_view_index(view, group, 0)
 
     # Set content for view and fold all indendation blocks
-    window.set_view_index(view, group, 0)
     view.run_command('xdebug_view_update', {'data': content, 'readonly': True})
     view.run_command('fold_all')
 

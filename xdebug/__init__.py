@@ -17,4 +17,4 @@ except:
 	import view as V
 
 # Modules to be imported from package when using *
-__all__ = ['dbgp','H','S','session','util','V']
+__all__ = ['dbgp','H','load','log','S','session','util','V']

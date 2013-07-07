@@ -18,12 +18,6 @@ try:
 except:
     import settings as S
 
-# View module
-try:
-    from . import view as V
-except:
-    import view as V
-
 
 def get_real_path(uri, server=False):
     """
@@ -90,19 +84,6 @@ def get_real_path(uri, server=False):
     return uri
 
 
-def launch_browser():
-    url = S.get_project_value('url') or S.get_package_value('url')
-    if not url:
-        sublime.status_message('Xdebug: No URL defined in (project) settings file.')
-        return
-    ide_key = S.get_project_value('ide_key') or S.get_package_value('ide_key') or DEFAULT_IDE_KEY
-
-    if S.SESSION and (S.SESSION.listening or not S.SESSION.connected):
-        webbrowser.open(url + '?XDEBUG_SESSION_START=' + ide_key)
-    else:
-        webbrowser.open(url + '?XDEBUG_SESSION_STOP=' + ide_key)
-
-
 def generate_settings():
     settings = {}
     settings["port"] = S.DEFAULT_PORT
@@ -110,6 +91,19 @@ def generate_settings():
     settings["url"] = ""
     settings["path_mapping"] = {}
     return json.dumps(settings, indent = 4)
+
+
+def launch_browser():
+    url = S.get_project_value('url') or S.get_package_value('url')
+    if not url:
+        sublime.status_message('Xdebug: No URL defined in (project) settings file.')
+        return
+    ide_key = S.get_project_value('ide_key') or S.get_package_value('ide_key') or S.DEFAULT_IDE_KEY
+
+    if S.SESSION and (S.SESSION.listening or not S.SESSION.connected):
+        webbrowser.open(url + '?XDEBUG_SESSION_START=' + ide_key)
+    else:
+        webbrowser.open(url + '?XDEBUG_SESSION_STOP=' + ide_key)
 
 
 def load_breakpoint_data():
@@ -133,10 +127,11 @@ def load_breakpoint_data():
             if not breakpoint_data or not os.path.isfile(filename):
                 del data[filename]
 
+    if not isinstance(S.BREAKPOINT, dict):
+        S.BREAKPOINT = {}
+
     # Set breakpoint data
-    S.BREAKPOINT = data
-    # Render breakpoint markers
-    V.render_regions()
+    S.BREAKPOINT.update(data)
 
 
 def save_breakpoint_data():

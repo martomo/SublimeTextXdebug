@@ -22,6 +22,8 @@ try:
 except:
     import dbgp
 
+from .log import debug
+
 
 class Protocol(object):
     """
@@ -101,7 +103,7 @@ class Protocol(object):
         # Get result data from debugger engine and verify length of response
         data = self.read_data()
         # Show debug output
-        if S.DEBUG: print('[Response data] ', data)
+        debug('[Response data] %s' % data)
         # Create XML document object
         document = parseString(data)
         return document
@@ -138,7 +140,7 @@ class Protocol(object):
         try:
             self.socket.send(H.data_write(command + '\x00'))
             # Show debug output
-            if S.DEBUG: print('[Send command] ', command)
+            debug('[Send command] %s' % command)
         except:
             e = sys.exc_info()[1]
             raise ProtocolConnectionException(e)
@@ -225,6 +227,30 @@ def connection_error(message):
         S.SESSION = None
         S.BREAKPOINT_ROW = None
         S.CONTEXT_DATA.clear()
+
+
+def get_breakpoint_values():
+    # Get breakpoints for files
+    values = H.unicode_string('')
+    if S.BREAKPOINT is None:
+        return values
+    for filename, breakpoint_data in sorted(S.BREAKPOINT.items()):
+        breakpoint_entry = ''
+        if breakpoint_data:
+            breakpoint_entry += "=> %s\n" % filename
+            # Sort breakpoint data by line number
+            for lineno, bp in sorted(breakpoint_data.items(), key=lambda item: (int(item[0]) if isinstance(item[0], int) or H.is_digit(item[0]) else float('inf'), item[0])):
+                breakpoint_entry += '\t'
+                if bp['enabled']:
+                    breakpoint_entry += '|+|'
+                else:
+                    breakpoint_entry += '|-|'
+                breakpoint_entry += ' %s' % lineno
+                if bp['expression'] is not None:
+                    breakpoint_entry += ' -- "%s"' % bp['expression']
+                breakpoint_entry += "\n"
+        values += H.unicode_string(breakpoint_entry)
+    return values
 
 
 def get_context_values():
@@ -366,7 +392,9 @@ def generate_context_output(context, indent=0):
         property_text = ''
         for i in range(indent): property_text += '\t'
         if variable['value']:
-            property_text += variable['name'] + ' = (' + variable['type'] + ') ' + variable['value'] + '\n'
+            # Remove newlines in value to prevent incorrect indentation
+            value = variable['value'].replace("\r\n", "\n").replace("\n", " ")
+            property_text += variable['name'] + ' = (' + variable['type'] + ') ' + value + '\n'
         elif isinstance(variable['children'], dict):
             property_text += variable['name'] + ' = ' + variable['type'] + '[%d]\n' % len(variable['children'])
             property_text += generate_context_output(variable['children'], indent+1)

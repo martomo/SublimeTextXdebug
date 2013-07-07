@@ -1,6 +1,5 @@
 import sublime
 
-
 DEBUG = False
 
 DEFAULT_PORT = 9000
@@ -9,6 +8,7 @@ DEFAULT_IDE_KEY = 'sublime.xdebug'
 PACKAGE_PATH = None
 PACKAGE_FOLDER = None
 
+FILE_LOG_OUTPUT = 'Xdebug.log'
 FILE_BREAKPOINT_DATA = 'Xdebug.breakpoints'
 FILE_PACKAGE_SETTINGS = 'Xdebug.sublime-settings'
 
@@ -37,13 +37,25 @@ LAYOUT_NORMAL = {
                 }
 
 SESSION = None
-BREAKPOINT = None
+BREAKPOINT = {}
+CONTEXT_DATA = {}
 # Breakpoint line number in script being debugged
 BREAKPOINT_ROW = None
 # Will hold breakpoint line number to show for file which is being loaded
 SHOW_ROW_ONLOAD = {}
 
-CONTEXT_DATA = {}
+
+def get_package_value(key, default_value=None):
+    """
+    Get value from package configuration settings.
+    """
+    try:
+        config = sublime.load_settings(FILE_PACKAGE_SETTINGS)
+        if config and config.has(key):
+            return config.get(key)
+    except:
+        pass
+    return default_value
 
 
 def get_project_value(key, default_value=None):
@@ -62,14 +74,32 @@ def get_project_value(key, default_value=None):
     return default_value
 
 
-def get_package_value(key, default_value=None):
+def set_package_value(key, value=None):
     """
-    Get value from package configuration settings.
+    Set value in package configuration settings.
     """
     try:
         config = sublime.load_settings(FILE_PACKAGE_SETTINGS)
-        if config and config.has(key):
-            return config.get(key)
+        if value is not None:
+            config.set(key, value)
+        elif config and config.has(key):
+            return config.erase(key)
     except:
         pass
-    return default_value
+
+
+def set_project_value(key, value=None):
+    """
+    Set value in project configuration settings.
+    """
+    try:
+        project = sublime.active_window().active_view().settings()
+        # Use 'xdebug' as key which contains dictionary with project values for package
+        config = project.get(KEY_PROJECT_SETTINGS, {})
+        if value is not None:
+            config[key] = value
+        elif key in config:
+            del config[key]
+        project.set(KEY_PROJECT_SETTINGS, config)
+    except:
+        pass

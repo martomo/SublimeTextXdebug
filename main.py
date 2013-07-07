@@ -21,10 +21,8 @@ except:
     print("Unable to resolve current path for package.")
 
 
-# Load breakpoint data
-if S.BREAKPOINT is None:
-    S.BREAKPOINT = {}
-    sublime.set_timeout(lambda: util.load_breakpoint_data(), 1000)
+# Initialize package
+sublime.set_timeout(lambda: load.xdebug(), 1000)
 
 
 # Define event listener for view(s)
@@ -105,6 +103,9 @@ class XdebugBreakpointCommand(sublime_plugin.TextCommand):
         # Render breakpoint markers
         V.render_regions()
 
+        # Update breakpoint list
+        V.show_content(V.DATA_BREAKPOINT)
+
         # Save breakpoint data to file
         util.save_breakpoint_data()
 
@@ -164,7 +165,7 @@ class XdebugSessionStartCommand(sublime_plugin.TextCommand):
                             breakpoint_id = response.getAttribute('id')
                             if breakpoint_id:
                                 S.BREAKPOINT[filename][lineno]['id'] = breakpoint_id
-                            if S.DEBUG: print('breakpoint_set: ' + filename + ':' + lineno)
+                            log.debug('breakpoint_set: ' + filename + ':' + lineno)
 
             # Tell script to run it's process
             self.view.run_command('xdebug_execute', {'command': 'run'})
@@ -252,7 +253,7 @@ class XdebugExecuteCommand(sublime_plugin.TextCommand):
                     lineno = child.getAttribute(dbgp.BREAKPOINT_LINENO)
                     filename = util.get_real_path(fileuri)
                     # Show debug output
-                    if S.DEBUG: print('Break: ' + filename + ':' + lineno)
+                    log.info('Break: ' + filename + ':' + lineno)
                     # Store line number of breakpoint for displaying region marker
                     S.BREAKPOINT_ROW = { 'filename': filename, 'lineno': lineno }
                     # Focus/Open file window view
@@ -430,6 +431,7 @@ class XdebugResetLayoutCommand(sublime_plugin.TextCommand):
             return
         # Reset data in debugging related windows
         V.show_content(V.DATA_CONTEXT)
+        V.show_content(V.DATA_BREAKPOINT)
         V.show_content(V.DATA_STACK)
         output = window.get_output_panel('xdebug_inspect')
         output.run_command("xdebug_view_update")
