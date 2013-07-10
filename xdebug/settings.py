@@ -44,6 +44,11 @@ BREAKPOINT_ROW = None
 # Will hold breakpoint line number to show for file which is being loaded
 SHOW_ROW_ONLOAD = {}
 
+# Maximum amount of array children and object's properties to return
+MAX_CHILDREN = 0
+# Maximum amount of nested levels to retrieve of array elements and object properties
+MAX_DEPTH = 1023
+
 
 def get_package_value(key, default_value=None):
     """

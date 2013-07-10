@@ -49,10 +49,17 @@ def xdebug():
     for package_name in os.listdir(sublime.packages_path()):
         if package_name not in packages:
             packages.append(package_name)
+    # Strip .sublime-package of package name for comparison
+    package_extension = ".sublime-package"
+    current_package = S.PACKAGE_FOLDER
+    if current_package.endswith(package_extension):
+        current_package = current_package[:-len(package_extension)]
     # Check for other Xdebug packages
     duplicates = []
     for package in packages:
-        if package.lower().count("xdebug") and package != S.PACKAGE_FOLDER:
+        if package.endswith(package_extension):
+            package = package[:-len(package_extension)]
+        if package.lower().count("xdebug") and package != current_package:
             duplicates.append(package)
     # Show message if other Xdebug packages have been found
     if duplicates:

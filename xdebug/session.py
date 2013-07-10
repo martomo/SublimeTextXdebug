@@ -293,7 +293,11 @@ def get_context_variable(context, variable_name):
                     return children
 
 
-def get_property_children(property_name, numchildren):
+def get_property_children(property_name, numchildren, depth=0):
+    # Limit numchildren to max_children
+    max_children = S.get_project_value('max_children') or S.get_package_value('max_children') or S.MAX_CHILDREN
+    if isinstance(max_children, int) and max_children is not 0 and int(numchildren) > max_children:
+        numchildren = max_children
     if S.SESSION:
         # Set max children limit accordingly
         S.SESSION.send(dbgp.FEATURE_SET, n=dbgp.FEATURE_NAME_MAXCHILDREN, v=numchildren)
@@ -309,11 +313,12 @@ def get_property_children(property_name, numchildren):
             if child.nodeName == dbgp.ELEMENT_PROPERTY:
                 # Return it's children when property matches property name
                 if property_name == H.unicode_string(child.getAttribute(dbgp.PROPERTY_FULLNAME)):
-                    return get_response_properties(child)
+                    return get_response_properties(child, depth)
     return {}
 
 
-def get_response_properties(response):
+def get_response_properties(response, depth=0):
+    max_depth = S.get_project_value('max_depth') or S.get_package_value('max_depth') or S.MAX_DEPTH
     properties = H.new_dictionary()
     # Walk through elements in response
     for child in response.childNodes:
@@ -333,6 +338,9 @@ def get_response_properties(response):
             # Avoid nasty static functions/variables from turning in an infinitive loop
             if property_name.count("::") > 1:
                 continue
+            # Stop at maximum depth
+            if isinstance(max_depth, int) and max_depth is not 0 and depth > max_depth:
+                continue
 
             try:
                 # Try to base64 decode value
@@ -346,11 +354,11 @@ def get_response_properties(response):
                     property_value = H.unicode_string('*****')
 
                 # Store property
-                properties[property_name] = { 'name': property_name, 'type': property_type, 'value': property_value, 'children' : None }
+                properties[property_name] = { 'name': property_name, 'type': property_type, 'value': property_value, 'numchildren': property_numchildren, 'children' : None }
 
                 # Get values for children
                 if property_children:
-                    properties[property_name]['children'] = get_property_children(property_name, property_numchildren)
+                    properties[property_name]['children'] = get_property_children(property_name, property_numchildren, depth+1)
 
                 # Set classname, if available, as type for object
                 if property_classname and property_type == 'object':
@@ -396,8 +404,12 @@ def generate_context_output(context, indent=0):
             value = variable['value'].replace("\r\n", "\n").replace("\n", " ")
             property_text += variable['name'] + ' = (' + variable['type'] + ') ' + value + '\n'
         elif isinstance(variable['children'], dict):
-            property_text += variable['name'] + ' = ' + variable['type'] + '[%d]\n' % len(variable['children'])
+            property_text += variable['name'] + ' = ' + variable['type'] + '[' + variable['numchildren'] + ']\n'
             property_text += generate_context_output(variable['children'], indent+1)
+            # Use ellipsis to indicate that results have been truncated
+            if int(variable['numchildren']) != len(variable['children']):
+                for i in range(indent+1): property_text += '\t'
+                property_text += '...\n'
         else:
             property_text += variable['name'] + ' = <' + variable['type'] + '>\n'
         values += H.unicode_string(property_text)

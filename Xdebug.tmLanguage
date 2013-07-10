@@ -60,7 +60,7 @@
 				</dict>
 			</dict>
 			<key>match</key>
-			<string>^\s*(\$.*?)\s+(=)\s+(\(.*\))\s(.*)</string>
+			<string>^\s*(\$.*?)\s+(=)\s+(\(.*?\))\s(.*)</string>
 			<key>name</key>
 			<string>xdebug.output.context.property</string>
 		</dict>
@@ -87,6 +87,20 @@
 			<string>^\s*(\$.*?)\s+(=)\s+(&lt;.*&gt;)</string>
 			<key>name</key>
 			<string>xdebug.output.context.unknown</string>
+		</dict>
+		<dict>
+			<key>captures</key>
+			<dict>
+				<key>1</key>
+				<dict>
+					<key>name</key>
+					<string>constant.other.settings</string>
+				</dict>
+			</dict>
+			<key>match</key>
+			<string>^\s*(\.{3,})</string>
+			<key>name</key>
+			<string>xdebug.output.context.trimmed</string>
 		</dict>
 		<dict>
 			<key>captures</key>
