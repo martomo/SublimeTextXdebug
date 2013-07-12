@@ -12,7 +12,8 @@ FILE_LOG_OUTPUT = 'Xdebug.log'
 FILE_BREAKPOINT_DATA = 'Xdebug.breakpoints'
 FILE_PACKAGE_SETTINGS = 'Xdebug.sublime-settings'
 
-KEY_PROJECT_SETTINGS = 'xdebug'
+KEY_SETTINGS = 'settings'
+KEY_XDEBUG = 'xdebug'
 
 REGION_KEY_BREAKPOINT = 'xdebug_breakpoint'
 REGION_KEY_CURRENT = 'xdebug_current'
@@ -39,6 +40,7 @@ LAYOUT_NORMAL = {
 SESSION = None
 BREAKPOINT = {}
 CONTEXT_DATA = {}
+
 # Breakpoint line number in script being debugged
 BREAKPOINT_ROW = None
 # Will hold breakpoint line number to show for file which is being loaded
@@ -70,12 +72,24 @@ def get_project_value(key, default_value=None):
     try:
         project = sublime.active_window().active_view().settings()
         # Use 'xdebug' as key which contains dictionary with project values for package
-        config = project.get(KEY_PROJECT_SETTINGS)
+        config = project.get(KEY_XDEBUG)
         if config:
             if key in config:
                 return config[key]
     except:
         pass
+    return default_value
+
+
+def get_window_value(key, default_value=None):
+    """
+    Get value from window session settings.
+    """
+    settings = sublime.active_window().settings()
+    if settings.has(KEY_XDEBUG):
+        xdebug = settings.get(KEY_XDEBUG)
+        if isinstance(xdebug, dict) and key in xdebug.keys():
+            return xdebug[key]
     return default_value
 
 
@@ -97,14 +111,40 @@ def set_project_value(key, value=None):
     """
     Set value in project configuration settings.
     """
-    try:
-        project = sublime.active_window().active_view().settings()
-        # Use 'xdebug' as key which contains dictionary with project values for package
-        config = project.get(KEY_PROJECT_SETTINGS, {})
-        if value is not None:
-            config[key] = value
-        elif key in config:
-            del config[key]
-        project.set(KEY_PROJECT_SETTINGS, config)
-    except:
-        pass
+    # Unable to set project value if no project file
+    if not sublime.active_window().project_file_name():
+        return False
+    # Get current project data
+    project = sublime.active_window().project_data()
+    # Make sure project data is a dictionary
+    if not isinstance(project, dict):
+        project = {}
+    # Create settings entries if they are undefined
+    if KEY_SETTINGS not in project.keys() or not isinstance(project[KEY_SETTINGS], dict):
+        project[KEY_SETTINGS] = {}
+    if KEY_XDEBUG not in project[KEY_SETTINGS].keys() or not isinstance(project[KEY_SETTINGS][KEY_XDEBUG], dict):
+        project[KEY_SETTINGS][KEY_XDEBUG] = {}
+    # Update Xdebug settings
+    if value is not None:
+        project[KEY_SETTINGS][KEY_XDEBUG][key] = value
+    elif key in project[KEY_SETTINGS][KEY_XDEBUG].keys():
+        del project[KEY_SETTINGS][KEY_XDEBUG][key]
+    # Save project data
+    sublime.active_window().set_project_data(project)
+    return True
+
+
+def set_window_value(key, value=None):
+    """
+    Set value in window session settings.
+    """
+    settings = sublime.active_window().settings()
+    if settings.has(KEY_XDEBUG):
+        xdebug = settings.get(KEY_XDEBUG)
+    else:
+        xdebug = {}
+    if value is not None:
+        xdebug[key] = value
+    elif key in xdebug.keys():
+        del xdebug[key]
+    settings.set(KEY_XDEBUG, xdebug)

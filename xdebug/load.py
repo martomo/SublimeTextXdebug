@@ -64,9 +64,9 @@ def xdebug():
     # Show message if other Xdebug packages have been found
     if duplicates:
         info("Multiple 'xdebug' packages detected.")
-        if not S.get_project_value('hide_conflict', False):
+        if not S.get_window_value('hide_conflict', False):
             sublime.error_message("The following Xdebug package(s) could cause conflicts with '{package}':\n\n{other}\n\nPlease consider removing the package(s) above when experiencing any complications." \
                                     .format(package=S.PACKAGE_FOLDER, other='\n'.join(duplicates)))
-            S.set_project_value('hide_conflict', True)
+            S.set_window_value('hide_conflict', True)
     else:
-        S.set_project_value('hide_conflict', False)
+        S.set_window_value('hide_conflict', False)
