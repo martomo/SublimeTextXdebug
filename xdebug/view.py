@@ -43,31 +43,33 @@ def set_layout(layout):
     if layout == 'debug':
         if window.get_layout() != S.LAYOUT_DEBUG:
             # Save current layout
-            restore_layout = window.get_layout()
-            S.set_window_value('restore_layout', restore_layout)
+            S.RESTORE_LAYOUT = window.get_layout()
+            S.set_window_value('restore_layout', S.RESTORE_LAYOUT)
             # Remember view indexes
-            restore_index = H.new_dictionary()
+            S.RESTORE_INDEX = H.new_dictionary()
             for view in window.views():
                 view_id = "%d" % view.id()
                 group, index = window.get_view_index(view)
-                restore_index[view_id] = { "group": group, "index": index }
-            S.set_window_value('restore_index', restore_index)
+                S.RESTORE_INDEX[view_id] = { "group": group, "index": index }
+            S.set_window_value('restore_index', S.RESTORE_INDEX)
             # Set debug layout
             window.set_layout(S.LAYOUT_NORMAL)
         window.set_layout(S.LAYOUT_DEBUG)
     # Show previous (single) layout
     else:
         # Get previous layout configuration
-        restore_layout = S.get_window_value('restore_layout', S.LAYOUT_NORMAL)
-        restore_index = S.get_window_value('restore_index', {})
+        if S.RESTORE_LAYOUT is None:
+            S.RESTORE_LAYOUT = S.get_window_value('restore_layout', S.LAYOUT_NORMAL)
+        if S.RESTORE_INDEX is None:
+            S.RESTORE_INDEX = S.get_window_value('restore_index', {})
         # Restore layout
         window.set_layout(S.LAYOUT_NORMAL)
-        window.set_layout(restore_layout)
+        window.set_layout(S.RESTORE_LAYOUT)
         for view in window.views():
             view_id = "%d" % view.id()
             # Set view indexes
-            if view_id in H.dictionary_keys(restore_index):
-                v = restore_index[view_id]
+            if view_id in H.dictionary_keys(S.RESTORE_INDEX):
+                v = S.RESTORE_INDEX[view_id]
                 window.set_view_index(view, v["group"], v["index"])
             # Close all debugging related windows
             if view.name() == TITLE_WINDOW_BREAKPOINT or view.name() == TITLE_WINDOW_CONTEXT or view.name() == TITLE_WINDOW_STACK:

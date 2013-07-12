@@ -37,6 +37,9 @@ LAYOUT_NORMAL = {
                 "cells": [[0, 0, 1, 1]]
                 }
 
+RESTORE_LAYOUT = None
+RESTORE_INDEX = None
+
 SESSION = None
 BREAKPOINT = {}
 CONTEXT_DATA = {}
@@ -84,12 +87,17 @@ def get_project_value(key, default_value=None):
 def get_window_value(key, default_value=None):
     """
     Get value from window session settings.
+
+    NOTE: Window object in Sublime Text 2 has no Settings.
     """
-    settings = sublime.active_window().settings()
-    if settings.has(KEY_XDEBUG):
-        xdebug = settings.get(KEY_XDEBUG)
-        if isinstance(xdebug, dict) and key in xdebug.keys():
-            return xdebug[key]
+    try:
+        settings = sublime.active_window().settings()
+        if settings.has(KEY_XDEBUG):
+            xdebug = settings.get(KEY_XDEBUG)
+            if isinstance(xdebug, dict) and key in xdebug.keys():
+                return xdebug[key]
+    except:
+        pass
     return default_value
 
 
@@ -137,14 +145,19 @@ def set_project_value(key, value=None):
 def set_window_value(key, value=None):
     """
     Set value in window session settings.
+
+    NOTE: Window object in Sublime Text 2 has no Settings.
     """
-    settings = sublime.active_window().settings()
-    if settings.has(KEY_XDEBUG):
-        xdebug = settings.get(KEY_XDEBUG)
-    else:
-        xdebug = {}
-    if value is not None:
-        xdebug[key] = value
-    elif key in xdebug.keys():
-        del xdebug[key]
-    settings.set(KEY_XDEBUG, xdebug)
+    try:
+        settings = sublime.active_window().settings()
+        if settings.has(KEY_XDEBUG):
+            xdebug = settings.get(KEY_XDEBUG)
+        else:
+            xdebug = {}
+        if value is not None:
+            xdebug[key] = value
+        elif key in xdebug.keys():
+            del xdebug[key]
+        settings.set(KEY_XDEBUG, xdebug)
+    except:
+        pass
