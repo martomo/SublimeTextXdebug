@@ -36,6 +36,7 @@ LAYOUT_NORMAL = {
                 "rows": [0.0, 1.0],
                 "cells": [[0, 0, 1, 1]]
                 }
+CLOSE_ON_STOP = False
 
 RESTORE_LAYOUT = None
 RESTORE_INDEX = None

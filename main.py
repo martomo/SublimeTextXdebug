@@ -201,7 +201,8 @@ class XdebugSessionStopCommand(sublime_plugin.TextCommand):
             S.SESSION = None
             S.BREAKPOINT_ROW = None
             S.CONTEXT_DATA.clear()
-        if close_windows:
+        close_on_stop = S.get_project_value('close_on_stop') or S.get_package_value('close_on_stop') or S.CLOSE_ON_STOP
+        if close_windows or close_on_stop:
             self.view.run_command('xdebug_reset_layout', {'layout': 'default'})
         else:
             self.view.run_command('xdebug_reset_layout', {'layout': 'debug'})
@@ -213,8 +214,11 @@ class XdebugSessionStopCommand(sublime_plugin.TextCommand):
             return True
         return False
 
-    def is_visible(self, launch_browser=False):
+    def is_visible(self, close_windows=False, launch_browser=False):
         if S.SESSION:
+            close_on_stop = S.get_project_value('close_on_stop') or S.get_package_value('close_on_stop') or S.CLOSE_ON_STOP
+            if close_windows and close_on_stop:
+                return False
             if launch_browser and not (S.get_project_value('url') or S.get_package_value('url')):
                 return False
             return True
