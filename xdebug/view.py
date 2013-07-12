@@ -37,20 +37,43 @@ def set_layout(layout):
     """
     # Get active window and set reference to active view
     window = sublime.active_window()
-    previous_active = window.active_view_in_group(0)
+    previous_active = window.active_view()
 
     # Show debug layout
     if layout == 'debug':
+        if window.get_layout() != S.LAYOUT_DEBUG:
+            # Save current layout
+            restore_layout = window.get_layout()
+            S.set_window_value('restore_layout', restore_layout)
+            # Remember view indexes
+            restore_index = H.new_dictionary()
+            for view in window.views():
+                view_id = "%d" % view.id()
+                group, index = window.get_view_index(view)
+                restore_index[view_id] = { "group": group, "index": index }
+            S.set_window_value('restore_index', restore_index)
+            # Set debug layout
+            window.set_layout(S.LAYOUT_NORMAL)
         window.set_layout(S.LAYOUT_DEBUG)
-    # Show default (single) layout
+    # Show previous (single) layout
     else:
+        # Get previous layout configuration
+        restore_layout = S.get_window_value('restore_layout', S.LAYOUT_NORMAL)
+        restore_index = S.get_window_value('restore_index', {})
+        # Restore layout
         window.set_layout(S.LAYOUT_NORMAL)
-        # Close all debugging related windows
-        window.run_command('hide_panel', {"panel": 'output.xdebug_inspect'})
+        window.set_layout(restore_layout)
         for view in window.views():
+            view_id = "%d" % view.id()
+            # Set view indexes
+            if view_id in H.dictionary_keys(restore_index):
+                v = restore_index[view_id]
+                window.set_view_index(view, v["group"], v["index"])
+            # Close all debugging related windows
             if view.name() == TITLE_WINDOW_BREAKPOINT or view.name() == TITLE_WINDOW_CONTEXT or view.name() == TITLE_WINDOW_STACK:
                 window.focus_view(view)
                 window.run_command('close')
+        window.run_command('hide_panel', {"panel": 'output.xdebug_inspect'})
 
     # Restore focus to previous active view
     if not previous_active is None:
@@ -121,6 +144,10 @@ def show_content(data, content=None):
     for view in window.views():
         if view.name() == title:
             found = True
+            # Make sure the view is in the right group
+            view_group, view_index = window.get_view_index(view)
+            if view_group != group:
+                window.set_view_index(view, group, 0)
             break
 
     # Create new view if it does not exists
