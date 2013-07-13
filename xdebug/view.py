@@ -165,7 +165,8 @@ def show_content(data, content=None):
 
     # Set content for view and fold all indendation blocks
     view.run_command('xdebug_view_update', {'data': content, 'readonly': True})
-    view.run_command('fold_all')
+    if data == DATA_CONTEXT:
+        view.run_command('fold_all')
 
     # Restore focus to previous active view/group
     if not previous_active is None:
@@ -312,16 +313,22 @@ def render_regions(view=None):
     # Remove all markers to avoid marker conflict
     view.erase_regions(S.REGION_KEY_BREAKPOINT)
     view.erase_regions(S.REGION_KEY_CURRENT)
+    view.erase_regions(S.REGION_KEY_DISABLED)
 
     # Get filename of current view and check if is a valid filename
     filename = view.file_name()
     if not filename:
         return
 
-    # Get all breakpoint rows (line numbers) for file
-    breakpoint_rows = {}
-    if filename in S.BREAKPOINT:
-        breakpoint_rows = H.dictionary_keys(S.BREAKPOINT[filename])
+    # Get all (disabled) breakpoint rows (line numbers) for file
+    breakpoint_rows = []
+    disabled_rows = []
+    if filename in S.BREAKPOINT and isinstance(S.BREAKPOINT[filename], dict):
+        for lineno, bp in S.BREAKPOINT[filename].items():
+            if bp['enabled']:
+                breakpoint_rows.append(lineno)
+            else:
+                disabled_rows.append(lineno)
 
     # Get current line from breakpoint hit
     if S.BREAKPOINT_ROW is not None:
@@ -332,9 +339,59 @@ def render_regions(view=None):
             if S.BREAKPOINT_ROW['lineno'] in breakpoint_rows:
                 icon = S.ICON_BREAKPOINT_CURRENT
                 breakpoint_rows.remove(S.BREAKPOINT_ROW['lineno'])
+            if S.BREAKPOINT_ROW['lineno'] in disabled_rows:
+                disabled_rows.remove(S.BREAKPOINT_ROW['lineno'])
             # Set current line marker
             view.add_regions(S.REGION_KEY_CURRENT, rows_to_region(S.BREAKPOINT_ROW['lineno']), S.REGION_SCOPE_CURRENT, icon, sublime.HIDDEN)
 
     # Set breakpoint marker(s)
     if breakpoint_rows:
         view.add_regions(S.REGION_KEY_BREAKPOINT, rows_to_region(breakpoint_rows), S.REGION_SCOPE_BREAKPOINT, S.ICON_BREAKPOINT, sublime.HIDDEN)
+    if disabled_rows:
+        view.add_regions(S.REGION_KEY_DISABLED, rows_to_region(disabled_rows), S.REGION_SCOPE_BREAKPOINT, S.ICON_BREAKPOINT_DISABLED, sublime.HIDDEN)
+
+
+def toggle_breakpoint(view):
+    try:
+        # Get selected point in view
+        point = view.sel()[0]
+        # Check if selected point uses breakpoint line scope
+        if point.size() == 3 and sublime.score_selector(view.scope_name(point.a), 'xdebug.output.breakpoint.line'):
+            # Find line number of breakpoint
+            line = view.substr(view.line(point))
+            pattern = re.compile('^\\s*(?:(\\|\\+\\|)|(\\|-\\|))\\s*(?P<line_number>\\d+)\\s*(?:(--)(.*)|.*)')
+            match = pattern.match(line)
+            # Check if it has found line number
+            if match and match.group('line_number'):
+                # Get all breakpoint filenames
+                breakpoint_file = view.find_by_selector('xdebug.output.breakpoint.file')
+                # Locate line with filename related to selected breakpoint
+                file_line = None
+                for entry in breakpoint_file:
+                    # Stop searching if we have passed selected breakpoint
+                    if entry > point:
+                        break
+                    file_line = view.substr(view.line(entry))
+                # Do not continue without line containing filename
+                if file_line is None:
+                    return
+                # Remove unnecessary text from line to get filename
+                file_pattern = re.compile('^\\s*(=>)\\s*(?P<filename>.*)')
+                file_match = file_pattern.match(file_line)
+                # Check if it is a valid filename
+                if file_match and file_match.group('filename'):
+                    filename = file_match.group('filename')
+                    line_number = match.group('line_number')
+                    enabled = None
+                    # Disable breakpoint
+                    if sublime.score_selector(view.scope_name(point.a), 'entity') and S.BREAKPOINT[filename][line_number]['enabled']:
+                        enabled = False
+                    # Enable breakpoint
+                    if sublime.score_selector(view.scope_name(point.a), 'keyword') and not S.BREAKPOINT[filename][line_number]['enabled']:
+                        enabled = True
+                    # Toggle breakpoint only if it has valid value
+                    if enabled is None:
+                        return
+                    sublime.active_window().run_command('xdebug_breakpoint', {"enabled": enabled, "rows": [line_number], "filename": filename})
+    except:
+        pass

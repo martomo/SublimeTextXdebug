@@ -59,13 +59,13 @@ def xdebug():
     for package in packages:
         if package.endswith(package_extension):
             package = package[:-len(package_extension)]
-        if package.lower().count("xdebug") and package != current_package:
+        if (package.lower().count("xdebug") or package.lower().count("moai")) and package != current_package:
             duplicates.append(package)
     # Show message if other Xdebug packages have been found
     if duplicates:
         info("Multiple 'xdebug' packages detected.")
         if not S.get_window_value('hide_conflict', False):
-            sublime.error_message("The following Xdebug package(s) could cause conflicts with '{package}':\n\n{other}\n\nPlease consider removing the package(s) above when experiencing any complications." \
+            sublime.error_message("The following package(s) could cause conflicts with '{package}':\n\n{other}\n\nPlease consider removing the package(s) above when experiencing any complications." \
                                     .format(package=S.PACKAGE_FOLDER, other='\n'.join(duplicates)))
             S.set_window_value('hide_conflict', True)
     else:

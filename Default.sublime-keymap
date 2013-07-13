@@ -1,5 +1,6 @@
 [
 	{"keys": ["ctrl+f8"], "command": "xdebug_breakpoint"},
+	{"keys": ["ctrl+f9"], "command": "xdebug_conditional_breakpoint"},
 	{"keys": ["ctrl+shift+f5"], "command": "xdebug_continue", "args": {"command": "run"}},
 	{"keys": ["ctrl+shift+f6"], "command": "xdebug_continue", "args": {"command": "step_over"}},
 	{"keys": ["ctrl+shift+f7"], "command": "xdebug_continue", "args": {"command": "step_into"}},

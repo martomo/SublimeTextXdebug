@@ -17,11 +17,13 @@ KEY_XDEBUG = 'xdebug'
 
 REGION_KEY_BREAKPOINT = 'xdebug_breakpoint'
 REGION_KEY_CURRENT = 'xdebug_current'
-REGION_SCOPE_BREAKPOINT = 'comment'
-REGION_SCOPE_CURRENT = 'string'
+REGION_KEY_DISABLED = 'xdebug_disabled'
+REGION_SCOPE_BREAKPOINT = 'comment.line.settings'
+REGION_SCOPE_CURRENT = 'string.quoted.settings'
 
 ICON_BREAKPOINT = 'circle'
 ICON_BREAKPOINT_CURRENT = 'circle'
+ICON_BREAKPOINT_DISABLED = 'dot'
 ICON_CURRENT = 'bookmark'
 
 # Window layout for debugging output

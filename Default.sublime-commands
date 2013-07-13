@@ -27,6 +27,10 @@
         "command": "xdebug_breakpoint"
     },
     {
+        "caption": "Xdebug: Set Conditional Breakpoint",
+        "command": "xdebug_conditional_breakpoint"
+    },
+    {
         "caption": "Xdebug: Clear All Breakpoints",
         "command": "xdebug_clear_breakpoints"
     },

@@ -50,6 +50,8 @@ class EventListener(sublime_plugin.EventListener):
         # Show details in output panel of selected variable in context window
         if view.name() == V.TITLE_WINDOW_CONTEXT:
             V.show_context_output(view)
+        elif view.name() == V.TITLE_WINDOW_BREAKPOINT:
+            V.toggle_breakpoint(view)
         else:
             pass
 
@@ -57,13 +59,12 @@ class EventListener(sublime_plugin.EventListener):
 class XdebugBreakpointCommand(sublime_plugin.TextCommand):
     """
     Add/Remove breakpoint(s) for rows (line numbers) in selection.
-
-    TODO: By argument setting expression for conditional breakpoint
     """
-    def run(self, edit, rows=None, expression=None):
+    def run(self, edit, rows=None, condition=None, enabled=None, filename=None):
         # Get filename in current view and check if is a valid filename
-        filename = self.view.file_name()
-        if not filename:
+        if filename is None:
+            filename = self.view.file_name()
+        if not filename or not os.path.isfile(filename):
             return
 
         # Add entry for file in breakpoint data
@@ -76,21 +77,13 @@ class XdebugBreakpointCommand(sublime_plugin.TextCommand):
 
         # Loop through rows
         for row in rows:
-            # Add breakpoint
-            if row not in S.BREAKPOINT[filename]:
-                S.BREAKPOINT[filename][row] = { 'id': None, 'enabled': True, 'expression': expression }
-                if session.is_connected():
-                    try:
-                        S.SESSION.send(dbgp.BREAKPOINT_SET, t='line', f=util.get_real_path(filename, True), n=row)
-                        response = S.SESSION.read().firstChild
-                        breakpoint_id = response.getAttribute('id')
-                        if breakpoint_id:
-                            S.BREAKPOINT[filename][row]['id'] = breakpoint_id
-                    except (socket.error, session.ProtocolConnectionException):
-                        e = sys.exc_info()[1]
-                        session.connection_error("%s" % e)
-            # Remove breakpoint
-            else:
+            expression = None
+            if condition is not None and len(condition.strip()) > 0:
+                expression = condition
+            # Check if breakpoint exists
+            breakpoint_exists = row in S.BREAKPOINT[filename]
+            # Disable/Remove breakpoint
+            if breakpoint_exists:
                 if session.is_connected() and S.BREAKPOINT[filename][row]['id'] is not None:
                     try:
                         S.SESSION.send(dbgp.BREAKPOINT_REMOVE, d=S.BREAKPOINT[filename][row]['id'])
@@ -98,16 +91,60 @@ class XdebugBreakpointCommand(sublime_plugin.TextCommand):
                     except (socket.error, session.ProtocolConnectionException):
                         e = sys.exc_info()[1]
                         session.connection_error("%s" % e)
-                del S.BREAKPOINT[filename][row]
+                if enabled is False:
+                    S.BREAKPOINT[filename][row]['enabled'] = False
+                elif enabled is None:
+                    del S.BREAKPOINT[filename][row]
+            # Add/Enable breakpoint
+            if not breakpoint_exists or enabled is True:
+                if row not in S.BREAKPOINT[filename]:
+                    S.BREAKPOINT[filename][row] = { 'id': None, 'enabled': True, 'expression': expression }
+                else:
+                    S.BREAKPOINT[filename][row]['enabled'] = True
+                    if condition is not None:
+                        S.BREAKPOINT[filename][row]['expression'] = expression
+                    else:
+                        expression = S.BREAKPOINT[filename][row]['expression']
+                if session.is_connected():
+                    try:
+                        S.SESSION.send(dbgp.BREAKPOINT_SET, t='line', f=util.get_real_path(filename, True), n=row, expression=expression)
+                        response = S.SESSION.read().firstChild
+                        breakpoint_id = response.getAttribute('id')
+                        if breakpoint_id:
+                            S.BREAKPOINT[filename][row]['id'] = breakpoint_id
+                    except (socket.error, session.ProtocolConnectionException):
+                        e = sys.exc_info()[1]
+                        session.connection_error("%s" % e)
 
         # Render breakpoint markers
         V.render_regions()
 
         # Update breakpoint list
-        V.show_content(V.DATA_BREAKPOINT)
+        try:
+            if sublime.active_window().get_layout() == S.LAYOUT_DEBUG:
+                V.show_content(V.DATA_BREAKPOINT)
+        except:
+            pass
 
         # Save breakpoint data to file
         util.save_breakpoint_data()
+
+
+class XdebugConditionalBreakpointCommand(sublime_plugin.TextCommand):
+    """
+    Add conditional breakpoint(s) for rows (line numbers) in selection.
+    """
+    def run(self, edit):
+        self.view.window().show_input_panel('Breakpoint condition', '', self.on_done, self.on_change, self.on_cancel)
+
+    def on_done(self, condition):
+        self.view.run_command('xdebug_breakpoint', {'condition': condition, 'enabled': True})
+
+    def on_change(self, line):
+        pass
+
+    def on_cancel(self):
+        pass
 
 
 class XdebugClearBreakpointsCommand(sublime_plugin.TextCommand):
