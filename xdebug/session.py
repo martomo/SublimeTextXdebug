@@ -22,7 +22,8 @@ try:
 except:
     import dbgp
 
-from .log import debug
+# Log module
+from .log import debug, info
 
 
 class Protocol(object):
@@ -217,7 +218,9 @@ def is_connected():
 
 
 def connection_error(message):
-    sublime.error_message("Please restart Xdebug debugging session.\nDisconnected from Xdebug debugger engine.\n"+message)
+    sublime.error_message("Please restart Xdebug debugging session.\nDisconnected from Xdebug debugger engine.\n" + message)
+    info("Connection lost with debugger engine.")
+    debug(message)
     # Reset connection
     try:
         S.SESSION.clear()

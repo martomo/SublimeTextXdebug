@@ -1,4 +1,5 @@
 import sublime
+
 import logging
 import os
 
@@ -19,8 +20,7 @@ def debug(message=None):
     debug = S.get_project_value('debug') or S.get_package_value('debug') or S.DEBUG
     if not debug or message is None:
         return
-    # Write message to console and output file
-    print(message)
+    # Write message to output file
     logging.debug(message)
 
 

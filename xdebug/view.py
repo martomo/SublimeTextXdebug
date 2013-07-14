@@ -16,10 +16,7 @@ except:
     import settings as S
 
 # Session module
-try:
-    from . import session
-except:
-    import session
+from .session import get_breakpoint_values, get_context_variable, generate_context_output
 
 
 DATA_BREAKPOINT = 'breakpoint'
@@ -103,12 +100,12 @@ def show_context_output(view):
                 if match:
                     # Get variable details from context data
                     variable_name = match.group(1)
-                    variable = session.get_context_variable(S.CONTEXT_DATA, variable_name)
+                    variable = get_context_variable(S.CONTEXT_DATA, variable_name)
                     if variable:
                         # Convert details to text output
                         variables = H.new_dictionary()
                         variables[variable_name] = variable
-                        data = session.generate_context_output(variables)
+                        data = generate_context_output(variables)
                         # Show context variables and children in output panel
                         window = sublime.active_window()
                         output = window.get_output_panel('xdebug_inspect')
@@ -138,7 +135,7 @@ def show_content(data, content=None):
     if data == DATA_BREAKPOINT:
         group = 2
         title = TITLE_WINDOW_BREAKPOINT
-        content = session.get_breakpoint_values()
+        content = get_breakpoint_values()
 
     # Search for view assigned to data type
     found = False
@@ -159,7 +156,7 @@ def show_content(data, content=None):
         view.set_read_only(True)
         view.set_name(title)
         view.settings().set('word_wrap', False)
-        if S.PACKAGE_FOLDER and os.path.exists(S.PACKAGE_PATH + "/Xdebug.tmLanguage"):
+        if S.PACKAGE_PATH and S.PACKAGE_FOLDER and os.path.exists(S.PACKAGE_PATH + "/Xdebug.tmLanguage"):
             view.set_syntax_file("Packages/" + S.PACKAGE_FOLDER + "/Xdebug.tmLanguage")
         window.set_view_index(view, group, 0)
 

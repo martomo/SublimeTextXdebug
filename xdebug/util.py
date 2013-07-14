@@ -18,6 +18,9 @@ try:
 except:
     import settings as S
 
+# Log module
+from .log import debug, info
+
 
 def get_real_path(uri, server=False):
     """
@@ -113,13 +116,15 @@ def load_breakpoint_data():
         data_file = open(data_path, 'rb')
     except:
         e = sys.exc_info()[1]
-        if S.DEBUG: print('Failed to open %s.\n' % data_path, e)
+        info('Failed to open %s.' % data_path)
+        debug(e)
 
     try:
         data = json.loads(H.data_read(data_file.read()))
     except:
         e = sys.exc_info()[1]
-        if S.DEBUG: print('Failed to parse %s.\n' % data_path, e)
+        info('Failed to parse %s.' % data_path)
+        debug(e)
 
     # Do not use deleted files or entries without breakpoints
     if data:

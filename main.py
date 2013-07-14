@@ -3,8 +3,8 @@ import sublime_plugin
 
 import os
 import socket
+import sys
 import threading
-
 
 # Load modules
 try:
@@ -18,7 +18,7 @@ try:
     S.PACKAGE_PATH = os.path.dirname(os.path.realpath(__file__))
     S.PACKAGE_FOLDER = os.path.basename(S.PACKAGE_PATH)
 except:
-    print("Unable to resolve current path for package.")
+    pass
 
 
 # Initialize package
