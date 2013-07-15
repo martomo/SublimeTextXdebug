@@ -1,7 +1,7 @@
 # SublimeTextXdebug
 Xdebug debugger client integration for Sublime Text.
 
-![SublimeTextXdebug](http://i.imgur.com/c5Ih11p.png)
+![SublimeTextXdebug](http://i.imgur.com/2FGYW3P.png)
 
 Based on the Xdebug protocol functionality in [SublimeXdebug](https://github.com/Kindari/SublimeXdebug) package by [Kindari](https://github.com/Kindari).
 
@@ -17,15 +17,16 @@ Based on the Xdebug protocol functionality in [SublimeXdebug](https://github.com
 ## Features
 * Remote debugging by configuring path mapping
 * Navigate on breakpoint hit to relevant file on specific line, when found on local drive
+* Overview of breakpoints in all files and disable/enable breakpoints with simple click
 * Debugging layout for stack history and context variables with syntax
+* Evaluate a given string within the current execution context
 * Inspect (nested) context variables
+* Set conditional breakpoints
 * Works on both Sublime Text 2 __and__ 3
 
 #### Upcoming/Scheduled features
-* Conditional breakpoints
-* Show global and class context variables
-* Option for defining debug/default layout in settings
-* Debug window for showing breakpoints in file
+* Show global/class context variables
+* Option for defining debug layout in settings
 
 ## Commands
 Here is a complete list of commands you can find Command Pallette under the `Xdebug` namespace or in the menu under `Tools / Xdebug`:
@@ -41,9 +42,11 @@ Here is a complete list of commands you can find Command Pallette under the `Xde
 
 #### Breakpoints
 * Add/Remove Breakpoint - <kbd>Ctrl+F8</kbd>
+* Set Conditional Breakpoint - <kbd>Ctrl+F9</kbd>
 * Clear All Breakpoints
 
 #### Session commands
+* Evaluate
 * Execute
 * Status
 
@@ -113,8 +116,20 @@ Determine which URL to launch in the default web browser when starting/stopping 
 *__port__*  
 Which port number Sublime Text should listen to connect with debugger engine.  
 
----
+*__close_on_stop__*  
+Always close debug windows and restore layout on session stop.  
 
+*__max_children__*  
+Maximum amount of array children and object's properties to return.  
+
+*__max_depth__*  
+Maximum amount of nested levels to retrieve of array elements and object properties.  
+
+*__debug__*  
+Show detailed log information about communication between debugger engine and Sublime Text.  
+  
+---
+  
 Below are examples how to configure your Xdebug.sublime-settings and *.sublime-project files.
 
 __Xdebug.sublime-settings__
@@ -126,7 +141,11 @@ __Xdebug.sublime-settings__
     },
     "ide_key": "sublime.xdebug",
     "url": "http://your.web.server",
-    "port": 9000
+    "port": 9000,
+    "close_on_stop": true,
+    "max_depth": 3,
+    "max_children": 32,
+    "debug": true
 }
 ```
 __*.sublime-project__
@@ -147,7 +166,11 @@ __*.sublime-project__
             },
             "ide_key": "sublime.xdebug",
             "url": "http://your.web.server",
-            "port": 9000
+            "port": 9000,
+            "close_on_stop": true,
+            "max_depth": 3,
+            "max_children": 32,
+            "debug": true
         }
     }
 }
@@ -166,7 +189,7 @@ SublimeTextXdebug can [start or stop a debugging session](#startstop-debugging-s
 If you do not configure the URL, the plugin will still listen for debugging connections from Xdebug, but you will need to trigger Xdebug [for a remote session](http://xdebug.org/docs/remote#starting).
 
 #### How do I set a breakpoint?
-* With SublimeTextXdebug you can [add/remove breakpoints](#breakpoints), which are send to debugger engine on session start.
+* With SublimeTextXdebug you can [add/remove breakpoints](#breakpoints), which are send on session start.
 * Another way is to set the breakpoint in your PHP code with the following function [`xdebug_break()`](http://xdebug.org/docs/remote#xdebug_break).
 
 ## License
