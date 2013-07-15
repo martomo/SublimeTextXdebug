@@ -35,6 +35,10 @@
         "command": "xdebug_clear_breakpoints"
     },
     {
+        "caption": "Xdebug: Session - Evaluate",
+        "command": "xdebug_evaluate"
+    },
+    {
         "caption": "Xdebug: Session - Execute",
         "command": "xdebug_user_execute"
     },

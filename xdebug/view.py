@@ -72,7 +72,7 @@ def set_layout(layout):
             if view.name() == TITLE_WINDOW_BREAKPOINT or view.name() == TITLE_WINDOW_CONTEXT or view.name() == TITLE_WINDOW_STACK:
                 window.focus_view(view)
                 window.run_command('close')
-        window.run_command('hide_panel', {"panel": 'output.xdebug_inspect'})
+        window.run_command('hide_panel', {"panel": 'output.xdebug'})
 
     # Restore focus to previous active view
     if not previous_active is None:
@@ -108,10 +108,10 @@ def show_context_output(view):
                         data = generate_context_output(variables)
                         # Show context variables and children in output panel
                         window = sublime.active_window()
-                        output = window.get_output_panel('xdebug_inspect')
+                        output = window.get_output_panel('xdebug')
                         output.run_command("xdebug_view_update", {'data' : data} )
                         output.run_command('set_setting', {"setting": 'word_wrap', "value": True})
-                        window.run_command('show_panel', {"panel": 'output.xdebug_inspect'})
+                        window.run_command('show_panel', {"panel": 'output.xdebug'})
         except:
             pass
 
@@ -155,10 +155,17 @@ def show_content(data, content=None):
         view.set_scratch(True)
         view.set_read_only(True)
         view.set_name(title)
-        view.settings().set('word_wrap', False)
-        if S.PACKAGE_PATH and S.PACKAGE_FOLDER and os.path.exists(S.PACKAGE_PATH + "/Xdebug.tmLanguage"):
-            view.set_syntax_file("Packages/" + S.PACKAGE_FOLDER + "/Xdebug.tmLanguage")
         window.set_view_index(view, group, 0)
+
+    # Strip .sublime-package of package name for syntax file
+    package_extension = ".sublime-package"
+    package = S.PACKAGE_FOLDER
+    if package.endswith(package_extension):
+        package = package[:-len(package_extension)]
+
+    # Configure view settings
+    view.settings().set('word_wrap', False)
+    view.settings().set('syntax', 'Packages/' + package + '/Xdebug.tmLanguage')
 
     # Set content for view and fold all indendation blocks
     view.run_command('xdebug_view_update', {'data': content, 'readonly': True})

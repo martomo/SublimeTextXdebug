@@ -50,6 +50,10 @@
                         "caption": "-"
                     },
                     {
+                        "caption": "Evaluate",
+                        "command": "xdebug_evaluate"
+                    },
+                    {
                         "caption": "Execute",
                         "command": "xdebug_user_execute"
                     },

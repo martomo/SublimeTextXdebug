@@ -42,6 +42,16 @@ PROPERTY_VALUE = 'property_value'
 
 
 """
+Extendend commands
+"""
+STDIN = 'stdin'
+BREAK = 'break'
+EVAL = 'eval'
+EXPR = 'expr'
+EXEC = 'exec'
+
+
+"""
 Status codes
 """
 STATUS_STARTING = 'starting';

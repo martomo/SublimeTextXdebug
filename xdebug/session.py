@@ -207,12 +207,12 @@ class ProtocolConnectionException(ProtocolException):
     pass
 
 
-def is_connected():
+def is_connected(show_status=False):
     if S.SESSION and S.SESSION.connected:
         return True
-    elif S.SESSION:
+    elif S.SESSION and show_status:
         sublime.status_message('Xdebug: Waiting response from debugger engine.')
-    else:
+    elif show_status:
         sublime.status_message('Xdebug: No Xdebug session running.')
     return False
 
