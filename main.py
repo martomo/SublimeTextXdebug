@@ -156,8 +156,9 @@ class XdebugClearBreakpointsCommand(sublime_plugin.TextCommand):
         if filename and filename in S.BREAKPOINT:
             rows = H.dictionary_keys(S.BREAKPOINT[filename])
             self.view.run_command('xdebug_breakpoint', {'rows': rows})
-            # Continue debug process after clearing breakpoints
-            self.view.run_command('xdebug_execute', {'command': 'run'})
+            # Continue debug session when breakpoints are cleared on current script being debugged
+            if self.view.file_name() == S.BREAKPOINT_ROW['filename']:
+                self.view.run_command('xdebug_execute', {'command': 'run'})
 
 
 class XdebugSessionStartCommand(sublime_plugin.TextCommand):
