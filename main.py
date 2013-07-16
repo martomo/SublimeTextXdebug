@@ -158,19 +158,19 @@ class XdebugClearBreakpointsCommand(sublime_plugin.TextCommand):
             self.view.run_command('xdebug_breakpoint', {'rows': rows})
             # Continue debug session when breakpoints are cleared on current script being debugged
             if self.view.file_name() == S.BREAKPOINT_ROW['filename']:
-                self.view.run_command('xdebug_execute', {'command': 'run'})
+                self.view.window().run_command('xdebug_execute', {'command': 'run'})
 
 
-class XdebugSessionStartCommand(sublime_plugin.TextCommand):
+class XdebugSessionStartCommand(sublime_plugin.WindowCommand):
     """
     Start Xdebug session, listen for request response from debugger engine.
     """
-    def run(self, edit, launch_browser=False):
+    def run(self, launch_browser=False):
         # Define new session with DBGp protocol
         S.SESSION = session.Protocol()
         S.BREAKPOINT_ROW = None
         S.CONTEXT_DATA.clear()
-        self.view.run_command('xdebug_reset_layout', {'layout': 'debug'})
+        self.window.run_command('xdebug_reset_layout', {'layout': 'debug'})
         if launch_browser:
             util.launch_browser()
 
@@ -206,7 +206,7 @@ class XdebugSessionStartCommand(sublime_plugin.TextCommand):
                             log.debug('breakpoint_set: ' + filename + ':' + lineno)
 
             # Tell script to run it's process
-            self.view.run_command('xdebug_execute', {'command': 'run'})
+            self.window.run_command('xdebug_execute', {'command': 'run'})
         except (socket.error, session.ProtocolConnectionException):
             e = sys.exc_info()[1]
             session.connection_error("%s" % e)
@@ -224,11 +224,11 @@ class XdebugSessionStartCommand(sublime_plugin.TextCommand):
         return True
 
 
-class XdebugSessionStopCommand(sublime_plugin.TextCommand):
+class XdebugSessionStopCommand(sublime_plugin.WindowCommand):
     """
     Stop Xdebug session, close connection and stop listening to debugger engine.
     """
-    def run(self, edit, close_windows=False, launch_browser=False):
+    def run(self, close_windows=False, launch_browser=False):
         if launch_browser:
             util.launch_browser()
         try:
@@ -241,9 +241,9 @@ class XdebugSessionStopCommand(sublime_plugin.TextCommand):
             S.CONTEXT_DATA.clear()
         close_on_stop = S.get_project_value('close_on_stop') or S.get_package_value('close_on_stop') or S.CLOSE_ON_STOP
         if close_windows or close_on_stop:
-            self.view.run_command('xdebug_reset_layout', {'layout': 'default'})
+            self.window.run_command('xdebug_reset_layout', {'layout': 'default'})
         else:
-            self.view.run_command('xdebug_reset_layout', {'layout': 'debug'})
+            self.window.run_command('xdebug_reset_layout', {'layout': 'debug'})
         # Render breakpoint markers
         V.render_regions()
 
@@ -263,14 +263,14 @@ class XdebugSessionStopCommand(sublime_plugin.TextCommand):
         return False
 
 
-class XdebugExecuteCommand(sublime_plugin.TextCommand):
+class XdebugExecuteCommand(sublime_plugin.WindowCommand):
     """
     Execute command, handle breakpoints and reload session when page execution has completed.
 
     Keyword arguments:
     command -- Command to send to debugger engine.
     """
-    def run(self, edit, command=None):
+    def run(self, command=None):
         # Do not execute if no command is set
         if not command:
             sublime.status_message('Xdebug: No command')
@@ -284,7 +284,7 @@ class XdebugExecuteCommand(sublime_plugin.TextCommand):
             # Reset previous breakpoint values
             S.BREAKPOINT_ROW = None
             S.CONTEXT_DATA.clear()
-            self.view.run_command('xdebug_reset_layout', {'layout': 'debug'})
+            self.window.run_command('xdebug_reset_layout', {'layout': 'debug'})
 
             # Handle breakpoint hit
             for child in response.childNodes:
@@ -301,7 +301,6 @@ class XdebugExecuteCommand(sublime_plugin.TextCommand):
                     # Focus/Open file window view
                     V.show_file(filename, lineno)
 
-
             # On breakpoint get context variables and stack history
             if (response.getAttribute(dbgp.ATTRIBUTE_STATUS) == dbgp.STATUS_BREAK):
                 # Context variables
@@ -314,8 +313,8 @@ class XdebugExecuteCommand(sublime_plugin.TextCommand):
 
             # Reload session when session stopped, by reaching end of file or interruption
             if response.getAttribute(dbgp.ATTRIBUTE_STATUS) ==  dbgp.STATUS_STOPPING or response.getAttribute(dbgp.ATTRIBUTE_STATUS) == dbgp.STATUS_STOPPED:
-                self.view.run_command('xdebug_session_stop')
-                self.view.run_command('xdebug_session_start')
+                self.window.run_command('xdebug_session_stop')
+                self.window.run_command('xdebug_session_start')
                 sublime.status_message('Xdebug: Finished executing file on server. Reload page to continue debugging.')
 
         except (socket.error, session.ProtocolConnectionException):
@@ -329,7 +328,7 @@ class XdebugExecuteCommand(sublime_plugin.TextCommand):
         return session.is_connected()
 
 
-class XdebugContinueCommand(sublime_plugin.TextCommand):
+class XdebugContinueCommand(sublime_plugin.WindowCommand):
     """
     Continuation commands when on breakpoint, show menu by default if no command has been passed as argument.
 
@@ -347,9 +346,9 @@ class XdebugContinueCommand(sublime_plugin.TextCommand):
     command_index = H.dictionary_keys(commands)
     command_options = H.dictionary_values(commands)
 
-    def run(self, edit, command=None):
+    def run(self, command=None):
         if not command or not command in self.commands:
-            self.view.window().show_quick_panel(self.command_options, self.callback)
+            self.window.show_quick_panel(self.command_options, self.callback)
         else:
             self.callback(command)
 
@@ -359,7 +358,7 @@ class XdebugContinueCommand(sublime_plugin.TextCommand):
         if isinstance(command, int):
             command = self.command_index[command]
 
-        self.view.run_command('xdebug_execute', {'command': command})
+        self.window.run_command('xdebug_execute', {'command': command})
 
     def is_enabled(self):
         return S.BREAKPOINT_ROW is not None and session.is_connected()
@@ -368,11 +367,11 @@ class XdebugContinueCommand(sublime_plugin.TextCommand):
         return S.BREAKPOINT_ROW is not None and session.is_connected()
 
 
-class XdebugStatusCommand(sublime_plugin.TextCommand):
+class XdebugStatusCommand(sublime_plugin.WindowCommand):
     """
     Get status from debugger engine.
     """
-    def run(self, edit):
+    def run(self):
         try:
             # Send 'status' command to debugger engine
             S.SESSION.send(dbgp.STATUS)
@@ -390,9 +389,9 @@ class XdebugStatusCommand(sublime_plugin.TextCommand):
         return session.is_connected()
 
 
-class XdebugEvaluateCommand(sublime_plugin.TextCommand):
-    def run(self, edit):
-        self.view.window().show_input_panel('Evaluate', '', self.on_done, self.on_change, self.on_cancel)
+class XdebugEvaluateCommand(sublime_plugin.WindowCommand):
+    def run(self):
+        self.window.show_input_panel('Evaluate', '', self.on_done, self.on_change, self.on_cancel)
 
     def on_done(self, expression):
         try:
@@ -401,7 +400,7 @@ class XdebugEvaluateCommand(sublime_plugin.TextCommand):
             response = S.SESSION.read().firstChild
 
             # Show output panel
-            window = self.view.window()
+            window = sublime.active_window()
             if window is None:
                 return
             window.run_command('show_panel', {'panel': 'output.xdebug'})
@@ -415,7 +414,7 @@ class XdebugEvaluateCommand(sublime_plugin.TextCommand):
             e = sys.exc_info()[1]
             session.connection_error("%s" % e)
 
-    def on_change(self, line):
+    def on_change(self, expression):
         pass
 
     def on_cancel(self):
@@ -428,13 +427,13 @@ class XdebugEvaluateCommand(sublime_plugin.TextCommand):
         return session.is_connected()
 
 
-class XdebugUserExecuteCommand(sublime_plugin.TextCommand):
+class XdebugUserExecuteCommand(sublime_plugin.WindowCommand):
     """
     Open input panel, allowing user to execute arbitrary command according to DBGp protocol.
     Note: Transaction ID is automatically generated by session module.
     """
-    def run(self, edit):
-        self.view.window().show_input_panel('DBGp command', '', self.on_done, self.on_change, self.on_cancel)
+    def run(self):
+        self.window.show_input_panel('DBGp command', '', self.on_done, self.on_change, self.on_cancel)
 
     def on_done(self, line):
         # Split command and arguments, define arguments when only command is defined.
@@ -449,7 +448,7 @@ class XdebugUserExecuteCommand(sublime_plugin.TextCommand):
             response = S.SESSION.read().firstChild
 
             # Show output panel
-            window = self.view.window()
+            window = sublime.active_window()
             if window is None:
                 return
             window.run_command('show_panel', {'panel': 'output.xdebug'})
@@ -494,11 +493,11 @@ class XdebugViewUpdateCommand(sublime_plugin.TextCommand):
             view.set_read_only(True)
 
 
-class XdebugResetLayoutCommand(sublime_plugin.TextCommand):
+class XdebugResetLayoutCommand(sublime_plugin.WindowCommand):
     """
     Toggle between debug and default window layouts.
     """
-    def run(self, edit, layout='default', keymap=False):
+    def run(self, layout='default', keymap=False):
         # Get active window
         window = sublime.active_window()
         # Check keymap
