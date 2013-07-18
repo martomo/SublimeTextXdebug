@@ -1,0 +1,47 @@
+{
+    // For remote debugging to resolve the file locations
+    // it is required to configure the path mapping
+    // with the server path as key and local path as value.
+    //
+    // Make sure to use absolute path when defining server path,
+    // because Xdebug debugger engine does not return symbolic links.
+    //
+    // Example:
+    // "/absolute/path/to/file/on/server" : "/path/to/file/on/computer",
+    // "/var/www/htdocs/example/" : "C:/git/websites/example/"
+    "path_mapping": {
+
+    },
+
+    // Determine which URL to launch in the default web browser
+    // when starting/stopping a session.
+    "url": "",
+
+    // An IDE key is used to identify with debugger engine
+    // when Sublime Text will start or stop a debugging session.
+    //
+    // This package does not filter sessions by IDE key,
+    // it will accept any IDE key, also ones that do not match this configured IDE key.
+    // It is merely used when launching the default web browser with the configured URL.
+    "ide_key": "sublime.xdebug",
+
+    // Which port number Sublime Text should listen
+    // to connect with debugger engine.
+    "port": 9000,
+
+    // Maximum amount of array children
+    // and object's properties to return.
+    "max_children": 32,
+
+    // Maximum amount of nested levels to retrieve
+    // of array elements and object properties.
+    "max_depth": 3,
+
+    // Always close debug windows and restore layout on session stop.
+    "close_on_stop": false,
+
+    // Show detailed log information about communication
+    // between debugger engine and Sublime Text.
+    // Log can be found at Packages/User/Xdebug.log
+    "debug": false
+}
