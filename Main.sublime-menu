@@ -103,9 +103,41 @@
                         "args"   : {"keymap" : true}
                     },
                     {
-                        "caption": "Settings",
+                        "caption": "Settings - Default",
+                        "command": "xdebug_settings"
+                    },
+                    {
+                        "caption": "Settings - User",
                         "command": "open_file",
                         "args"   : {"file": "${packages}/User/Xdebug.sublime-settings"}
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "id": "preferences",
+        "children":
+        [
+            {
+                "caption": "Package Settings",
+                "mnemonic": "P",
+                "id": "package-settings",
+                "children": [
+                    {
+                        "caption": "Xdebug",
+                        "mnemonic": "X",
+                        "children": [
+                            {
+                                "caption": "Settings – Default",
+                                "command": "xdebug_settings"
+                            },
+                            {
+                                "caption": "Settings – User",
+                                "command": "open_file",
+                                "args": {"file": "${packages}/User/Xdebug.sublime-settings"}
+                            }
+                        ]
                     }
                 ]
             }

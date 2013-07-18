@@ -524,3 +524,14 @@ class XdebugResetLayoutCommand(sublime_plugin.WindowCommand):
             return sublime.active_window().get_layout() == S.LAYOUT_DEBUG
         except:
             return True
+
+class XdebugSettingsCommand(sublime_plugin.WindowCommand):
+    """
+    Show settings file.
+    """
+    def run(self):
+        self.window.run_command('open_file', {'file':'${packages}/'+S.PACKAGE_FOLDER+'/Xdebug.sublime-settings'});
+    def is_enabled(self):
+        if S.PACKAGE_FOLDER:
+            return True
+        return False
