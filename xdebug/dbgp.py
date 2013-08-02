@@ -75,11 +75,16 @@ Response attributes/elements
 """
 ATTRIBUTE_STATUS = 'status'
 ATTRIBUTE_REASON = 'reason'
+ATTRIBUTE_SUCCESS = 'success'
+ATTRIBUTE_BREAKPOINT_ID = 'id'
 ELEMENT_INIT = 'init'
 ELEMENT_BREAKPOINT = 'xdebug:message'
 ELEMENT_PROPERTY = 'property'
 ELEMENT_STACK = 'stack'
-
+ELEMENT_PATH_INIT = '{urn:debugger_protocol_v1}init'
+ELEMENT_PATH_BREAKPOINT = '{http://xdebug.org/dbgp/xdebug}message'
+ELEMENT_PATH_PROPERTY = '{urn:debugger_protocol_v1}property'
+ELEMENT_PATH_STACK = '{urn:debugger_protocol_v1}stack'
 
 """
 Initialization attributes

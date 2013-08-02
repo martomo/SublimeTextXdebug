@@ -40,6 +40,9 @@
     // Always close debug windows and restore layout on session stop.
     "close_on_stop": false,
 
+    // Do not show possible password values in context output.
+    "hide_password": true,
+
     // Show detailed log information about communication
     // between debugger engine and Sublime Text.
     // Log can be found at Packages/User/Xdebug.log

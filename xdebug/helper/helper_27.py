@@ -43,7 +43,9 @@ def base64_encode(data):
 	return base64.b64encode(data)
 
 def unicode_string(string):
-	return unicode(string)
+	if isinstance(string, unicode):
+		return string
+	return string.decode('utf8', 'replace')
 
 def is_digit(string):
 	# Check if basestring (str, unicode) is digit

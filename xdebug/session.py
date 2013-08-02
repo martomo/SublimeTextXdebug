@@ -2,7 +2,6 @@ import sublime
 
 import socket
 import sys
-from xml.dom.minidom import parseString
 
 # Helper module
 try:
@@ -25,6 +24,23 @@ except:
 # Log module
 from .log import debug, info
 
+# XML parser
+try:
+    from xml.etree import cElementTree as ET
+    info("Using xml.etree.cElementTree.")
+except ImportError:
+    try:
+        from xml.etree import ElementTree as ET
+        info("Using xml.etree.ElementTree.")
+    except ImportError:
+        from .elementtree import ElementTree as ET
+        info("Using elementtree.ElementTree.")
+try:
+    from xml.parsers import expat
+except ImportError:
+    info("Module xml.parsers.expat missing, using SimpleXMLTreeBuilder.")
+    from .elementtree import SimpleXMLTreeBuilder
+    ET.XMLTreeBuilder = SimpleXMLTreeBuilder.TreeBuilder
 
 class Protocol(object):
     """
@@ -97,7 +113,7 @@ class Protocol(object):
         else:
             raise ProtocolException("Length mismatch encountered while reading the Xdebug message")
 
-    def read(self):
+    def read(self, return_string=False):
         """
         Get response from debugger engine as XML document object.
         """
@@ -105,8 +121,11 @@ class Protocol(object):
         data = self.read_data()
         # Show debug output
         debug('[Response data] %s' % data)
+        # Return data string
+        if return_string:
+            return data
         # Create XML document object
-        document = parseString(data)
+        document = ET.fromstring(data)
         return document
 
     def send(self, command, *args, **kwargs):
@@ -264,11 +283,11 @@ def get_context_values():
         try:
             # Only show first level variables
             S.SESSION.send(dbgp.FEATURE_SET, n=dbgp.FEATURE_NAME_MAXCHILDREN, v='0')
-            response = S.SESSION.read().firstChild
+            response = S.SESSION.read()
 
             # Local variables
             S.SESSION.send(dbgp.CONTEXT_GET)
-            response = S.SESSION.read().firstChild
+            response = S.SESSION.read()
 
             # Retrieve properties from response
             context = get_response_properties(response)
@@ -304,18 +323,18 @@ def get_property_children(property_name, numchildren, depth=0):
     if S.SESSION:
         # Set max children limit accordingly
         S.SESSION.send(dbgp.FEATURE_SET, n=dbgp.FEATURE_NAME_MAXCHILDREN, v=numchildren)
-        response = S.SESSION.read().firstChild
+        response = S.SESSION.read()
 
         # Get property and it's children
         S.SESSION.send(dbgp.PROPERTY_GET, n=property_name)
-        response = S.SESSION.read().firstChild
+        response = S.SESSION.read()
 
         # Walk through elements in response
-        for child in response.childNodes:
+        for child in response:
             # Only read property elements
-            if child.nodeName == dbgp.ELEMENT_PROPERTY:
+            if child.tag == dbgp.ELEMENT_PROPERTY or child.tag == dbgp.ELEMENT_PATH_PROPERTY:
                 # Return it's children when property matches property name
-                if property_name == H.unicode_string(child.getAttribute(dbgp.PROPERTY_FULLNAME)):
+                if property_name == child.get(dbgp.PROPERTY_FULLNAME):
                     return get_response_properties(child, depth)
     return {}
 
@@ -324,37 +343,41 @@ def get_response_properties(response, depth=0):
     max_depth = S.get_project_value('max_depth') or S.get_package_value('max_depth') or S.MAX_DEPTH
     properties = H.new_dictionary()
     # Walk through elements in response
-    for child in response.childNodes:
+    for child in response:
         # Only read property elements
-        if child.nodeName == dbgp.ELEMENT_PROPERTY:
-            # Get property attribute values
-            property_name = H.unicode_string(child.getAttribute(dbgp.PROPERTY_FULLNAME))
-            property_type = H.unicode_string(child.getAttribute(dbgp.PROPERTY_TYPE))
-            property_children = H.unicode_string(child.getAttribute(dbgp.PROPERTY_CHILDREN))
-            property_numchildren = H.unicode_string(child.getAttribute(dbgp.PROPERTY_NUMCHILDREN))
-            property_classname = H.unicode_string(child.getAttribute(dbgp.PROPERTY_CLASSNAME))
-            property_value = None
-
-            # Ignore following properties
-            if property_name == "::":
-                continue
-            # Avoid nasty static functions/variables from turning in an infinitive loop
-            if property_name.count("::") > 1:
-                continue
+        if child.tag == dbgp.ELEMENT_PROPERTY or child.tag == dbgp.ELEMENT_PATH_PROPERTY:
             # Stop at maximum depth
             if isinstance(max_depth, int) and max_depth is not 0 and depth > max_depth:
                 continue
 
-            try:
-                # Try to base64 decode value
-                property_value = H.unicode_string(' '.join(H.base64_decode(t.data) for t in child.childNodes if t.nodeType == t.TEXT_NODE or t.nodeType == t.CDATA_SECTION_NODE))
-            except:
-                # Return raw value
-                property_value = H.unicode_string(' '.join(t.data for t in child.childNodes if t.nodeType == t.TEXT_NODE or t.nodeType == t.CDATA_SECTION_NODE))
+            # Get property attribute values
+            property_name = child.get(dbgp.PROPERTY_FULLNAME)
+            property_type = child.get(dbgp.PROPERTY_TYPE)
+            property_children = child.get(dbgp.PROPERTY_CHILDREN)
+            property_numchildren = child.get(dbgp.PROPERTY_NUMCHILDREN)
+            property_classname = child.get(dbgp.PROPERTY_CLASSNAME)
+            property_value = None
+            if child.text:
+                try:
+                    # Try to base64 decode value
+                    property_value = H.base64_decode(child.text)
+                except:
+                    # Return raw value
+                    property_value = child.text
+
             if property_name:
+                # Ignore following properties
+                if property_name == "::":
+                    continue
+
+                # Avoid nasty static functions/variables from turning in an infinitive loop
+                if property_name.count("::") > 1:
+                    continue
+
                 # Filter password values
-                if property_name.lower().find('password') != -1:
-                    property_value = H.unicode_string('*****')
+                hide_password = S.get_project_value('hide_password') or S.get_package_value('hide_password', True)
+                if hide_password and property_name.lower().find('password') != -1:
+                    property_value = '******'
 
                 # Store property
                 properties[property_name] = { 'name': property_name, 'type': property_type, 'value': property_value, 'numchildren': property_numchildren, 'children' : None }
@@ -375,16 +398,16 @@ def get_stack_values():
         try:
             # Get stack information
             S.SESSION.send(dbgp.STACK_GET)
-            response = S.SESSION.read().firstChild
+            response = S.SESSION.read()
 
-            for child in response.childNodes:
+            for child in response:
                 # Get stack attribute values
-                if child.nodeName == dbgp.ELEMENT_STACK:
-                    stack_level = child.getAttribute(dbgp.STACK_LEVEL)
-                    stack_type = child.getAttribute(dbgp.STACK_TYPE)
-                    stack_file = H.url_decode(child.getAttribute(dbgp.STACK_FILENAME))
-                    stack_line = child.getAttribute(dbgp.STACK_LINENO)
-                    stack_where = child.getAttribute(dbgp.STACK_WHERE)
+                if child.tag == dbgp.ELEMENT_STACK or child.tag == dbgp.ELEMENT_PATH_STACK:
+                    stack_level = child.get(dbgp.STACK_LEVEL, 0)
+                    stack_type = child.get(dbgp.STACK_TYPE)
+                    stack_file = H.url_decode(child.get(dbgp.STACK_FILENAME))
+                    stack_line = child.get(dbgp.STACK_LINENO, 0)
+                    stack_where = child.get(dbgp.STACK_WHERE, '{unknown}')
                     # Append values
                     values += H.unicode_string('[{level}] {filename}.{where}:{lineno}\n' \
                                               .format(level=stack_level, type=stack_type, where=stack_where, lineno=stack_line, filename=stack_file))
@@ -410,7 +433,13 @@ def generate_context_output(context, indent=0):
             property_text += variable['name'] + ' = ' + variable['type'] + '[' + variable['numchildren'] + ']\n'
             property_text += generate_context_output(variable['children'], indent+1)
             # Use ellipsis to indicate that results have been truncated
-            if int(variable['numchildren']) != len(variable['children']):
+            limited = False
+            if isinstance(variable['numchildren'], int) or H.is_digit(variable['numchildren']):
+                if int(variable['numchildren']) != len(variable['children']):
+                    limited = True
+            elif len(variable['children']) > 0 and not variable['numchildren']:
+                limited = True
+            if limited:
                 for i in range(indent+1): property_text += '\t'
                 property_text += '...\n'
         else:

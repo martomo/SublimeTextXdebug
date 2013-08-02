@@ -29,9 +29,6 @@ sublime.set_timeout(lambda: load.xdebug(), 1000)
 class EventListener(sublime_plugin.EventListener):
     def on_load(self, view):
         filename = view.file_name()
-        # Create settings template upon opening empty settings file
-        if filename and filename.endswith(S.FILE_PACKAGE_SETTINGS) and not view.size() > 0:
-            view.run_command("xdebug_view_update", {'data': util.generate_settings() })
         # Scroll the view to current breakpoint line
         if filename and filename in S.SHOW_ROW_ONLOAD:
             V.show_at_row(view, S.SHOW_ROW_ONLOAD[filename])
@@ -87,7 +84,7 @@ class XdebugBreakpointCommand(sublime_plugin.TextCommand):
                 if session.is_connected(show_status=True) and S.BREAKPOINT[filename][row]['id'] is not None:
                     try:
                         S.SESSION.send(dbgp.BREAKPOINT_REMOVE, d=S.BREAKPOINT[filename][row]['id'])
-                        response = S.SESSION.read().firstChild
+                        response = S.SESSION.read()
                     except (socket.error, session.ProtocolConnectionException):
                         e = sys.exc_info()[1]
                         session.connection_error("%s" % e)
@@ -108,8 +105,9 @@ class XdebugBreakpointCommand(sublime_plugin.TextCommand):
                 if session.is_connected(show_status=True):
                     try:
                         S.SESSION.send(dbgp.BREAKPOINT_SET, t='line', f=util.get_real_path(filename, True), n=row, expression=expression)
-                        response = S.SESSION.read().firstChild
-                        breakpoint_id = response.getAttribute('id')
+                        response = S.SESSION.read()
+                        # Update breakpoint id
+                        breakpoint_id = response.get(dbgp.ATTRIBUTE_BREAKPOINT_ID)
                         if breakpoint_id:
                             S.BREAKPOINT[filename][row]['id'] = breakpoint_id
                     except (socket.error, session.ProtocolConnectionException):
@@ -188,7 +186,7 @@ class XdebugSessionStartCommand(sublime_plugin.WindowCommand):
         sublime.status_message('Xdebug: Connected')
         try:
             # Connection initialization
-            init = S.SESSION.read().firstChild
+            init = S.SESSION.read()
 
             # Set breakpoints for files
             for filename, breakpoint_data in S.BREAKPOINT.items():
@@ -198,9 +196,9 @@ class XdebugSessionStartCommand(sublime_plugin.WindowCommand):
                     for lineno, bp in breakpoint_data.items():
                         if bp['enabled']:
                             S.SESSION.send(dbgp.BREAKPOINT_SET, t='line', f=fileuri, n=lineno, expression=bp['expression'])
-                            response = S.SESSION.read().firstChild
+                            response = S.SESSION.read()
                             # Update breakpoint id
-                            breakpoint_id = response.getAttribute('id')
+                            breakpoint_id = response.get(dbgp.ATTRIBUTE_BREAKPOINT_ID)
                             if breakpoint_id:
                                 S.BREAKPOINT[filename][lineno]['id'] = breakpoint_id
                             log.debug('breakpoint_set: ' + filename + ':' + lineno)
@@ -279,7 +277,7 @@ class XdebugExecuteCommand(sublime_plugin.WindowCommand):
         try:
             # Send command to debugger engine
             S.SESSION.send(command)
-            response = S.SESSION.read().firstChild
+            response = S.SESSION.read()
 
             # Reset previous breakpoint values
             S.BREAKPOINT_ROW = None
@@ -287,12 +285,12 @@ class XdebugExecuteCommand(sublime_plugin.WindowCommand):
             self.window.run_command('xdebug_reset_layout', {'layout': 'debug'})
 
             # Handle breakpoint hit
-            for child in response.childNodes:
-                if child.nodeName == dbgp.ELEMENT_BREAKPOINT:
+            for child in response:
+                if child.tag == dbgp.ELEMENT_BREAKPOINT or child.tag == dbgp.ELEMENT_PATH_BREAKPOINT:
                     sublime.status_message('Xdebug: Breakpoint')
                     # Get breakpoint attribute values
-                    fileuri = child.getAttribute(dbgp.BREAKPOINT_FILENAME)
-                    lineno = child.getAttribute(dbgp.BREAKPOINT_LINENO)
+                    fileuri = child.get(dbgp.BREAKPOINT_FILENAME)
+                    lineno = child.get(dbgp.BREAKPOINT_LINENO)
                     filename = util.get_real_path(fileuri)
                     # Show debug output
                     log.info('Break: ' + filename + ':' + lineno)
@@ -302,7 +300,7 @@ class XdebugExecuteCommand(sublime_plugin.WindowCommand):
                     V.show_file(filename, lineno)
 
             # On breakpoint get context variables and stack history
-            if (response.getAttribute(dbgp.ATTRIBUTE_STATUS) == dbgp.STATUS_BREAK):
+            if response.get(dbgp.ATTRIBUTE_STATUS) == dbgp.STATUS_BREAK:
                 # Context variables
                 context = session.get_context_values()
                 V.show_content(V.DATA_CONTEXT, context)
@@ -312,7 +310,7 @@ class XdebugExecuteCommand(sublime_plugin.WindowCommand):
                 V.show_content(V.DATA_STACK, stack)
 
             # Reload session when session stopped, by reaching end of file or interruption
-            if response.getAttribute(dbgp.ATTRIBUTE_STATUS) ==  dbgp.STATUS_STOPPING or response.getAttribute(dbgp.ATTRIBUTE_STATUS) == dbgp.STATUS_STOPPED:
+            if response.get(dbgp.ATTRIBUTE_STATUS) == dbgp.STATUS_STOPPING or response.get(dbgp.ATTRIBUTE_STATUS) == dbgp.STATUS_STOPPED:
                 self.window.run_command('xdebug_session_stop')
                 self.window.run_command('xdebug_session_start')
                 sublime.status_message('Xdebug: Finished executing file on server. Reload page to continue debugging.')
@@ -375,9 +373,9 @@ class XdebugStatusCommand(sublime_plugin.WindowCommand):
         try:
             # Send 'status' command to debugger engine
             S.SESSION.send(dbgp.STATUS)
-            response = S.SESSION.read().firstChild
+            response = S.SESSION.read()
             # Show response in status bar
-            sublime.status_message("Xdebug status: " + response.getAttribute(dbgp.ATTRIBUTE_REASON) + ' - ' + response.getAttribute(dbgp.ATTRIBUTE_STATUS))
+            sublime.status_message("Xdebug status: " + response.get(dbgp.ATTRIBUTE_REASON) + ' - ' + response.get(dbgp.ATTRIBUTE_STATUS))
         except (socket.error, session.ProtocolConnectionException):
             e = sys.exc_info()[1]
             session.connection_error("%s" % e)
@@ -397,7 +395,7 @@ class XdebugEvaluateCommand(sublime_plugin.WindowCommand):
         try:
             # Send 'eval' command to debugger engine with code to evaluate
             S.SESSION.send(dbgp.EVAL, expression=expression)
-            response = S.SESSION.read().firstChild
+            response = S.SESSION.read(return_string=True)
 
             # Show output panel
             window = sublime.active_window()
@@ -409,7 +407,7 @@ class XdebugEvaluateCommand(sublime_plugin.WindowCommand):
             output = window.get_output_panel('xdebug')
             if output is None:
                 return
-            output.run_command('xdebug_view_update', {'data': response.toprettyxml()})
+            output.run_command('xdebug_view_update', {'data': response})
         except (socket.error, session.ProtocolConnectionException):
             e = sys.exc_info()[1]
             session.connection_error("%s" % e)
@@ -445,7 +443,7 @@ class XdebugUserExecuteCommand(sublime_plugin.WindowCommand):
         try:
             # Send command to debugger engine
             S.SESSION.send(command, args)
-            response = S.SESSION.read().firstChild
+            response = S.SESSION.read(return_string=True)
 
             # Show output panel
             window = sublime.active_window()
@@ -457,7 +455,7 @@ class XdebugUserExecuteCommand(sublime_plugin.WindowCommand):
             output = window.get_output_panel('xdebug')
             if output is None:
                 return
-            output.run_command('xdebug_view_update', {'data': response.toprettyxml()})
+            output.run_command('xdebug_view_update', {'data': response})
         except (socket.error, session.ProtocolConnectionException):
             e = sys.exc_info()[1]
             session.connection_error("%s" % e)
@@ -529,9 +527,14 @@ class XdebugSettingsCommand(sublime_plugin.WindowCommand):
     """
     Show settings file.
     """
-    def run(self):
-        self.window.run_command('open_file', {'file':'${packages}/'+S.PACKAGE_FOLDER+'/Xdebug.sublime-settings'});
-    def is_enabled(self):
-        if S.PACKAGE_FOLDER:
-            return True
-        return False
+    def run(self, default=True):
+        if default and S.PACKAGE_FOLDER is not None:
+            package = S.PACKAGE_FOLDER
+        else:
+            package = "User"
+        # Strip .sublime-package of package name for syntax file
+        package_extension = ".sublime-package"
+        if package.endswith(package_extension):
+            package = package[:-len(package_extension)]
+        # Open settings file
+        self.window.run_command('open_file', {'file': '${packages}/' + package + '/' + S.FILE_PACKAGE_SETTINGS });

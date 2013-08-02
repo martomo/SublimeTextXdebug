@@ -87,15 +87,6 @@ def get_real_path(uri, server=False):
     return uri
 
 
-def generate_settings():
-    settings = {}
-    settings["port"] = S.DEFAULT_PORT
-    settings["ide_key"] = S.DEFAULT_IDE_KEY
-    settings["url"] = ""
-    settings["path_mapping"] = {}
-    return json.dumps(settings, indent = 4)
-
-
 def launch_browser():
     url = S.get_project_value('url') or S.get_package_value('url')
     if not url:
