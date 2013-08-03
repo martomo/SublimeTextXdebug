@@ -274,12 +274,18 @@ def get_breakpoint_values():
             breakpoint_entry += "=> %s\n" % filename
             # Sort breakpoint data by line number
             for lineno, bp in sorted(breakpoint_data.items(), key=lambda item: (int(item[0]) if isinstance(item[0], int) or H.is_digit(item[0]) else float('inf'), item[0])):
+                # Do not show temporary breakpoint
+                if S.BREAKPOINT_RUN is not None and S.BREAKPOINT_RUN['filename'] == filename and S.BREAKPOINT_RUN['lineno'] == lineno:
+                    continue
+                # Whether breakpoint is enabled or disabled
                 breakpoint_entry += '\t'
                 if bp['enabled']:
                     breakpoint_entry += '|+|'
                 else:
                     breakpoint_entry += '|-|'
+                # Line number
                 breakpoint_entry += ' %s' % lineno
+                # Conditional expression
                 if bp['expression'] is not None:
                     breakpoint_entry += ' -- "%s"' % bp['expression']
                 breakpoint_entry += "\n"

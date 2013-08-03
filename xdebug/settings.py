@@ -49,6 +49,8 @@ CONTEXT_DATA = {}
 
 # Breakpoint line number in script being debugged
 BREAKPOINT_ROW = None
+# Placholder for temporary breakpoint filename and line number
+BREAKPOINT_RUN = None
 # Will hold breakpoint line number to show for file which is being loaded
 SHOW_ROW_ONLOAD = {}
 

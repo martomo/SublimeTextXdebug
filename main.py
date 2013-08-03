@@ -160,10 +160,42 @@ class XdebugClearBreakpointsCommand(sublime_plugin.TextCommand):
         filename = self.view.file_name()
         if filename and filename in S.BREAKPOINT:
             rows = H.dictionary_keys(S.BREAKPOINT[filename])
-            self.view.run_command('xdebug_breakpoint', {'rows': rows})
+            self.view.run_command('xdebug_breakpoint', {'rows': rows, 'filename': filename})
             # Continue debug session when breakpoints are cleared on current script being debugged
-            if self.view.file_name() == S.BREAKPOINT_ROW['filename']:
+            if S.BREAKPOINT_ROW and self.view.file_name() == S.BREAKPOINT_ROW['filename']:
                 self.view.window().run_command('xdebug_execute', {'command': 'run'})
+
+
+class XdebugRunToLineCommand(sublime_plugin.TextCommand):
+    """
+    Run script to current selected line in view, ignoring all other breakpoints.
+    """
+    def run(self, edit):
+        # Determine filename for current view and check if is a valid filename
+        filename = self.view.file_name()
+        if not filename or not os.path.isfile(filename):
+            return
+        # Get first line from selected rows and make sure it is not empty
+        rows = V.region_to_rows(self.view.sel(), filter_empty=True)
+        if rows is None or len(rows) == 0:
+            return
+        lineno = rows[0]
+        # Check if breakpoint does not already exists
+        breakpoint_exists = False
+        if filename in S.BREAKPOINT and lineno in S.BREAKPOINT[filename]:
+            breakpoint_exists = True
+        # Store line number and filename for temporary breakpoint in session
+        if not breakpoint_exists:
+            S.BREAKPOINT_RUN = { 'filename': filename, 'lineno': lineno }
+        # Set breakpoint and run script
+        self.view.run_command('xdebug_breakpoint', {'rows': [lineno], 'enabled': True, 'filename': filename})
+        self.view.window().run_command('xdebug_execute', {'command': 'run'})
+
+    def is_enabled(self):
+        return S.BREAKPOINT_ROW is not None and session.is_connected()
+
+    def is_visible(self):
+        return S.BREAKPOINT_ROW is not None and session.is_connected()
 
 
 class XdebugSessionStartCommand(sublime_plugin.WindowCommand):
@@ -175,6 +207,10 @@ class XdebugSessionStartCommand(sublime_plugin.WindowCommand):
         S.SESSION = session.Protocol()
         S.BREAKPOINT_ROW = None
         S.CONTEXT_DATA.clear()
+        # Remove temporary breakpoint
+        if S.BREAKPOINT_RUN is not None and S.BREAKPOINT_RUN['filename'] in S.BREAKPOINT and S.BREAKPOINT_RUN['lineno'] in S.BREAKPOINT[S.BREAKPOINT_RUN['filename']]:
+            self.window.active_view().run_command('xdebug_breakpoint', {'rows': [S.BREAKPOINT_RUN['lineno']], 'filename': S.BREAKPOINT_RUN['filename']})
+        S.BREAKPOINT_RUN = None
         self.window.run_command('xdebug_reset_layout', {'layout': 'debug'})
         if launch_browser:
             util.launch_browser()
@@ -210,8 +246,31 @@ class XdebugSessionStartCommand(sublime_plugin.WindowCommand):
                                 S.BREAKPOINT[filename][lineno]['id'] = breakpoint_id
                             log.debug('breakpoint_set: ' + filename + ':' + lineno)
 
-            # Tell script to run it's process
-            self.window.run_command('xdebug_execute', {'command': 'run'})
+            # Determine if client should break at first line on connect
+            break_on_start = S.get_project_value('break_on_start') or S.get_package_value('break_on_start')
+            if break_on_start:
+                # Get init attribute values
+                fileuri = init.get(dbgp.INIT_FILEURI)
+                filename = util.get_real_path(fileuri)
+                # Show debug/status output
+                sublime.status_message('Xdebug: Break on start')
+                log.info('Break on start: ' + filename )
+                # Store line number of breakpoint for displaying region marker
+                S.BREAKPOINT_ROW = { 'filename': filename, 'lineno': 1 }
+                # Focus/Open file window view
+                V.show_file(filename, 1)
+
+                # Get context variables and stack history
+                context = session.get_context_values()
+                V.show_content(V.DATA_CONTEXT, context)
+                stack = session.get_stack_values()
+                if not stack:
+                    stack = H.unicode_string('[{level}] {filename}.{where}:{lineno}\n' \
+                                              .format(level=0, where='{main}', lineno=1, filename=fileuri))
+                V.show_content(V.DATA_STACK, stack)
+            else:
+                # Tell script to run it's process
+                self.window.run_command('xdebug_execute', {'command': 'run'})
         except (socket.error, session.ProtocolConnectionException):
             e = sys.exc_info()[1]
             session.connection_error("%s" % e)
@@ -244,6 +303,10 @@ class XdebugSessionStopCommand(sublime_plugin.WindowCommand):
             S.SESSION = None
             S.BREAKPOINT_ROW = None
             S.CONTEXT_DATA.clear()
+            # Remove temporary breakpoint
+            if S.BREAKPOINT_RUN is not None and S.BREAKPOINT_RUN['filename'] in S.BREAKPOINT and S.BREAKPOINT_RUN['lineno'] in S.BREAKPOINT[S.BREAKPOINT_RUN['filename']]:
+                self.window.active_view().run_command('xdebug_breakpoint', {'rows': [S.BREAKPOINT_RUN['lineno']], 'filename': S.BREAKPOINT_RUN['filename']})
+            S.BREAKPOINT_RUN = None
         close_on_stop = S.get_project_value('close_on_stop') or S.get_package_value('close_on_stop') or S.CLOSE_ON_STOP
         if close_windows or close_on_stop:
             self.window.run_command('xdebug_reset_layout', {'layout': 'default'})
@@ -294,12 +357,22 @@ class XdebugExecuteCommand(sublime_plugin.WindowCommand):
             # Handle breakpoint hit
             for child in response:
                 if child.tag == dbgp.ELEMENT_BREAKPOINT or child.tag == dbgp.ELEMENT_PATH_BREAKPOINT:
-                    sublime.status_message('Xdebug: Breakpoint')
                     # Get breakpoint attribute values
                     fileuri = child.get(dbgp.BREAKPOINT_FILENAME)
                     lineno = child.get(dbgp.BREAKPOINT_LINENO)
                     filename = util.get_real_path(fileuri)
-                    # Show debug output
+                    # Check if temporary breakpoint is set and hit
+                    if S.BREAKPOINT_RUN is not None and S.BREAKPOINT_RUN['filename'] == filename and S.BREAKPOINT_RUN['lineno'] == lineno:
+                        # Remove temporary breakpoint
+                        if S.BREAKPOINT_RUN['filename'] in S.BREAKPOINT and S.BREAKPOINT_RUN['lineno'] in S.BREAKPOINT[S.BREAKPOINT_RUN['filename']]:
+                            self.window.active_view().run_command('xdebug_breakpoint', {'rows': [S.BREAKPOINT_RUN['lineno']], 'filename': S.BREAKPOINT_RUN['filename']})
+                        S.BREAKPOINT_RUN = None
+                    # Skip if temporary breakpoint was not hit
+                    if S.BREAKPOINT_RUN is not None and (S.BREAKPOINT_RUN['filename'] != filename or S.BREAKPOINT_RUN['lineno'] != lineno):
+                        self.window.run_command('xdebug_execute', {'command': 'run'})
+                        return
+                    # Show debug/status output
+                    sublime.status_message('Xdebug: Breakpoint')
                     log.info('Break: ' + filename + ':' + lineno)
                     # Store line number of breakpoint for displaying region marker
                     S.BREAKPOINT_ROW = { 'filename': filename, 'lineno': lineno }

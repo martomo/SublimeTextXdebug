@@ -22,10 +22,12 @@ from .session import get_breakpoint_values, get_context_variable, generate_conte
 DATA_BREAKPOINT = 'breakpoint'
 DATA_CONTEXT = 'context'
 DATA_STACK = 'stack'
+DATA_WATCH = 'watch'
 
 TITLE_WINDOW_BREAKPOINT = "Xdebug Breakpoint"
 TITLE_WINDOW_CONTEXT = "Xdebug Context"
 TITLE_WINDOW_STACK = "Xdebug Stack"
+TITLE_WINDOW_WATCH = "Xdebug Watch"
 
 
 def set_layout(layout):
@@ -69,7 +71,7 @@ def set_layout(layout):
                 v = S.RESTORE_INDEX[view_id]
                 window.set_view_index(view, v["group"], v["index"])
             # Close all debugging related windows
-            if view.name() == TITLE_WINDOW_BREAKPOINT or view.name() == TITLE_WINDOW_CONTEXT or view.name() == TITLE_WINDOW_STACK:
+            if view.name() == TITLE_WINDOW_BREAKPOINT or view.name() == TITLE_WINDOW_CONTEXT or view.name() == TITLE_WINDOW_STACK or view.name() == TITLE_WINDOW_WATCH:
                 window.focus_view(view)
                 window.run_command('close')
         window.run_command('hide_panel', {"panel": 'output.xdebug'})
@@ -129,6 +131,9 @@ def show_content(data, content=None):
     if data == DATA_CONTEXT:
         group = 1
         title = TITLE_WINDOW_CONTEXT
+    if data == DATA_WATCH:
+        group = 1
+        title = TITLE_WINDOW_WATCH
     if data == DATA_STACK:
         group = 2
         title = TITLE_WINDOW_STACK
@@ -236,6 +241,9 @@ def rows_to_region(rows):
 
     # Get current active view
     view = sublime.active_window().active_view()
+    # Unable to convert rows to regions when no view available
+    if view is None:
+        return
 
     # List for containing regions to return
     region = []
@@ -270,6 +278,9 @@ def region_to_rows(region=None, filter_empty=False):
 
     # Get current active view
     view = sublime.active_window().active_view()
+    # Unable to convert regions to rows when no view available
+    if view is None:
+        return
 
     # Use current selection/cursor position if no region defined
     if region is None:
@@ -313,7 +324,7 @@ def render_regions(view=None):
     # Get current active view
     if view is None:
         view = sublime.active_window().active_view()
-    # Unable to set regions when no view opened
+    # Unable to set regions when no view available
     if view is None:
         return
 
@@ -332,6 +343,10 @@ def render_regions(view=None):
     disabled_rows = []
     if filename in S.BREAKPOINT and isinstance(S.BREAKPOINT[filename], dict):
         for lineno, bp in S.BREAKPOINT[filename].items():
+            # Do not show temporary breakpoint
+            if S.BREAKPOINT_RUN is not None and S.BREAKPOINT_RUN['filename'] == filename and S.BREAKPOINT_RUN['lineno'] == lineno:
+                continue
+            # Determine if breakpoint is enabled or disabled
             if bp['enabled']:
                 breakpoint_rows.append(lineno)
             else:

@@ -40,6 +40,9 @@
     // of array elements and object properties.
     "max_depth": 3,
 
+    // Break at first line on session start, when debugger engine has connected.
+    "break_on_start": false,
+
     // Always close debug windows and restore layout on session stop.
     "close_on_stop": false,
 

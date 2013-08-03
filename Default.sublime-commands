@@ -52,6 +52,10 @@
         "args"   : {"command" : "run"}
     },
     {
+        "caption": "Xdebug: Breakpoint - Run To Line",
+        "command": "xdebug_run_to_line"
+    },
+    {
         "caption": "Xdebug: Breakpoint - Step Over",
         "command": "xdebug_continue",
         "args"   : {"command" : "step_over"}

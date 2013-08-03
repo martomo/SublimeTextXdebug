@@ -25,6 +25,10 @@
                 "args"   : {"command" : "run"}
             },
             {
+                "caption": "Run To Line",
+                "command": "xdebug_run_to_line"
+            },
+            {
                 "caption": "Step Over",
                 "command": "xdebug_continue",
                 "args"   : {"command" : "step_over"}
