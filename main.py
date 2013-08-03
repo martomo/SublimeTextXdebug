@@ -12,6 +12,13 @@ try:
 except:
     from xdebug import *
 
+# Set Python libraries from system installation
+python_path = S.get_project_value('python_path') or S.get_package_value('python_path')
+if python_path:
+    python_path = os.path.normpath(python_path.replace("\\", "/"))
+    python_dynload = os.path.join(python_path, 'lib-dynload')
+    if python_dynload not in sys.path:
+        sys.path.append(python_dynload)
 
 # Define path variables
 try:

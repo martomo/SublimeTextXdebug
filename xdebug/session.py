@@ -27,18 +27,15 @@ from .log import debug, info
 # XML parser
 try:
     from xml.etree import cElementTree as ET
-    info("Using xml.etree.cElementTree.")
 except ImportError:
     try:
         from xml.etree import ElementTree as ET
-        info("Using xml.etree.ElementTree.")
     except ImportError:
         from .elementtree import ElementTree as ET
-        info("Using elementtree.ElementTree.")
 try:
     from xml.parsers import expat
 except ImportError:
-    info("Module xml.parsers.expat missing, using SimpleXMLTreeBuilder.")
+    # Module xml.parsers.expat missing, using SimpleXMLTreeBuilder
     from .elementtree import SimpleXMLTreeBuilder
     ET.XMLTreeBuilder = SimpleXMLTreeBuilder.TreeBuilder
 

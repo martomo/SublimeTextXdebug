@@ -43,6 +43,17 @@
     // Do not show possible password values in context output.
     "hide_password": true,
 
+    // Path to Python installation on your system.
+    // Which is being used to load missing modules.
+    //
+    // It is recommended to configure your Python path for Sublime Text 2
+    // especially on older UNIX systems, where some modules (xml.parsers.expat)
+    // might be missing and could improve performance of package.
+    //
+    // Example:
+    // "python_path" : "/usr/lib/python2.7"
+    "python_path" : "",
+
     // Show detailed log information about communication
     // between debugger engine and Sublime Text.
     // Log can be found at Packages/User/Xdebug.log

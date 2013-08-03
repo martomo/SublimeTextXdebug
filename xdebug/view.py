@@ -90,9 +90,9 @@ def show_context_output(view):
     if S.SESSION and S.SESSION.connected and S.CONTEXT_DATA:
         try:
             # Get selected point in view
-            point = view.sel()[0].a
+            point = view.sel()[0]
             # Check if selected point uses variable scope
-            if sublime.score_selector(view.scope_name(point), 'variable'):
+            if point.size() == 0 and sublime.score_selector(view.scope_name(point.a), 'variable'):
                 # Find variable in line which contains the point
                 line = view.substr(view.line(point))
                 pattern = re.compile('^\\s*(\\$.*?)\\s+\\=')
@@ -313,6 +313,9 @@ def render_regions(view=None):
     # Get current active view
     if view is None:
         view = sublime.active_window().active_view()
+    # Unable to set regions when no view opened
+    if view is None:
+        return
 
     # Remove all markers to avoid marker conflict
     view.erase_regions(S.REGION_KEY_BREAKPOINT)
