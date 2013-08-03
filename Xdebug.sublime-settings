@@ -29,6 +29,9 @@
     // to connect with debugger engine.
     "port": 9000,
 
+    // Show super globals in context view.
+    "super_globals": true,
+
     // Maximum amount of array children
     // and object's properties to return.
     "max_children": 32,

@@ -31,7 +31,7 @@
 				</dict>
 			</dict>
 			<key>match</key>
-			<string>^\s*(\$.*?)\s+(=)\s+(.*)(\[.*\])</string>
+			<string>^\s*(\$.*?)\s+(=)\s+(\S*)(\[.*\])</string>
 			<key>name</key>
 			<string>xdebug.output.context.object</string>
 		</dict>

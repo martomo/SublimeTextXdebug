@@ -7,8 +7,8 @@ Helper module for Python version 3.0 and above
 """
 
 import base64
-import collections
 import urllib.parse
+from collections import OrderedDict
 
 def modulename():
 	return "Helper module for Python version 3.0 and above"
@@ -20,7 +20,7 @@ def url_encode(uri):
 	return urllib.parse.quote(uri)
 
 def new_dictionary():
-	return collections.OrderedDict()
+	return OrderedDict()
 
 def dictionary_keys(dictionary):
 	return list(dictionary.keys())

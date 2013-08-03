@@ -8,7 +8,10 @@ Helper module for Python version 2.6 and below
 
 import base64
 import urllib2
-
+try:
+	from ordereddict import OrderedDict
+except:
+	pass
 
 def modulename():
 	return "Helper module for Python version 2.6 and below"
@@ -20,7 +23,10 @@ def url_encode(uri):
 	return urllib2.quote(uri)
 
 def new_dictionary():
-	return {}
+	try:
+		return OrderedDict()
+	except:
+		return {}
 
 def dictionary_keys(dictionary):
 	return dictionary.keys()

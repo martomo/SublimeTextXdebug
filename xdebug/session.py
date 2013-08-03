@@ -164,7 +164,7 @@ class Protocol(object):
 
     def listen(self):
         """
-        Create socket server which listens for connection on configured port
+        Create socket server which listens for connection on configured port.
         """
         # Create socket server
         server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -224,16 +224,28 @@ class ProtocolConnectionException(ProtocolException):
 
 
 def is_connected(show_status=False):
+    """
+    Check if client is connected to debugger engine.
+
+    Keyword arguments:
+    show_status -- Show message why client is not connected in status bar.
+    """
     if S.SESSION and S.SESSION.connected:
         return True
     elif S.SESSION and show_status:
-        sublime.status_message('Xdebug: Waiting response from debugger engine.')
+        sublime.status_message('Xdebug: Waiting for response from debugger engine.')
     elif show_status:
         sublime.status_message('Xdebug: No Xdebug session running.')
     return False
 
 
 def connection_error(message):
+    """
+    Template for showing error message on connection error/loss.
+
+    Keyword arguments:
+    message -- Exception/reason of connection error/loss.
+    """
     sublime.error_message("Please restart Xdebug debugging session.\nDisconnected from Xdebug debugger engine.\n" + message)
     info("Connection lost with debugger engine.")
     debug(message)
@@ -249,6 +261,9 @@ def connection_error(message):
 
 
 def get_breakpoint_values():
+    """
+    Get list of all configured breakpoints.
+    """
     # Get breakpoints for files
     values = H.unicode_string('')
     if S.BREAKPOINT is None:
@@ -274,33 +289,43 @@ def get_breakpoint_values():
 
 def get_context_values():
     """
-    #TODO: Get all variables by looping context_names
+    Get variables in current context.
     """
     if S.SESSION:
+        context = H.new_dictionary()
         try:
             # Only show first level variables
             S.SESSION.send(dbgp.FEATURE_SET, n=dbgp.FEATURE_NAME_MAXCHILDREN, v='0')
             response = S.SESSION.read()
 
+            # Super global variables
+            if S.get_project_value('super_globals') or S.get_package_value('super_globals'):
+                S.SESSION.send(dbgp.CONTEXT_GET, c=1)
+                response = S.SESSION.read()
+                context.update(get_response_properties(response, context=1))
+
             # Local variables
             S.SESSION.send(dbgp.CONTEXT_GET)
             response = S.SESSION.read()
+            context.update(get_response_properties(response))
 
-            # Retrieve properties from response
-            context = get_response_properties(response)
-
-            # Store context variables in session
-            S.CONTEXT_DATA = context
-
-            return generate_context_output(context)
         except (socket.error, ProtocolConnectionException):
             e = sys.exc_info()[1]
             connection_error("%s" % e)
 
+        # Store context variables in session
+        S.CONTEXT_DATA = context
+
+        return generate_context_output(context)
+
 
 def get_context_variable(context, variable_name):
     """
-    Find a variable in the context data
+    Find a variable in the context data.
+
+    Keyword arguments:
+    context -- Dictionary with context data to search.
+    variable_name -- Name of variable to find.
     """
     if isinstance(context, dict):
         if variable_name in context:
@@ -312,7 +337,16 @@ def get_context_variable(context, variable_name):
                     return children
 
 
-def get_property_children(property_name, numchildren, depth=0):
+def get_property_children(property_name, numchildren, depth=0, context=0):
+    """
+    Retrieve children properties for property.
+
+    Keyword arguments:
+    property_name -- Name of property to retrieve children properties from.
+    numchildren -- Number of children in property.
+    depth -- Current depth level within nested response properties.
+    context -- ID of context that has been returned in response (0=Local, 1=Global).
+    """
     # Limit numchildren to max_children
     max_children = S.get_project_value('max_children') or S.get_package_value('max_children') or S.MAX_CHILDREN
     if isinstance(max_children, int) and max_children is not 0 and int(numchildren) > max_children:
@@ -323,7 +357,7 @@ def get_property_children(property_name, numchildren, depth=0):
         response = S.SESSION.read()
 
         # Get property and it's children
-        S.SESSION.send(dbgp.PROPERTY_GET, n=property_name)
+        S.SESSION.send(dbgp.PROPERTY_GET, n=property_name, c=context)
         response = S.SESSION.read()
 
         # Walk through elements in response
@@ -332,11 +366,19 @@ def get_property_children(property_name, numchildren, depth=0):
             if child.tag == dbgp.ELEMENT_PROPERTY or child.tag == dbgp.ELEMENT_PATH_PROPERTY:
                 # Return it's children when property matches property name
                 if property_name == child.get(dbgp.PROPERTY_FULLNAME):
-                    return get_response_properties(child, depth)
+                    return get_response_properties(child, depth, context)
     return {}
 
 
-def get_response_properties(response, depth=0):
+def get_response_properties(response, depth=0, context=0):
+    """
+    Return a dictionary with available properties from response.
+
+    Keyword arguments:
+    response -- Response from debugger engine.
+    depth -- Current depth level within nested response properties.
+    context -- ID of context that has been returned in response (0=Local, 1=Global).
+    """
     max_depth = S.get_project_value('max_depth') or S.get_package_value('max_depth') or S.MAX_DEPTH
     properties = H.new_dictionary()
     # Walk through elements in response
@@ -381,7 +423,7 @@ def get_response_properties(response, depth=0):
 
                 # Get values for children
                 if property_children:
-                    properties[property_name]['children'] = get_property_children(property_name, property_numchildren, depth+1)
+                    properties[property_name]['children'] = get_property_children(property_name, property_numchildren, depth+1, context)
 
                 # Set classname, if available, as type for object
                 if property_classname and property_type == 'object':
@@ -390,6 +432,9 @@ def get_response_properties(response, depth=0):
 
 
 def get_stack_values():
+    """
+    Get stack information for current context.
+    """
     values = H.unicode_string('')
     if S.SESSION:
         try:
@@ -415,6 +460,13 @@ def get_stack_values():
 
 
 def generate_context_output(context, indent=0):
+    """
+    Generate readable context from dictionary with context data.
+
+    Keyword arguments:
+    context -- Dictionary with context data.
+    indent -- Indent level.
+    """
     # Generate output text for values
     values = H.unicode_string('')
     if not isinstance(context, dict):

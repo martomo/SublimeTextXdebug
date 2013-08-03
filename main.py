@@ -404,17 +404,15 @@ class XdebugEvaluateCommand(sublime_plugin.WindowCommand):
             S.SESSION.send(dbgp.EVAL, expression=expression)
             response = S.SESSION.read(return_string=True)
 
-            # Show output panel
-            window = sublime.active_window()
-            if window is None:
-                return
-            window.run_command('show_panel', {'panel': 'output.xdebug'})
-
             # Show response data in output panel
-            output = window.get_output_panel('xdebug')
-            if output is None:
-                return
-            output.run_command('xdebug_view_update', {'data': response})
+            try:
+                window = sublime.active_window()
+                output = window.get_output_panel('xdebug')
+                output.run_command('xdebug_view_update', {'data': response})
+                output.run_command('set_setting', {"setting": 'word_wrap', "value": True})
+                window.run_command('show_panel', {'panel': 'output.xdebug'})
+            except:
+                print(response)
         except (socket.error, session.ProtocolConnectionException):
             e = sys.exc_info()[1]
             session.connection_error("%s" % e)
@@ -452,17 +450,15 @@ class XdebugUserExecuteCommand(sublime_plugin.WindowCommand):
             S.SESSION.send(command, args)
             response = S.SESSION.read(return_string=True)
 
-            # Show output panel
-            window = sublime.active_window()
-            if window is None:
-                return
-            window.run_command('show_panel', {'panel': 'output.xdebug'})
-
             # Show response data in output panel
-            output = window.get_output_panel('xdebug')
-            if output is None:
-                return
-            output.run_command('xdebug_view_update', {'data': response})
+            try:
+                window = sublime.active_window()
+                output = window.get_output_panel('xdebug')
+                output.run_command('xdebug_view_update', {'data': response})
+                output.run_command('set_setting', {"setting": 'word_wrap', "value": True})
+                window.run_command('show_panel', {'panel': 'output.xdebug'})
+            except:
+                print(response)
         except (socket.error, session.ProtocolConnectionException):
             e = sys.exc_info()[1]
             session.connection_error("%s" % e)
