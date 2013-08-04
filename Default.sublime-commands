@@ -31,8 +31,17 @@
         "command": "xdebug_conditional_breakpoint"
     },
     {
-        "caption": "Xdebug: Clear All Breakpoints",
+        "caption": "Xdebug: Clear Breakpoints",
         "command": "xdebug_clear_breakpoints"
+    },
+    {
+        "caption": "Xdebug: Set Watch Expression",
+        "command": "xdebug_watch"
+    },
+    {
+        "caption": "Xdebug: Clear Watch Expressions",
+        "command": "xdebug_watch",
+        "args"   : {"clear" : true}
     },
     {
         "caption": "Xdebug: Session - Evaluate",

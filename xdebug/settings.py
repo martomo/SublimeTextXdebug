@@ -46,6 +46,7 @@ RESTORE_INDEX = None
 SESSION = None
 BREAKPOINT = {}
 CONTEXT_DATA = {}
+WATCH = []
 
 # Breakpoint line number in script being debugged
 BREAKPOINT_ROW = None

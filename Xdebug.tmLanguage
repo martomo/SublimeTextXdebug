@@ -184,6 +184,60 @@
 			<key>name</key>
 			<string>xdebug.output.breakpoint.line</string>
 		</dict>
+		<dict>
+			<key>captures</key>
+			<dict>
+				<key>1</key>
+				<dict>
+					<key>name</key>
+					<string>entity.other.attribute-name.anchor.settings</string>
+				</dict>
+				<key>2</key>
+				<dict>
+					<key>name</key>
+					<string>keyword.operator.settings</string>
+				</dict>
+				<key>3</key>
+				<dict>
+					<key>name</key>
+					<string>variable.other.settings</string>
+				</dict>
+				<key>4</key>
+				<dict>
+					<key>name</key>
+					<string>keyword.operator.settings</string>
+				</dict>
+				<key>5</key>
+				<dict>
+					<key>name</key>
+					<string>support.type.settings</string>
+				</dict>
+				<key>6</key>
+				<dict>
+					<key>name</key>
+					<string>string.quoted.settings</string>
+				</dict>
+				<key>7</key>
+				<dict>
+					<key>name</key>
+					<string>support.type.settings</string>
+				</dict>
+				<key>8</key>
+				<dict>
+					<key>name</key>
+					<string>variable.parameter.settings</string>
+				</dict>
+				<key>9</key>
+				<dict>
+					<key>name</key>
+					<string>comment.line.settings</string>
+				</dict>
+			</dict>
+			<key>match</key>
+			<string>^(?:(\|\+\|)|(\|-\|)|)\s+(\S*)\s+(?:(=)\s+(?:(\(.*?\))\s(.*)|(\S*)(\[.*\])|(&lt;.*&gt;))|.*)</string>
+			<key>name</key>
+			<string>xdebug.output.watch.entry</string>
+		</dict>
 	</array>
 	<key>scopeName</key>
 	<string>xdebug.output</string>

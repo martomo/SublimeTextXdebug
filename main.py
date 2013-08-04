@@ -166,17 +166,21 @@ class XdebugClearBreakpointsCommand(sublime_plugin.TextCommand):
                 self.view.window().run_command('xdebug_execute', {'command': 'run'})
 
 
-class XdebugRunToLineCommand(sublime_plugin.TextCommand):
+class XdebugRunToLineCommand(sublime_plugin.WindowCommand):
     """
     Run script to current selected line in view, ignoring all other breakpoints.
     """
-    def run(self, edit):
+    def run(self):
+        view = sublime.active_window().active_view()
+        # Unable to run to line when no view available
+        if view is None:
+            return
         # Determine filename for current view and check if is a valid filename
-        filename = self.view.file_name()
+        filename = view.file_name()
         if not filename or not os.path.isfile(filename):
             return
         # Get first line from selected rows and make sure it is not empty
-        rows = V.region_to_rows(self.view.sel(), filter_empty=True)
+        rows = V.region_to_rows(filter_empty=True)
         if rows is None or len(rows) == 0:
             return
         lineno = rows[0]
@@ -188,8 +192,8 @@ class XdebugRunToLineCommand(sublime_plugin.TextCommand):
         if not breakpoint_exists:
             S.BREAKPOINT_RUN = { 'filename': filename, 'lineno': lineno }
         # Set breakpoint and run script
-        self.view.run_command('xdebug_breakpoint', {'rows': [lineno], 'enabled': True, 'filename': filename})
-        self.view.window().run_command('xdebug_execute', {'command': 'run'})
+        view.run_command('xdebug_breakpoint', {'rows': [lineno], 'enabled': True, 'filename': filename})
+        self.window.run_command('xdebug_execute', {'command': 'run'})
 
     def is_enabled(self):
         return S.BREAKPOINT_ROW is not None and session.is_connected()
@@ -230,6 +234,20 @@ class XdebugSessionStartCommand(sublime_plugin.WindowCommand):
         try:
             # Connection initialization
             init = S.SESSION.read()
+
+            # More detailed internal information on properties
+            S.SESSION.send(dbgp.FEATURE_SET, n='show_hidden', v=1)
+            response = S.SESSION.read()
+
+            # Set max depth limit
+            max_depth = S.get_project_value('max_depth') or S.get_package_value('max_depth') or S.MAX_DEPTH
+            S.SESSION.send(dbgp.FEATURE_SET, n=dbgp.FEATURE_NAME_MAXDEPTH, v=max_depth)
+            response = S.SESSION.read()
+
+            # Set max children limit
+            max_children = S.get_project_value('max_children') or S.get_package_value('max_children') or S.MAX_CHILDREN
+            S.SESSION.send(dbgp.FEATURE_SET, n=dbgp.FEATURE_NAME_MAXCHILDREN, v=max_children)
+            response = S.SESSION.read()
 
             # Set breakpoints for files
             for filename, breakpoint_data in S.BREAKPOINT.items():
@@ -388,6 +406,9 @@ class XdebugExecuteCommand(sublime_plugin.WindowCommand):
                 # Stack history
                 stack = session.get_stack_values()
                 V.show_content(V.DATA_STACK, stack)
+
+                # Watch expressions
+                V.show_content(V.DATA_WATCH)
 
             # Reload session when session stopped, by reaching end of file or interruption
             if response.get(dbgp.ATTRIBUTE_STATUS) == dbgp.STATUS_STOPPING or response.get(dbgp.ATTRIBUTE_STATUS) == dbgp.STATUS_STOPPED:
@@ -549,6 +570,50 @@ class XdebugUserExecuteCommand(sublime_plugin.WindowCommand):
         return session.is_connected()
 
 
+class XdebugWatchCommand(sublime_plugin.WindowCommand):
+    """
+    Add/Remove watch condition.
+    """
+    watch_index = None
+    def run(self, clear=False):
+        if clear:
+            S.WATCH.clear()
+            # Update watch view
+            try:
+                if sublime.active_window().get_layout() == S.LAYOUT_DEBUG:
+                    V.show_content(V.DATA_WATCH)
+            except:
+                pass
+        else:
+            # Show user input for setting watch expression
+            self.window.show_input_panel('Watch expression', '', self.on_done, self.on_change, self.on_cancel)
+
+    def on_done(self, expression):
+        if not expression:
+            return
+        # Add/update watch expression to session
+        watch = {'expression': expression, 'enabled': True, 'value': None, 'type': None}
+        if self.watch_index and isinstance(self.watch_index, int):
+            try:
+                S.WATCH[self.watch_index]['expression'] = expression
+            except:
+                S.WATCH.insert(self.watch_index, watch)
+        else:
+            S.WATCH.append(watch)
+        # Update watch view
+        try:
+            if sublime.active_window().get_layout() == S.LAYOUT_DEBUG:
+                V.show_content(V.DATA_WATCH)
+        except:
+            pass
+
+    def on_change(self, line):
+        pass
+
+    def on_cancel(self):
+        pass
+
+
 class XdebugViewUpdateCommand(sublime_plugin.TextCommand):
     """
     Update content of sublime.Edit object in view, instead of using begin_edit/end_edit.
@@ -583,6 +648,7 @@ class XdebugResetLayoutCommand(sublime_plugin.WindowCommand):
         if not layout == 'debug':
             return
         # Reset data in debugging related windows
+        V.show_content(V.DATA_WATCH)
         V.show_content(V.DATA_CONTEXT)
         V.show_content(V.DATA_BREAKPOINT)
         V.show_content(V.DATA_STACK)

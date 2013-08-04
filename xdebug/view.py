@@ -16,7 +16,7 @@ except:
     import settings as S
 
 # Session module
-from .session import get_breakpoint_values, get_context_variable, generate_context_output
+from .session import get_breakpoint_values, get_context_variable, get_watch_values, generate_context_output
 
 
 DATA_BREAKPOINT = 'breakpoint'
@@ -134,6 +134,7 @@ def show_content(data, content=None):
     if data == DATA_WATCH:
         group = 1
         title = TITLE_WINDOW_WATCH
+        content = get_watch_values()
     if data == DATA_STACK:
         group = 2
         title = TITLE_WINDOW_STACK
@@ -174,7 +175,7 @@ def show_content(data, content=None):
 
     # Set content for view and fold all indendation blocks
     view.run_command('xdebug_view_update', {'data': content, 'readonly': True})
-    if data == DATA_CONTEXT:
+    if data == DATA_CONTEXT or data == DATA_WATCH:
         view.run_command('fold_all')
 
     # Restore focus to previous active view/group

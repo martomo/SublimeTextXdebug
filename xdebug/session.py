@@ -300,21 +300,16 @@ def get_context_values():
     if S.SESSION:
         context = H.new_dictionary()
         try:
-            # Only show first level variables
-            S.SESSION.send(dbgp.FEATURE_SET, n=dbgp.FEATURE_NAME_MAXCHILDREN, v='0')
-            response = S.SESSION.read()
-
             # Super global variables
             if S.get_project_value('super_globals') or S.get_package_value('super_globals'):
                 S.SESSION.send(dbgp.CONTEXT_GET, c=1)
                 response = S.SESSION.read()
-                context.update(get_response_properties(response, context=1))
+                context.update(get_response_properties(response))
 
             # Local variables
             S.SESSION.send(dbgp.CONTEXT_GET)
             response = S.SESSION.read()
             context.update(get_response_properties(response))
-
         except (socket.error, ProtocolConnectionException):
             e = sys.exc_info()[1]
             connection_error("%s" % e)
@@ -343,60 +338,22 @@ def get_context_variable(context, variable_name):
                     return children
 
 
-def get_property_children(property_name, numchildren, depth=0, context=0):
-    """
-    Retrieve children properties for property.
-
-    Keyword arguments:
-    property_name -- Name of property to retrieve children properties from.
-    numchildren -- Number of children in property.
-    depth -- Current depth level within nested response properties.
-    context -- ID of context that has been returned in response (0=Local, 1=Global).
-    """
-    # Limit numchildren to max_children
-    max_children = S.get_project_value('max_children') or S.get_package_value('max_children') or S.MAX_CHILDREN
-    if isinstance(max_children, int) and max_children is not 0 and int(numchildren) > max_children:
-        numchildren = max_children
-    if S.SESSION:
-        # Set max children limit accordingly
-        S.SESSION.send(dbgp.FEATURE_SET, n=dbgp.FEATURE_NAME_MAXCHILDREN, v=numchildren)
-        response = S.SESSION.read()
-
-        # Get property and it's children
-        S.SESSION.send(dbgp.PROPERTY_GET, n=property_name, c=context)
-        response = S.SESSION.read()
-
-        # Walk through elements in response
-        for child in response:
-            # Only read property elements
-            if child.tag == dbgp.ELEMENT_PROPERTY or child.tag == dbgp.ELEMENT_PATH_PROPERTY:
-                # Return it's children when property matches property name
-                if property_name == child.get(dbgp.PROPERTY_FULLNAME):
-                    return get_response_properties(child, depth, context)
-    return {}
-
-
-def get_response_properties(response, depth=0, context=0):
+def get_response_properties(response, default_key=None):
     """
     Return a dictionary with available properties from response.
 
     Keyword arguments:
     response -- Response from debugger engine.
-    depth -- Current depth level within nested response properties.
-    context -- ID of context that has been returned in response (0=Local, 1=Global).
+    default_key -- Index key to use when property has no name.
     """
-    max_depth = S.get_project_value('max_depth') or S.get_package_value('max_depth') or S.MAX_DEPTH
     properties = H.new_dictionary()
     # Walk through elements in response
     for child in response:
-        # Only read property elements
+        # Read property elements
         if child.tag == dbgp.ELEMENT_PROPERTY or child.tag == dbgp.ELEMENT_PATH_PROPERTY:
-            # Stop at maximum depth
-            if isinstance(max_depth, int) and max_depth is not 0 and depth > max_depth:
-                continue
-
             # Get property attribute values
-            property_name = child.get(dbgp.PROPERTY_FULLNAME)
+            property_name_short = child.get(dbgp.PROPERTY_NAME)
+            property_name = child.get(dbgp.PROPERTY_FULLNAME, property_name_short)
             property_type = child.get(dbgp.PROPERTY_TYPE)
             property_children = child.get(dbgp.PROPERTY_CHILDREN)
             property_numchildren = child.get(dbgp.PROPERTY_NUMCHILDREN)
@@ -410,7 +367,8 @@ def get_response_properties(response, depth=0, context=0):
                     # Return raw value
                     property_value = child.text
 
-            if property_name:
+            if property_name is not None and len(property_name) > 0:
+                property_key = property_name
                 # Ignore following properties
                 if property_name == "::":
                     continue
@@ -423,17 +381,30 @@ def get_response_properties(response, depth=0, context=0):
                 hide_password = S.get_project_value('hide_password') or S.get_package_value('hide_password', True)
                 if hide_password and property_name.lower().find('password') != -1:
                     property_value = '******'
+            else:
+                property_key = default_key
 
-                # Store property
-                properties[property_name] = { 'name': property_name, 'type': property_type, 'value': property_value, 'numchildren': property_numchildren, 'children' : None }
+            # Store property
+            if property_key:
+                properties[property_key] = { 'name': property_name, 'type': property_type, 'value': property_value, 'numchildren': property_numchildren, 'children' : None }
 
                 # Get values for children
                 if property_children:
-                    properties[property_name]['children'] = get_property_children(property_name, property_numchildren, depth+1, context)
+                    properties[property_key]['children'] = get_response_properties(child, default_key)
 
                 # Set classname, if available, as type for object
                 if property_classname and property_type == 'object':
-                    properties[property_name]['type'] = property_classname
+                    properties[property_key]['type'] = property_classname
+        # Handle error elements
+        elif child.tag == 'error' or child.tag == '{urn:debugger_protocol_v1}error':
+            error_code = child.get('code')
+            message = 'error'
+            for step_child in child:
+                if step_child.tag == 'message' or step_child.tag == '{urn:debugger_protocol_v1}message' and step_child.text:
+                    message = step_child.text
+                    break
+            if default_key:
+                properties[default_key] = { 'name': None, 'type': message, 'value': None, 'numchildren': None, 'children' : None }
     return properties
 
 
@@ -465,6 +436,61 @@ def get_stack_values():
     return values
 
 
+def get_watch_values():
+    """
+    Get list of all watch expressions.
+    """
+    for index, item in enumerate(S.WATCH):
+        # Reset value for watch expression
+        S.WATCH[index]['value'] = None
+        # Evaluate watch expression when connected to debugger engine
+        if is_connected():
+            try:
+                if item['enabled']:
+                    S.WATCH[index]['value'] = eval_watch_expression(item['expression'])
+            except:
+                pass
+    return generate_watch_output(S.WATCH)
+
+
+def eval_watch_expression(expression):
+    if S.SESSION:
+        try:
+            S.SESSION.send(dbgp.EVAL, expression=expression)
+            response = S.SESSION.read()
+
+            return get_response_properties(response, expression)
+        except (socket.error, ProtocolConnectionException):
+            e = sys.exc_info()[1]
+            connection_error("%s" % e)
+    return None
+
+
+def generate_watch_output(watch, indent=0):
+    values = H.unicode_string('')
+    if not isinstance(watch, list):
+        return values
+    for watch_data in watch:
+        watch_entry = ''
+        if watch_data and isinstance(watch_data, dict):
+            # Whether watch expression is enabled or disabled
+            if 'enabled' in watch_data.keys():
+                if watch_data['enabled']:
+                    watch_entry += '|+|'
+                else:
+                    watch_entry += '|-|'
+            # Watch expression
+            if 'expression' in watch_data.keys():
+                watch_entry += ' "%s"' % watch_data['expression']
+            # Evaluated value
+            if watch_data['value'] is not None:
+                watch_entry += ' = ' + generate_context_output(watch_data['value'])
+            else:
+                watch_entry += "\n"
+        values += H.unicode_string(watch_entry)
+    return values
+
+
 def generate_context_output(context, indent=0):
     """
     Generate readable context from dictionary with context data.
@@ -483,9 +509,13 @@ def generate_context_output(context, indent=0):
         if variable['value']:
             # Remove newlines in value to prevent incorrect indentation
             value = variable['value'].replace("\r\n", "\n").replace("\n", " ")
-            property_text += variable['name'] + ' = (' + variable['type'] + ') ' + value + '\n'
+            if variable['name']:
+                property_text += variable['name'] + ' = '
+            property_text += '(' + variable['type'] + ') ' + value + '\n'
         elif isinstance(variable['children'], dict):
-            property_text += variable['name'] + ' = ' + variable['type'] + '[' + variable['numchildren'] + ']\n'
+            if variable['name']:
+                property_text += variable['name'] + ' = '
+            property_text += variable['type'] + '[' + variable['numchildren'] + ']\n'
             property_text += generate_context_output(variable['children'], indent+1)
             # Use ellipsis to indicate that results have been truncated
             limited = False
@@ -498,6 +528,8 @@ def generate_context_output(context, indent=0):
                 for i in range(indent+1): property_text += '\t'
                 property_text += '...\n'
         else:
-            property_text += variable['name'] + ' = <' + variable['type'] + '>\n'
+            if variable['name']:
+                property_text += variable['name'] + ' = '
+            property_text += '<' + variable['type'] + '>\n'
         values += H.unicode_string(property_text)
     return values
