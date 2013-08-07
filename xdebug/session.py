@@ -515,7 +515,7 @@ def generate_context_output(context, indent=0):
         elif isinstance(variable['children'], dict):
             if variable['name']:
                 property_text += variable['name'] + ' = '
-            property_text += variable['type'] + '[' + variable['numchildren'] + ']\n'
+            property_text += str(variable['type']) + '[' + str(variable['numchildren']) + ']\n'
             property_text += generate_context_output(variable['children'], indent+1)
             # Use ellipsis to indicate that results have been truncated
             limited = False
