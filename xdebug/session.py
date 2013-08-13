@@ -379,7 +379,7 @@ def get_response_properties(response, default_key=None):
 
                 # Filter password values
                 hide_password = S.get_project_value('hide_password') or S.get_package_value('hide_password', True)
-                if hide_password and property_name.lower().find('password') != -1:
+                if hide_password and property_name.lower().find('password') != -1 and property_value is not None:
                     property_value = '******'
             else:
                 property_key = default_key
@@ -396,15 +396,14 @@ def get_response_properties(response, default_key=None):
                 if property_classname and property_type == 'object':
                     properties[property_key]['type'] = property_classname
         # Handle error elements
-        elif child.tag == 'error' or child.tag == '{urn:debugger_protocol_v1}error':
-            error_code = child.get('code')
+        elif child.tag == dbgp.ELEMENT_ERROR or child.tag == dbgp.ELEMENT_PATH_ERROR:
             message = 'error'
             for step_child in child:
-                if step_child.tag == 'message' or step_child.tag == '{urn:debugger_protocol_v1}message' and step_child.text:
+                if step_child.tag == dbgp.ELEMENT_MESSAGE or step_child.tag == dbgp.ELEMENT_PATH_MESSAGE and step_child.text:
                     message = step_child.text
                     break
             if default_key:
-                properties[default_key] = { 'name': None, 'type': message, 'value': None, 'numchildren': None, 'children' : None }
+                properties[default_key] = { 'name': None, 'type': message, 'value': None, 'numchildren': None, 'children': None }
     return properties
 
 
@@ -505,17 +504,18 @@ def generate_context_output(context, indent=0):
         return values
     for variable in context.values():
         property_text = ''
+        # Set indentation
         for i in range(indent): property_text += '\t'
-        if variable['value']:
-            # Remove newlines in value to prevent incorrect indentation
-            value = variable['value'].replace("\r\n", "\n").replace("\n", " ")
+        # Property with value
+        if variable['value'] is not None:
             if variable['name']:
-                property_text += variable['name'] + ' = '
-            property_text += '(' + variable['type'] + ') ' + value + '\n'
-        elif isinstance(variable['children'], dict):
+                property_text += '{name} = '
+            property_text += '({type}) {value}\n'
+        # Property with children
+        elif isinstance(variable['children'], dict) and variable['numchildren'] is not None:
             if variable['name']:
-                property_text += variable['name'] + ' = '
-            property_text += variable['type'] + '[' + variable['numchildren'] + ']\n'
+                property_text += '{name} = '
+            property_text += '{type}[{numchildren}]\n'
             property_text += generate_context_output(variable['children'], indent+1)
             # Use ellipsis to indicate that results have been truncated
             limited = False
@@ -527,9 +527,16 @@ def generate_context_output(context, indent=0):
             if limited:
                 for i in range(indent+1): property_text += '\t'
                 property_text += '...\n'
+        # Unknown property
         else:
             if variable['name']:
-                property_text += variable['name'] + ' = '
-            property_text += '<' + variable['type'] + '>\n'
-        values += H.unicode_string(property_text)
+                property_text += '{name} = '
+            property_text += '<{type}>\n'
+        # Remove newlines in value to prevent incorrect indentation
+        value = ''
+        if variable['value'] and len(variable['value']) > 0:
+            value = variable['value'].replace("\r\n", "\n").replace("\n", " ")
+        # Format string for output
+        values += H.unicode_string(property_text \
+                        .format(value=value, type=variable['type'], name=variable['name'], numchildren=variable['numchildren']))
     return values
