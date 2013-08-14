@@ -40,6 +40,8 @@ class EventListener(sublime_plugin.EventListener):
         if filename and filename in S.SHOW_ROW_ONLOAD:
             V.show_at_row(view, S.SHOW_ROW_ONLOAD[filename])
             del S.SHOW_ROW_ONLOAD[filename]
+            # Render breakpoint markers
+            V.render_regions(view)
 
     def on_activated(self, view):
         # Render breakpoint markers
@@ -577,7 +579,12 @@ class XdebugWatchCommand(sublime_plugin.WindowCommand):
     watch_index = None
     def run(self, clear=False):
         if clear:
-            S.WATCH.clear()
+            # Clear watch expressions in list
+            try:
+                # Python 3.3+
+                S.WATCH.clear()
+            except AttributeError:
+                del S.WATCH[:]
             # Update watch view
             try:
                 if sublime.active_window().get_layout() == S.LAYOUT_DEBUG:
