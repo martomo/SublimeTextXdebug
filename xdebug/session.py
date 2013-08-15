@@ -532,10 +532,10 @@ def generate_context_output(context, indent=0):
             if variable['name']:
                 property_text += '{name} = '
             property_text += '<{type}>\n'
-        # Remove newlines in value to prevent incorrect indentation
+        # Remove newlines in value to prevent incorrect indentation, Remove {} to avoid unmatched '{' in format issues
         value = ''
         if variable['value'] and len(variable['value']) > 0:
-            value = variable['value'].replace("\r\n", "\n").replace("\n", " ")
+            value = variable['value'].replace("\r\n", "\n").replace("\n", " ").replace("{", "").replace("}", "")
         # Format string for output
         values += H.unicode_string(property_text \
                         .format(value=value, type=variable['type'], name=variable['name'], numchildren=variable['numchildren']))
