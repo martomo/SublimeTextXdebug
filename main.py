@@ -40,8 +40,8 @@ class EventListener(sublime_plugin.EventListener):
         if filename and filename in S.SHOW_ROW_ONLOAD:
             V.show_at_row(view, S.SHOW_ROW_ONLOAD[filename])
             del S.SHOW_ROW_ONLOAD[filename]
-            # Render breakpoint markers
-            V.render_regions(view)
+        # Render breakpoint markers
+        V.render_regions(view)
 
     def on_activated(self, view):
         # Render breakpoint markers
@@ -313,8 +313,6 @@ class XdebugSessionStopCommand(sublime_plugin.WindowCommand):
     Stop Xdebug session, close connection and stop listening to debugger engine.
     """
     def run(self, close_windows=False, launch_browser=False):
-        if launch_browser:
-            util.launch_browser()
         try:
             S.SESSION.clear()
         except:
@@ -327,6 +325,9 @@ class XdebugSessionStopCommand(sublime_plugin.WindowCommand):
             if S.BREAKPOINT_RUN is not None and S.BREAKPOINT_RUN['filename'] in S.BREAKPOINT and S.BREAKPOINT_RUN['lineno'] in S.BREAKPOINT[S.BREAKPOINT_RUN['filename']]:
                 self.window.active_view().run_command('xdebug_breakpoint', {'rows': [S.BREAKPOINT_RUN['lineno']], 'filename': S.BREAKPOINT_RUN['filename']})
             S.BREAKPOINT_RUN = None
+        if launch_browser:
+            util.launch_browser()
+        # Close or reset debug layout
         close_on_stop = S.get_project_value('close_on_stop') or S.get_package_value('close_on_stop') or S.CLOSE_ON_STOP
         if close_windows or close_on_stop:
             self.window.run_command('xdebug_reset_layout', {'layout': 'default'})

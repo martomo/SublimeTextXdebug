@@ -503,8 +503,8 @@ def generate_context_output(context, indent=0):
     if not isinstance(context, dict):
         return values
     for variable in context.values():
+        has_children = False
         property_text = ''
-        property_children = ''
         # Set indentation
         for i in range(indent): property_text += '\t'
         # Property with value
@@ -514,12 +514,29 @@ def generate_context_output(context, indent=0):
             property_text += '({type}) {value}\n'
         # Property with children
         elif isinstance(variable['children'], dict) and variable['numchildren'] is not None:
+            has_children = True
             if variable['name']:
                 property_text += '{name} = '
             property_text += '{type}[{numchildren}]\n'
-            property_text += '{children}'
-            # Get children for property
-            property_children += generate_context_output(variable['children'], indent+1)
+        # Unknown property
+        else:
+            if variable['name']:
+                property_text += '{name} = '
+            property_text += '<{type}>\n'
+
+        # Remove newlines in value to prevent incorrect indentation
+        value = ''
+        if variable['value'] and len(variable['value']) > 0:
+            value = variable['value'].replace("\r\n", "\n").replace("\n", " ")
+
+        # Format string and append to output
+        values += H.unicode_string(property_text \
+                        .format(value=value, type=variable['type'], name=variable['name'], numchildren=variable['numchildren']))
+
+        # Append property children to output
+        if has_children:
+            # Get children for property (no need to convert, already unicode)
+            values += generate_context_output(variable['children'], indent+1)
             # Use ellipsis to indicate that results have been truncated
             limited = False
             if isinstance(variable['numchildren'], int) or H.is_digit(variable['numchildren']):
@@ -528,19 +545,6 @@ def generate_context_output(context, indent=0):
             elif len(variable['children']) > 0 and not variable['numchildren']:
                 limited = True
             if limited:
-                for i in range(indent+1): property_text += '\t'
-                property_text += '...\n'
-        # Unknown property
-        else:
-            if variable['name']:
-                property_text += '{name} = '
-            property_text += '<{type}>\n'
-        # Remove newlines in value to prevent incorrect indentation
-        value = ''
-        if variable['value'] and len(variable['value']) > 0:
-            value = variable['value'].replace("\r\n", "\n").replace("\n", " ")
-
-        # Format string for output
-        values += H.unicode_string(property_text \
-                        .format(value=value, type=variable['type'], name=variable['name'], numchildren=variable['numchildren'], children=property_children))        
+                for i in range(indent+1): values += H.unicode_string('\t')
+                values += H.unicode_string('...\n')
     return values

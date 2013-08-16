@@ -321,12 +321,18 @@ def region_to_rows(region=None, filter_empty=False):
 def render_regions(view=None):
     """
     Set breakpoint/current line marker(s) for current active view.
+
+    Note: View conflicts when using same icon for different scopes.
     """
     # Get current active view
     if view is None:
         view = sublime.active_window().active_view()
     # Unable to set regions when no view available
     if view is None:
+        return
+
+    # Do no set regions if view is empty or still loading
+    if view.size() == 0 or view.is_loading():
         return
 
     # Remove all markers to avoid marker conflict
@@ -360,7 +366,8 @@ def render_regions(view=None):
             icon = S.ICON_CURRENT
             # Remove current line number from breakpoint rows to avoid marker conflict
             if S.BREAKPOINT_ROW['lineno'] in breakpoint_rows:
-                icon = S.ICON_BREAKPOINT_CURRENT
+                #FIXME: Replace icon similar to breakpoint, but not the same icon!
+                #icon = S.ICON_BREAKPOINT_CURRENT
                 breakpoint_rows.remove(S.BREAKPOINT_ROW['lineno'])
             if S.BREAKPOINT_ROW['lineno'] in disabled_rows:
                 disabled_rows.remove(S.BREAKPOINT_ROW['lineno'])
