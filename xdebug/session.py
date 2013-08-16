@@ -504,6 +504,7 @@ def generate_context_output(context, indent=0):
         return values
     for variable in context.values():
         property_text = ''
+        property_children = ''
         # Set indentation
         for i in range(indent): property_text += '\t'
         # Property with value
@@ -516,7 +517,9 @@ def generate_context_output(context, indent=0):
             if variable['name']:
                 property_text += '{name} = '
             property_text += '{type}[{numchildren}]\n'
-            property_text += generate_context_output(variable['children'], indent+1)
+            property_text += '{children}'
+            # Get children for property
+            property_children += generate_context_output(variable['children'], indent+1)
             # Use ellipsis to indicate that results have been truncated
             limited = False
             if isinstance(variable['numchildren'], int) or H.is_digit(variable['numchildren']):
@@ -536,7 +539,8 @@ def generate_context_output(context, indent=0):
         value = ''
         if variable['value'] and len(variable['value']) > 0:
             value = variable['value'].replace("\r\n", "\n").replace("\n", " ")
+
         # Format string for output
         values += H.unicode_string(property_text \
-                        .format(value=value, type=variable['type'], name=variable['name'], numchildren=variable['numchildren']))
+                        .format(value=value, type=variable['type'], name=variable['name'], numchildren=variable['numchildren'], children=property_children))        
     return values
