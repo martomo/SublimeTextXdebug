@@ -18,6 +18,9 @@ except:
 # Session module
 from .session import get_breakpoint_values, get_context_variable, get_watch_values, generate_context_output
 
+# Util module
+from .util import get_region_icon
+
 
 DATA_BREAKPOINT = 'breakpoint'
 DATA_CONTEXT = 'context'
@@ -322,7 +325,7 @@ def render_regions(view=None):
     """
     Set breakpoint/current line marker(s) for current active view.
 
-    Note: View conflicts when using same icon for different scopes.
+    Note: View rendering conflict when using same icon for different scopes in add_regions().
     """
     # Get current active view
     if view is None:
@@ -345,6 +348,11 @@ def render_regions(view=None):
     if not filename:
         return
 
+    # Determine icon for regions
+    icon_current = get_region_icon(S.KEY_CURRENT_LINE)
+    icon_disabled = get_region_icon(S.KEY_BREAKPOINT_DISABLED)
+    icon_enabled = get_region_icon(S.KEY_BREAKPOINT_ENABLED)
+
     # Get all (disabled) breakpoint rows (line numbers) for file
     breakpoint_rows = []
     disabled_rows = []
@@ -363,22 +371,24 @@ def render_regions(view=None):
     if S.BREAKPOINT_ROW is not None:
         # Make sure current breakpoint is in this file
         if filename == S.BREAKPOINT_ROW['filename']:
-            icon = S.ICON_CURRENT
             # Remove current line number from breakpoint rows to avoid marker conflict
             if S.BREAKPOINT_ROW['lineno'] in breakpoint_rows:
-                #FIXME: Replace icon similar to breakpoint, but not the same icon!
-                #icon = S.ICON_BREAKPOINT_CURRENT
                 breakpoint_rows.remove(S.BREAKPOINT_ROW['lineno'])
+                # Set icon for current breakpoint
+                icon_breakpoint_current = get_region_icon(S.KEY_BREAKPOINT_CURRENT)
+                if icon_breakpoint_current:
+                    icon_current = icon_breakpoint_current
             if S.BREAKPOINT_ROW['lineno'] in disabled_rows:
                 disabled_rows.remove(S.BREAKPOINT_ROW['lineno'])
             # Set current line marker
-            view.add_regions(S.REGION_KEY_CURRENT, rows_to_region(S.BREAKPOINT_ROW['lineno']), S.REGION_SCOPE_CURRENT, icon, sublime.HIDDEN)
+            if icon_current:
+                view.add_regions(S.REGION_KEY_CURRENT, rows_to_region(S.BREAKPOINT_ROW['lineno']), S.REGION_SCOPE_CURRENT, icon_current, sublime.HIDDEN)
 
     # Set breakpoint marker(s)
-    if breakpoint_rows:
-        view.add_regions(S.REGION_KEY_BREAKPOINT, rows_to_region(breakpoint_rows), S.REGION_SCOPE_BREAKPOINT, S.ICON_BREAKPOINT, sublime.HIDDEN)
-    if disabled_rows:
-        view.add_regions(S.REGION_KEY_DISABLED, rows_to_region(disabled_rows), S.REGION_SCOPE_BREAKPOINT, S.ICON_BREAKPOINT_DISABLED, sublime.HIDDEN)
+    if breakpoint_rows and icon_enabled:
+        view.add_regions(S.REGION_KEY_BREAKPOINT, rows_to_region(breakpoint_rows), S.REGION_SCOPE_BREAKPOINT, icon_enabled, sublime.HIDDEN)
+    if disabled_rows and icon_disabled:
+        view.add_regions(S.REGION_KEY_DISABLED, rows_to_region(disabled_rows), S.REGION_SCOPE_BREAKPOINT, icon_disabled, sublime.HIDDEN)
 
 
 def toggle_breakpoint(view):

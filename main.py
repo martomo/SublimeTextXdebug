@@ -218,7 +218,9 @@ class XdebugSessionStartCommand(sublime_plugin.WindowCommand):
             self.window.active_view().run_command('xdebug_breakpoint', {'rows': [S.BREAKPOINT_RUN['lineno']], 'filename': S.BREAKPOINT_RUN['filename']})
         S.BREAKPOINT_RUN = None
         self.window.run_command('xdebug_reset_layout', {'layout': 'debug'})
-        if launch_browser:
+        # Launch browser
+        browser_launch = S.get_project_value('launch_browser') or S.get_package_value('launch_browser')
+        if launch_browser or browser_launch:
             util.launch_browser()
 
         # Start thread which will run method that listens for response on configured port
@@ -303,7 +305,9 @@ class XdebugSessionStartCommand(sublime_plugin.WindowCommand):
     def is_visible(self, launch_browser=False):
         if S.SESSION:
             return False
-        if launch_browser and not (S.get_project_value('url') or S.get_package_value('url')):
+        browser_launch = S.get_project_value('launch_browser') or S.get_package_value('launch_browser')
+        url = S.get_project_value('url') or S.get_package_value('url')
+        if launch_browser and (browser_launch or not url):
             return False
         return True
 
@@ -325,7 +329,9 @@ class XdebugSessionStopCommand(sublime_plugin.WindowCommand):
             if S.BREAKPOINT_RUN is not None and S.BREAKPOINT_RUN['filename'] in S.BREAKPOINT and S.BREAKPOINT_RUN['lineno'] in S.BREAKPOINT[S.BREAKPOINT_RUN['filename']]:
                 self.window.active_view().run_command('xdebug_breakpoint', {'rows': [S.BREAKPOINT_RUN['lineno']], 'filename': S.BREAKPOINT_RUN['filename']})
             S.BREAKPOINT_RUN = None
-        if launch_browser:
+        # Launch browser
+        browser_launch = S.get_project_value('launch_browser') or S.get_package_value('launch_browser')
+        if launch_browser or browser_launch:
             util.launch_browser()
         # Close or reset debug layout
         close_on_stop = S.get_project_value('close_on_stop') or S.get_package_value('close_on_stop') or S.CLOSE_ON_STOP
@@ -346,7 +352,9 @@ class XdebugSessionStopCommand(sublime_plugin.WindowCommand):
             close_on_stop = S.get_project_value('close_on_stop') or S.get_package_value('close_on_stop') or S.CLOSE_ON_STOP
             if close_windows and close_on_stop:
                 return False
-            if launch_browser and not (S.get_project_value('url') or S.get_package_value('url')):
+            browser_launch = S.get_project_value('launch_browser') or S.get_package_value('launch_browser')
+            url = S.get_project_value('url') or S.get_package_value('url')
+            if launch_browser and (browser_launch or not url):
                 return False
             return True
         return False

@@ -87,6 +87,92 @@ def get_real_path(uri, server=False):
     return uri
 
 
+def get_region_icon(icon):
+    # Default icons for color schemes from default theme
+    default_current = 'bookmark'
+    default_disabled = 'dot'
+    default_enabled = 'circle'
+
+    # Package icons (without .png extension)
+    package_breakpoint_current = 'breakpoint_current'
+    package_breakpoint_disabled = 'breakpoint_disabled'
+    package_breakpoint_enabled = 'breakpoint_enabled'
+    package_current_line = 'current_line'
+
+    # List to check for duplicate icon entries
+    icon_list = [default_current, default_disabled, default_enabled]
+
+    # Determine icon path
+    icon_path = None
+    if S.PACKAGE_FOLDER is not None:
+        if sublime.version() == '' or int(sublime.version()) > 3000:
+            # ST3: Packages/Xdebug Client/icons/breakpoint_enabled.png
+            icon_path = "Packages/" + S.PACKAGE_FOLDER + '/icons/{0}.png'
+        else:
+            # ST2: ../Xdebug Client/icons/breakpoint_enabled
+            icon_path = "../" + S.PACKAGE_FOLDER + '/icons/{0}'
+        # Append icon path to package icons
+        package_breakpoint_current = icon_path.format(package_breakpoint_current)
+        package_breakpoint_disabled = icon_path.format(package_breakpoint_disabled)
+        package_breakpoint_enabled = icon_path.format(package_breakpoint_enabled)
+        package_current_line = icon_path.format(package_current_line)
+        # Add to duplicate list
+        icon_list.append(icon_path.format(package_breakpoint_current))
+        icon_list.append(icon_path.format(package_breakpoint_disabled))
+        icon_list.append(icon_path.format(package_breakpoint_enabled))
+        icon_list.append(icon_path.format(package_current_line))
+
+    # Get user defined icons from settings
+    breakpoint_current = S.get_project_value(S.KEY_BREAKPOINT_CURRENT) or S.get_package_value(S.KEY_BREAKPOINT_CURRENT)
+    breakpoint_disabled = S.get_project_value(S.KEY_BREAKPOINT_DISABLED) or S.get_package_value(S.KEY_BREAKPOINT_DISABLED)
+    breakpoint_enabled = S.get_project_value(S.KEY_BREAKPOINT_ENABLED) or S.get_package_value(S.KEY_BREAKPOINT_ENABLED)
+    current_line = S.get_project_value(S.KEY_CURRENT_LINE) or S.get_package_value(S.KEY_CURRENT_LINE)
+
+    # Duplicate check, enabled breakpoint
+    if breakpoint_enabled not in icon_list:
+        icon_list.append(breakpoint_enabled)
+    else:
+        breakpoint_enabled = None
+    # Duplicate check, disabled breakpoint
+    if breakpoint_disabled not in icon_list:
+        icon_list.append(breakpoint_disabled)
+    else:
+        breakpoint_disabled = None
+    # Duplicate check, current line
+    if current_line not in icon_list:
+        icon_list.append(current_line)
+    else:
+        current_line = None
+    # Duplicate check, current breakpoint
+    if breakpoint_current not in icon_list:
+        icon_list.append(breakpoint_current)
+    else:
+        breakpoint_current = None
+
+    # Use default/package icon if no user defined or duplicate detected
+    if not breakpoint_current and icon_path is not None:
+        breakpoint_current = package_breakpoint_current
+    if not breakpoint_disabled:
+        breakpoint_disabled = default_disabled if icon_path is None else package_breakpoint_disabled
+    if not breakpoint_enabled:
+        breakpoint_enabled = default_enabled if icon_path is None else package_breakpoint_enabled
+    if not current_line:
+        current_line = default_current if icon_path is None else package_current_line
+
+    # Return icon for icon name
+    if icon == S.KEY_CURRENT_LINE:
+        return current_line
+    elif icon == S.KEY_BREAKPOINT_CURRENT:
+        return breakpoint_current
+    elif icon == S.KEY_BREAKPOINT_DISABLED:
+        return breakpoint_disabled
+    elif icon == S.KEY_BREAKPOINT_ENABLED:
+        return breakpoint_enabled
+    else:
+        info("Invalid icon name. (" + icon + ")")
+        return
+
+
 def launch_browser():
     url = S.get_project_value('url') or S.get_package_value('url')
     if not url:
@@ -94,10 +180,19 @@ def launch_browser():
         return
     ide_key = S.get_project_value('ide_key') or S.get_package_value('ide_key') or S.DEFAULT_IDE_KEY
 
+    # Start debug session
     if S.SESSION and (S.SESSION.listening or not S.SESSION.connected):
         webbrowser.open(url + '?XDEBUG_SESSION_START=' + ide_key)
+    # Stop debug session
     else:
-        webbrowser.open(url + '?XDEBUG_SESSION_STOP=' + ide_key)
+        # Check if we should execute script
+        browser_no_execute = S.get_project_value('browser_no_execute') or S.get_package_value('browser_no_execute')
+        if browser_no_execute:
+            # Without executing script
+            webbrowser.open(url + '?XDEBUG_SESSION_STOP_NO_EXEC=' + ide_key)
+        else:
+            # Run script normally
+            webbrowser.open(url + '?XDEBUG_SESSION_STOP=' + ide_key)
 
 
 def load_breakpoint_data():

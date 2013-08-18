@@ -49,6 +49,24 @@
     // Do not show possible password values in context output.
     "hide_password": true,
 
+    // Always launch browser on session start/stop.
+    // Note: This will only work if you have the 'url' setting configured.
+    "launch_browser": false,
+
+    // When launching browser on session stop do not execute script.
+    // By using parameter XDEBUG_SESSION_STOP_NO_EXEC instead of XDEBUG_SESSION_STOP.
+    "browser_no_execute": false,
+
+    // Custom gutter icons for indicating current line or enabled/disabled breakpoints.
+    //
+    // Do not use same icon for following values, because Sublime Text is unable
+    // to use the same icon for different scopes, in case there are duplicate icons
+    // detected it will fall back to the corresponding icon in the package.
+    "breakpoint_enabled": "circle",
+    "breakpoint_disabled": "dot",
+    "breakpoint_current": "",
+    "current_line": "bookmark",
+
     // Path to Python installation on your system.
     // Which is being used to load missing modules.
     //

@@ -15,16 +15,16 @@ FILE_PACKAGE_SETTINGS = 'Xdebug.sublime-settings'
 KEY_SETTINGS = 'settings'
 KEY_XDEBUG = 'xdebug'
 
+KEY_CURRENT_LINE = 'current_line'
+KEY_BREAKPOINT_CURRENT = 'breakpoint_current'
+KEY_BREAKPOINT_DISABLED = 'breakpoint_disabled'
+KEY_BREAKPOINT_ENABLED = 'breakpoint_enabled'
+
 REGION_KEY_BREAKPOINT = 'xdebug_breakpoint'
 REGION_KEY_CURRENT = 'xdebug_current'
 REGION_KEY_DISABLED = 'xdebug_disabled'
 REGION_SCOPE_BREAKPOINT = 'comment.line.settings'
 REGION_SCOPE_CURRENT = 'string.quoted.settings'
-
-ICON_BREAKPOINT = 'circle'
-ICON_BREAKPOINT_CURRENT = 'circle'
-ICON_BREAKPOINT_DISABLED = 'dot'
-ICON_CURRENT = 'bookmark'
 
 # Window layout for debugging output
 LAYOUT_DEBUG = {
