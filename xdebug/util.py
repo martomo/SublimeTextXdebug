@@ -105,12 +105,17 @@ def get_region_icon(icon):
     # Determine icon path
     icon_path = None
     if S.PACKAGE_FOLDER is not None:
+        # Strip .sublime-package of package name for comparison
+        package_extension = ".sublime-package"
+        current_package = S.PACKAGE_FOLDER
+        if current_package.endswith(package_extension):
+            current_package = current_package[:-len(package_extension)]
         if sublime.version() == '' or int(sublime.version()) > 3000:
             # ST3: Packages/Xdebug Client/icons/breakpoint_enabled.png
-            icon_path = "Packages/" + S.PACKAGE_FOLDER + '/icons/{0}.png'
+            icon_path = "Packages/" + current_package + '/icons/{0}.png'
         else:
             # ST2: ../Xdebug Client/icons/breakpoint_enabled
-            icon_path = "../" + S.PACKAGE_FOLDER + '/icons/{0}'
+            icon_path = "../" + current_package + '/icons/{0}'
         # Append icon path to package icons
         package_breakpoint_current = icon_path.format(package_breakpoint_current)
         package_breakpoint_disabled = icon_path.format(package_breakpoint_disabled)
