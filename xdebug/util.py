@@ -230,7 +230,43 @@ def load_breakpoint_data():
     S.BREAKPOINT.update(data)
 
 
+def load_watch_data():
+    data_path = os.path.join(sublime.packages_path(), 'User', S.FILE_WATCH_DATA)
+    data = []
+    try:
+        data_file = open(data_path, 'rb')
+    except:
+        e = sys.exc_info()[1]
+        info('Failed to open %s.' % data_path)
+        debug(e)
+
+    try:
+        data = json.loads(H.data_read(data_file.read()))
+    except:
+        e = sys.exc_info()[1]
+        info('Failed to parse %s.' % data_path)
+        debug(e)
+
+    # Check if expression is not already defined
+    for entry in data:
+        matches = [x for x in S.WATCH if x['expression'] == entry['expression']]
+        if matches:
+            data.remove(entry)
+
+    if not isinstance(S.WATCH, list):
+        S.WATCH = []
+
+    # Set watch data
+    S.WATCH.extend(data)
+
+
 def save_breakpoint_data():
     data_path = os.path.join(sublime.packages_path(), 'User', S.FILE_BREAKPOINT_DATA)
     with open(data_path, 'wb') as data:
         data.write(H.data_write(json.dumps(S.BREAKPOINT)))
+
+
+def save_watch_data():
+    data_path = os.path.join(sublime.packages_path(), 'User', S.FILE_WATCH_DATA)
+    with open(data_path, 'wb') as data:
+        data.write(H.data_write(json.dumps(S.WATCH)))

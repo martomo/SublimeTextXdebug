@@ -19,7 +19,7 @@ except:
 from .session import get_breakpoint_values, get_context_variable, get_watch_values, generate_context_output
 
 # Util module
-from .util import get_region_icon
+from .util import get_region_icon, save_watch_data
 
 
 DATA_BREAKPOINT = 'breakpoint'
@@ -433,5 +433,45 @@ def toggle_breakpoint(view):
                     if enabled is None:
                         return
                     sublime.active_window().run_command('xdebug_breakpoint', {"enabled": enabled, "rows": [line_number], "filename": filename})
+    except:
+        pass
+
+
+def toggle_watch(view):
+    # Do not try to toggle when no watch expressions defined
+    if not S.WATCH:
+        return
+    try:
+        # Get selected point in view
+        point = view.sel()[0]
+        # Check if selected point uses watch entry scope
+        if point.size() == 3 and sublime.score_selector(view.scope_name(point.a), 'xdebug.output.watch.entry'):
+            # Determine if watch entry is enabled or disabled
+            line = view.substr(view.line(point))
+            pattern = re.compile('^(?:(?P<enabled>\\|\\+\\|)|(?P<disabled>\\|-\\|))\\.*')
+            match = pattern.match(line)
+            if match and (match.group('enabled') or match.group('disabled')):
+                # Get all entries and determine index by line/point match
+                watch = view.find_by_selector('xdebug.output.watch.entry')
+                watch_index = 0
+                for entry in watch:
+                    # Stop searching if we have passed selected breakpoint
+                    if entry > point:
+                        break
+                    # Only increment watch index when it contains expression
+                    watch_line = view.substr(view.line(entry))
+                    watch_match = pattern.match(watch_line)
+                    if watch_match and (watch_match.group('enabled') or watch_match.group('disabled')):
+                        watch_index += 1
+                # Disable watch expression
+                if sublime.score_selector(view.scope_name(point.a), 'entity') and S.WATCH[watch_index]['enabled']:
+                    S.WATCH[watch_index]['enabled'] = False
+                # Enable watch expression
+                if sublime.score_selector(view.scope_name(point.a), 'keyword') and not S.WATCH[watch_index]['enabled']:
+                    S.WATCH[watch_index]['enabled'] = True
+                # Update watch view
+                show_content(DATA_WATCH)
+                # Save watch data to file
+                save_watch_data()
     except:
         pass

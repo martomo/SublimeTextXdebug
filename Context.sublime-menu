@@ -24,6 +24,16 @@
                 "command": "xdebug_watch"
             },
             {
+                "caption": "Edit Watch Expression",
+                "command": "xdebug_watch",
+                "args"   : {"edit" : true}
+            },
+            {
+                "caption": "Remove Watch Expression",
+                "command": "xdebug_watch",
+                "args"   : {"remove" : true}
+            },
+            {
                 "caption": "Clear Watch Expressions",
                 "command": "xdebug_watch",
                 "args"   : {"clear" : true}

@@ -11,6 +11,7 @@ PACKAGE_FOLDER = None
 FILE_LOG_OUTPUT = 'Xdebug.log'
 FILE_BREAKPOINT_DATA = 'Xdebug.breakpoints'
 FILE_PACKAGE_SETTINGS = 'Xdebug.sublime-settings'
+FILE_WATCH_DATA = 'Xdebug.expressions'
 
 KEY_SETTINGS = 'settings'
 KEY_XDEBUG = 'xdebug'

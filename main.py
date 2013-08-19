@@ -58,6 +58,8 @@ class EventListener(sublime_plugin.EventListener):
             V.show_context_output(view)
         elif view.name() == V.TITLE_WINDOW_BREAKPOINT:
             V.toggle_breakpoint(view)
+        elif view.name() == V.TITLE_WINDOW_WATCH:
+            V.toggle_watch(view)
         else:
             pass
 
@@ -583,33 +585,61 @@ class XdebugUserExecuteCommand(sublime_plugin.WindowCommand):
 
 class XdebugWatchCommand(sublime_plugin.WindowCommand):
     """
-    Add/Remove watch condition.
+    Add/Edit/Remove watch expression.
     """
-    watch_index = None
-    def run(self, clear=False):
+    def run(self, clear=False, edit=False, remove=False):
+        self.edit = edit
+        self.remove = remove
+        self.watch_index = None
+        # Clear watch expressions in list
         if clear:
-            # Clear watch expressions in list
             try:
                 # Python 3.3+
                 S.WATCH.clear()
             except AttributeError:
                 del S.WATCH[:]
             # Update watch view
-            try:
-                if sublime.active_window().get_layout() == S.LAYOUT_DEBUG:
-                    V.show_content(V.DATA_WATCH)
-            except:
-                pass
+            self.update_view()
+        # Edit or remove watch expression
+        elif edit or remove:
+            # Generate list with available watch expressions
+            watch_options = []
+            for index, item in enumerate(S.WATCH):
+                watch_item = '[{status}] - {expression}'.format(index=index, expression=item['expression'], status='enabled' if item['enabled'] else 'disabled')
+                watch_options.append(watch_item)
+            self.window.show_quick_panel(watch_options, self.callback)
+        # Set watch expression
         else:
-            # Show user input for setting watch expression
-            self.window.show_input_panel('Watch expression', '', self.on_done, self.on_change, self.on_cancel)
+            self.set_expression()
+
+    def callback(self, index):
+        # User has cancelled action
+        if index == -1:
+            return
+        # Make sure index is valid integer
+        if isinstance(index, int) or H.is_digit(index):
+            self.watch_index = int(index)
+            # Edit watch expression
+            if self.edit:
+                self.set_expression()
+            # Remove watch expression
+            else:
+                S.WATCH.pop(self.watch_index)
+                # Update watch view
+                self.update_view()
 
     def on_done(self, expression):
+        # User did not set expression
         if not expression:
             return
-        # Add/update watch expression to session
+        # Check if expression is not already defined
+        matches = [x for x in S.WATCH if x['expression'] == expression]
+        if matches:
+            sublime.status_message('Xdebug: Watch expression already defined.')
+            return
+        # Add/Edit watch expression in session
         watch = {'expression': expression, 'enabled': True, 'value': None, 'type': None}
-        if self.watch_index and isinstance(self.watch_index, int):
+        if self.watch_index is not None and isinstance(self.watch_index, int):
             try:
                 S.WATCH[self.watch_index]['expression'] = expression
             except:
@@ -617,17 +647,31 @@ class XdebugWatchCommand(sublime_plugin.WindowCommand):
         else:
             S.WATCH.append(watch)
         # Update watch view
-        try:
-            if sublime.active_window().get_layout() == S.LAYOUT_DEBUG:
-                V.show_content(V.DATA_WATCH)
-        except:
-            pass
+        self.update_view()
 
     def on_change(self, line):
         pass
 
     def on_cancel(self):
         pass
+
+    def set_expression(self):
+        # Show user input for setting watch expression
+        self.window.show_input_panel('Watch expression', '', self.on_done, self.on_change, self.on_cancel)
+
+    def update_view(self):
+        try:
+            if sublime.active_window().get_layout() == S.LAYOUT_DEBUG:
+                V.show_content(V.DATA_WATCH)
+        except:
+            pass
+        # Save watch data to file
+        util.save_watch_data()
+
+    def is_visible(self, clear=False, edit=False, remove=False):
+        if (clear or edit or remove) and not S.WATCH:
+            return False
+        return True
 
 
 class XdebugViewUpdateCommand(sublime_plugin.TextCommand):

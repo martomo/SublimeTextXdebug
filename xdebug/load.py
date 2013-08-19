@@ -10,7 +10,7 @@ except:
 
 # Load modules
 from .view import DATA_BREAKPOINT, DATA_CONTEXT, DATA_STACK, DATA_WATCH, show_content, render_regions
-from .util import load_breakpoint_data
+from .util import load_breakpoint_data, load_watch_data
 from .log import clear_output, debug, info
 
 
@@ -27,6 +27,9 @@ def xdebug():
     finally:
         # Render breakpoint markers
         render_regions()
+
+    # Load watch data
+    load_watch_data()
 
     # Reset debug windows
     if sublime.active_window().get_layout() == S.LAYOUT_DEBUG:
