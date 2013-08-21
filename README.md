@@ -41,8 +41,8 @@ Here is a complete list of commands you can find Command Pallette under the `Xde
 *__Launch Browser__ menu option will only show if you have an url configured within [settings](#configuration).*
 
 #### Breakpoints
-* Add/Remove Breakpoint - <kbd>Ctrl+F8</kbd>
-* Set Conditional Breakpoint - <kbd>Ctrl+F9</kbd>
+* Add/Remove Breakpoint - <kbd>Ctrl+F9</kbd>
+* Set Conditional Breakpoint - <kbd>Ctrl+F10</kbd>
 * Clear All Breakpoints
 
 #### Session commands
