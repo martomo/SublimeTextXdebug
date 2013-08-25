@@ -56,8 +56,8 @@ def get_real_path(uri, server=False):
     if not drive_pattern.match(uri) and not os.path.isabs(uri):
         uri = os.path.normpath('/' + uri)
 
-    path_mapping = S.get_project_value('path_mapping') or S.get_package_value('path_mapping')
-    if not path_mapping is None:
+    path_mapping = S.get_config_value('path_mapping')
+    if isinstance(path_mapping, dict):
         # Go through path mappings
         for server_path, local_path in path_mapping.items():
             server_path = os.path.normpath(server_path)
@@ -128,10 +128,10 @@ def get_region_icon(icon):
         icon_list.append(icon_path.format(package_current_line))
 
     # Get user defined icons from settings
-    breakpoint_current = S.get_project_value(S.KEY_BREAKPOINT_CURRENT) or S.get_package_value(S.KEY_BREAKPOINT_CURRENT)
-    breakpoint_disabled = S.get_project_value(S.KEY_BREAKPOINT_DISABLED) or S.get_package_value(S.KEY_BREAKPOINT_DISABLED)
-    breakpoint_enabled = S.get_project_value(S.KEY_BREAKPOINT_ENABLED) or S.get_package_value(S.KEY_BREAKPOINT_ENABLED)
-    current_line = S.get_project_value(S.KEY_CURRENT_LINE) or S.get_package_value(S.KEY_CURRENT_LINE)
+    breakpoint_current = S.get_config_value(S.KEY_BREAKPOINT_CURRENT)
+    breakpoint_disabled = S.get_config_value(S.KEY_BREAKPOINT_DISABLED)
+    breakpoint_enabled = S.get_config_value(S.KEY_BREAKPOINT_ENABLED)
+    current_line = S.get_config_value(S.KEY_CURRENT_LINE)
 
     # Duplicate check, enabled breakpoint
     if breakpoint_enabled not in icon_list:
@@ -179,25 +179,29 @@ def get_region_icon(icon):
 
 
 def launch_browser():
-    url = S.get_project_value('url') or S.get_package_value('url')
+    url = S.get_config_value('url')
     if not url:
         sublime.status_message('Xdebug: No URL defined in (project) settings file.')
         return
-    ide_key = S.get_project_value('ide_key') or S.get_package_value('ide_key') or S.DEFAULT_IDE_KEY
+    ide_key = S.get_config_value('ide_key', S.DEFAULT_IDE_KEY)
+    operator = '?'
+
+    # Check if url already has query string
+    if url.count("?"):
+        operator = '&'
 
     # Start debug session
     if S.SESSION and (S.SESSION.listening or not S.SESSION.connected):
-        webbrowser.open(url + '?XDEBUG_SESSION_START=' + ide_key)
+        webbrowser.open(url + operator + 'XDEBUG_SESSION_START=' + ide_key)
     # Stop debug session
     else:
         # Check if we should execute script
-        browser_no_execute = S.get_project_value('browser_no_execute') or S.get_package_value('browser_no_execute')
-        if browser_no_execute:
+        if S.get_config_value('browser_no_execute'):
             # Without executing script
-            webbrowser.open(url + '?XDEBUG_SESSION_STOP_NO_EXEC=' + ide_key)
+            webbrowser.open(url + operator + 'XDEBUG_SESSION_STOP_NO_EXEC=' + ide_key)
         else:
             # Run script normally
-            webbrowser.open(url + '?XDEBUG_SESSION_STOP=' + ide_key)
+            webbrowser.open(url + operator + 'XDEBUG_SESSION_STOP=' + ide_key)
 
 
 def load_breakpoint_data():

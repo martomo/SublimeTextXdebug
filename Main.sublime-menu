@@ -124,9 +124,14 @@
                         "caption": "-"
                     },
                     {
-                        "caption": "Reset Layout",
-                        "command": "xdebug_reset_layout",
-                        "args"   : {"keymap" : true}
+                        "caption": "Close Windows",
+                        "command": "xdebug_layout",
+                        "args"   : {"close_windows" : true}
+                    },
+                    {
+                        "caption": "Restore Layout",
+                        "command": "xdebug_layout",
+                        "args"   : {"restore" : true}
                     },
                     {
                         "caption": "Settings - Default",

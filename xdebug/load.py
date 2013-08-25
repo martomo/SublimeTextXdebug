@@ -9,7 +9,7 @@ except:
     import settings as S
 
 # Load modules
-from .view import DATA_BREAKPOINT, DATA_CONTEXT, DATA_STACK, DATA_WATCH, show_content, render_regions
+from .view import DATA_BREAKPOINT, DATA_CONTEXT, DATA_STACK, DATA_WATCH, has_debug_view, show_content, render_regions
 from .util import load_breakpoint_data, load_watch_data
 from .log import clear_output, debug, info
 
@@ -31,12 +31,15 @@ def xdebug():
     # Load watch data
     load_watch_data()
 
-    # Reset debug windows
-    if sublime.active_window().get_layout() == S.LAYOUT_DEBUG:
-        show_content(DATA_WATCH)
-        show_content(DATA_CONTEXT)
+    # Clear/Reset content in debug windows
+    if has_debug_view(DATA_BREAKPOINT):
         show_content(DATA_BREAKPOINT)
+    if has_debug_view(DATA_CONTEXT):
+        show_content(DATA_CONTEXT)
+    if has_debug_view(DATA_STACK):
         show_content(DATA_STACK)
+    if has_debug_view(DATA_WATCH):
+        show_content(DATA_WATCH)
 
     # Check for conflicting packages
     if S.PACKAGE_FOLDER:

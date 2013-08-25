@@ -13,7 +13,7 @@ except:
     from xdebug import *
 
 # Set Python libraries from system installation
-python_path = S.get_project_value('python_path') or S.get_package_value('python_path')
+python_path = S.get_config_value('python_path')
 if python_path:
     python_path = os.path.normpath(python_path.replace("\\", "/"))
     python_dynload = os.path.join(python_path, 'lib-dynload')
@@ -130,7 +130,7 @@ class XdebugBreakpointCommand(sublime_plugin.TextCommand):
 
         # Update breakpoint list
         try:
-            if sublime.active_window().get_layout() == S.LAYOUT_DEBUG:
+            if V.has_debug_view(V.TITLE_WINDOW_BREAKPOINT):
                 V.show_content(V.DATA_BREAKPOINT)
         except:
             pass
@@ -219,10 +219,10 @@ class XdebugSessionStartCommand(sublime_plugin.WindowCommand):
         if S.BREAKPOINT_RUN is not None and S.BREAKPOINT_RUN['filename'] in S.BREAKPOINT and S.BREAKPOINT_RUN['lineno'] in S.BREAKPOINT[S.BREAKPOINT_RUN['filename']]:
             self.window.active_view().run_command('xdebug_breakpoint', {'rows': [S.BREAKPOINT_RUN['lineno']], 'filename': S.BREAKPOINT_RUN['filename']})
         S.BREAKPOINT_RUN = None
-        self.window.run_command('xdebug_reset_layout', {'layout': 'debug'})
+        # Set debug layout
+        self.window.run_command('xdebug_layout')
         # Launch browser
-        browser_launch = S.get_project_value('launch_browser') or S.get_package_value('launch_browser')
-        if launch_browser or browser_launch:
+        if launch_browser or S.get_config_value('launch_browser'):
             util.launch_browser()
 
         # Start thread which will run method that listens for response on configured port
@@ -246,12 +246,12 @@ class XdebugSessionStartCommand(sublime_plugin.WindowCommand):
             response = S.SESSION.read()
 
             # Set max depth limit
-            max_depth = S.get_project_value('max_depth') or S.get_package_value('max_depth') or S.MAX_DEPTH
+            max_depth = S.get_config_value('max_depth', S.MAX_DEPTH)
             S.SESSION.send(dbgp.FEATURE_SET, n=dbgp.FEATURE_NAME_MAXDEPTH, v=max_depth)
             response = S.SESSION.read()
 
             # Set max children limit
-            max_children = S.get_project_value('max_children') or S.get_package_value('max_children') or S.MAX_CHILDREN
+            max_children = S.get_config_value('max_children', S.MAX_CHILDREN)
             S.SESSION.send(dbgp.FEATURE_SET, n=dbgp.FEATURE_NAME_MAXCHILDREN, v=max_children)
             response = S.SESSION.read()
 
@@ -271,8 +271,7 @@ class XdebugSessionStartCommand(sublime_plugin.WindowCommand):
                             log.debug('breakpoint_set: ' + filename + ':' + lineno)
 
             # Determine if client should break at first line on connect
-            break_on_start = S.get_project_value('break_on_start') or S.get_package_value('break_on_start')
-            if break_on_start:
+            if S.get_config_value('break_on_start'):
                 # Get init attribute values
                 fileuri = init.get(dbgp.INIT_FILEURI)
                 filename = util.get_real_path(fileuri)
@@ -307,9 +306,7 @@ class XdebugSessionStartCommand(sublime_plugin.WindowCommand):
     def is_visible(self, launch_browser=False):
         if S.SESSION:
             return False
-        browser_launch = S.get_project_value('launch_browser') or S.get_package_value('launch_browser')
-        url = S.get_project_value('url') or S.get_package_value('url')
-        if launch_browser and (browser_launch or not url):
+        if launch_browser and (S.get_config_value('launch_browser') or not S.get_config_value('url')):
             return False
         return True
 
@@ -332,15 +329,16 @@ class XdebugSessionStopCommand(sublime_plugin.WindowCommand):
                 self.window.active_view().run_command('xdebug_breakpoint', {'rows': [S.BREAKPOINT_RUN['lineno']], 'filename': S.BREAKPOINT_RUN['filename']})
             S.BREAKPOINT_RUN = None
         # Launch browser
-        browser_launch = S.get_project_value('launch_browser') or S.get_package_value('launch_browser')
-        if launch_browser or browser_launch:
+        if launch_browser or S.get_config_value('launch_browser'):
             util.launch_browser()
         # Close or reset debug layout
-        close_on_stop = S.get_project_value('close_on_stop') or S.get_package_value('close_on_stop') or S.CLOSE_ON_STOP
-        if close_windows or close_on_stop:
-            self.window.run_command('xdebug_reset_layout', {'layout': 'default'})
+        if close_windows or S.get_config_value('close_on_stop'):
+            if S.get_config_value('disable_layout'):
+                self.window.run_command('xdebug_layout', {'close_windows': True})
+            else:
+                self.window.run_command('xdebug_layout', {'restore': True})
         else:
-            self.window.run_command('xdebug_reset_layout', {'layout': 'debug'})
+            self.window.run_command('xdebug_layout')
         # Render breakpoint markers
         V.render_regions()
 
@@ -351,12 +349,9 @@ class XdebugSessionStopCommand(sublime_plugin.WindowCommand):
 
     def is_visible(self, close_windows=False, launch_browser=False):
         if S.SESSION:
-            close_on_stop = S.get_project_value('close_on_stop') or S.get_package_value('close_on_stop') or S.CLOSE_ON_STOP
-            if close_windows and close_on_stop:
+            if close_windows and S.get_config_value('close_on_stop'):
                 return False
-            browser_launch = S.get_project_value('launch_browser') or S.get_package_value('launch_browser')
-            url = S.get_project_value('url') or S.get_package_value('url')
-            if launch_browser and (browser_launch or not url):
+            if launch_browser and (S.get_config_value('launch_browser') or not S.get_config_value('url')):
                 return False
             return True
         return False
@@ -383,7 +378,8 @@ class XdebugExecuteCommand(sublime_plugin.WindowCommand):
             # Reset previous breakpoint values
             S.BREAKPOINT_ROW = None
             S.CONTEXT_DATA.clear()
-            self.window.run_command('xdebug_reset_layout', {'layout': 'debug'})
+            # Set debug layout
+            self.window.run_command('xdebug_layout')
 
             # Handle breakpoint hit
             for child in response:
@@ -661,7 +657,7 @@ class XdebugWatchCommand(sublime_plugin.WindowCommand):
 
     def update_view(self):
         try:
-            if sublime.active_window().get_layout() == S.LAYOUT_DEBUG:
+            if V.has_debug_view(V.TITLE_WINDOW_WATCH):
                 V.show_content(V.DATA_WATCH)
         except:
             pass
@@ -692,38 +688,59 @@ class XdebugViewUpdateCommand(sublime_plugin.TextCommand):
             view.set_read_only(True)
 
 
-class XdebugResetLayoutCommand(sublime_plugin.WindowCommand):
+class XdebugLayoutCommand(sublime_plugin.WindowCommand):
     """
     Toggle between debug and default window layouts.
     """
-    def run(self, layout='default', keymap=False):
+    def run(self, restore=False, close_windows=False, keymap=False):
         # Get active window
         window = sublime.active_window()
-        # Check keymap
-        if keymap and (S.SESSION or window.get_layout() != S.LAYOUT_DEBUG):
+        # Do not restore layout or close windows while debugging
+        if S.SESSION and (restore or close_windows or keymap):
             return
-        # Set layout
-        V.set_layout(layout)
-        # Only execute following when debugging
-        if not layout == 'debug':
+        # Set layout, unless user disabled debug layout
+        if not S.get_config_value('disable_layout'):
+            if restore or keymap:
+                V.set_layout('normal')
+            else:
+                V.set_layout('debug')
+        # Close all debugging related windows
+        if close_windows or restore or keymap:
+            V.close_debug_windows()
             return
         # Reset data in debugging related windows
-        V.show_content(V.DATA_WATCH)
-        V.show_content(V.DATA_CONTEXT)
         V.show_content(V.DATA_BREAKPOINT)
+        V.show_content(V.DATA_CONTEXT)
         V.show_content(V.DATA_STACK)
+        V.show_content(V.DATA_WATCH)
         output = window.get_output_panel('xdebug')
         output.run_command("xdebug_view_update")
         # Close output panel
         window.run_command('hide_panel', {"panel": 'output.xdebug'})
 
-    def is_visible(self):
+    def is_enabled(self, restore=False, close_windows=False):
+        disable_layout = S.get_config_value('disable_layout')
+        if close_windows and (not disable_layout or not V.has_debug_view()):
+            return False
+        if restore and disable_layout:
+            return False
+        return True
+
+    def is_visible(self, restore=False, close_windows=False):
         if S.SESSION:
             return False
-        try:
-            return sublime.active_window().get_layout() == S.LAYOUT_DEBUG
-        except:
-            return True
+        disable_layout = S.get_config_value('disable_layout')
+        if close_windows and (not disable_layout or not V.has_debug_view()):
+            return False
+        if restore and disable_layout:
+            return False
+        if restore:
+            try:
+                return sublime.active_window().get_layout() == S.get_config_value('debug_layout', S.LAYOUT_DEBUG)
+            except:
+                pass
+        return True
+
 
 class XdebugSettingsCommand(sublime_plugin.WindowCommand):
     """

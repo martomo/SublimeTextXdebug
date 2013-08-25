@@ -100,8 +100,13 @@
         "args"   : {"command" : "detach"}
     },
     {
-        "caption": "Xdebug: Reset Layout",
-        "command": "xdebug_reset_layout",
-        "args"   : {"keymap" : "true"}
+        "caption": "Xdebug: Close Windows",
+        "command": "xdebug_layout",
+        "args"   : {"close_windows" : true}
+    },
+    {
+        "caption": "Xdebug: Restore Layout",
+        "command": "xdebug_layout",
+        "args"   : {"restore" : true}
     }
 ]

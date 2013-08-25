@@ -49,7 +49,7 @@ class Protocol(object):
 
     def __init__(self):
         # Set port number to listen for response
-        self.port = S.get_project_value('port') or S.get_package_value('port') or S.DEFAULT_PORT
+        self.port = S.get_config_value('port', S.DEFAULT_PORT)
         self.clear()
 
     def transaction_id():
@@ -301,7 +301,7 @@ def get_context_values():
         context = H.new_dictionary()
         try:
             # Super global variables
-            if S.get_project_value('super_globals') or S.get_package_value('super_globals'):
+            if S.get_config_value('super_globals'):
                 S.SESSION.send(dbgp.CONTEXT_GET, c=1)
                 response = S.SESSION.read()
                 context.update(get_response_properties(response))
@@ -378,8 +378,7 @@ def get_response_properties(response, default_key=None):
                     continue
 
                 # Filter password values
-                hide_password = S.get_project_value('hide_password') or S.get_package_value('hide_password', True)
-                if hide_password and property_name.lower().find('password') != -1 and property_value is not None:
+                if S.get_config_value('hide_password', True) and property_name.lower().find('password') != -1 and property_value is not None:
                     property_value = '******'
             else:
                 property_key = default_key

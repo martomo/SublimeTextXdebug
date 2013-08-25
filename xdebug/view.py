@@ -1,5 +1,6 @@
 import sublime
 
+import operator
 import os
 import re
 
@@ -33,6 +34,109 @@ TITLE_WINDOW_STACK = "Xdebug Stack"
 TITLE_WINDOW_WATCH = "Xdebug Watch"
 
 
+def close_debug_windows():
+    """
+    Close all debugging related views in active window.
+    """
+    window = sublime.active_window()
+    for view in window.views():
+        if is_debug_view(view):
+            window.focus_view(view)
+            window.run_command('close')
+    window.run_command('hide_panel', {"panel": 'output.xdebug'})
+
+
+def get_debug_index(name=None):
+    """
+    Retrieve configured group/index position of of debug view(s) within active window.
+    Returns list with tuple entries for all debug views or single tuple when specified name of debug view.
+    Structure of tuple entry for debug view is as followed:
+    (group position in window, index position in group, name/title of debug view)
+
+    Keyword arguments:
+    name -- Name of debug view to get group/index position.
+    """
+    # Set group and index for each debug view
+    breakpoint_group = S.get_config_value('breakpoint_group', -1)
+    breakpoint_index = S.get_config_value('breakpoint_index', 0)
+    context_group = S.get_config_value('context_group', -1)
+    context_index = S.get_config_value('context_index', 0)
+    stack_group = S.get_config_value('stack_group', -1)
+    stack_index = S.get_config_value('stack_index', 0)
+    watch_group = S.get_config_value('watch_group', -1)
+    watch_index = S.get_config_value('watch_index', 0)
+
+    # Create list with all debug views and sort by group/index
+    debug_list = []
+    debug_list.append((breakpoint_group, breakpoint_index, TITLE_WINDOW_BREAKPOINT))
+    debug_list.append((context_group, context_index, TITLE_WINDOW_CONTEXT))
+    debug_list.append((stack_group, stack_index, TITLE_WINDOW_STACK))
+    debug_list.append((watch_group, watch_index, TITLE_WINDOW_WATCH))
+    debug_list.sort(key=operator.itemgetter(0,1))
+
+    # Recalculate group/index position within boundaries of active window
+    window = sublime.active_window()
+    group_limit = window.num_groups()-1
+    sorted_list = []
+    last_group = None
+    last_index = 0
+    for debug in debug_list:
+        group, index, title = debug
+        # Set group position
+        if group > group_limit:
+            group = group_limit
+        # Set index position
+        if group == last_group:
+            last_index += 1
+        else:
+            index_limit = len(window.views_in_group(group))
+            if index > index_limit:
+                index = index_limit
+            last_group = group
+            last_index = index
+        # Add debug view with new group/index
+        sorted_list.append((group, last_index, title))
+    # Sort recalculated list by group/index
+    sorted_list.sort(key=operator.itemgetter(0,1))
+
+    # Find specified view by name/title of debug view
+    if name is not None:
+        try:
+            return [view[2] for view in sorted_list].index(name)
+        except ValueError:
+            return None
+
+    # List with all debug views
+    return sorted_list
+
+
+def has_debug_view(name=None):
+    """
+    Determine if active window has any or specific debug view(s).
+
+    Keyword arguments:
+    name -- Name of debug view to search for in active window.
+    """
+    for view in sublime.active_window().views():
+        if is_debug_view(view):
+            if name is not None:
+                if view.name() == name:
+                    return True
+            else:
+                return True
+    return False
+
+
+def is_debug_view(view):
+    """
+    Check if view name matches debug name/title.
+
+    Keyword arguments:
+    view -- View reference which to check if name matches debug name/title.
+    """
+    return view.name() == TITLE_WINDOW_BREAKPOINT or view.name() == TITLE_WINDOW_CONTEXT or view.name() == TITLE_WINDOW_STACK or view.name() == TITLE_WINDOW_WATCH
+
+
 def set_layout(layout):
     """
     Toggle between debug and default window layouts.
@@ -41,9 +145,18 @@ def set_layout(layout):
     window = sublime.active_window()
     previous_active = window.active_view()
 
+    # Do not set layout when disabled
+    if S.get_config_value('disable_layout'):
+        S.RESTORE_LAYOUT = window.get_layout()
+        S.set_window_value('restore_layout', S.RESTORE_LAYOUT)
+        S.RESTORE_INDEX = H.new_dictionary()
+        S.set_window_value('restore_index', S.RESTORE_INDEX)
+        return
+
     # Show debug layout
     if layout == 'debug':
-        if window.get_layout() != S.LAYOUT_DEBUG:
+        debug_layout = S.get_config_value('debug_layout', S.LAYOUT_DEBUG)
+        if window.get_layout() != debug_layout:
             # Save current layout
             S.RESTORE_LAYOUT = window.get_layout()
             S.set_window_value('restore_layout', S.RESTORE_LAYOUT)
@@ -56,7 +169,7 @@ def set_layout(layout):
             S.set_window_value('restore_index', S.RESTORE_INDEX)
             # Set debug layout
             window.set_layout(S.LAYOUT_NORMAL)
-        window.set_layout(S.LAYOUT_DEBUG)
+        window.set_layout(debug_layout)
     # Show previous (single) layout
     else:
         # Get previous layout configuration
@@ -73,11 +186,6 @@ def set_layout(layout):
             if view_id in H.dictionary_keys(S.RESTORE_INDEX):
                 v = S.RESTORE_INDEX[view_id]
                 window.set_view_index(view, v["group"], v["index"])
-            # Close all debugging related windows
-            if view.name() == TITLE_WINDOW_BREAKPOINT or view.name() == TITLE_WINDOW_CONTEXT or view.name() == TITLE_WINDOW_STACK or view.name() == TITLE_WINDOW_WATCH:
-                window.focus_view(view)
-                window.run_command('close')
-        window.run_command('hide_panel', {"panel": 'output.xdebug'})
 
     # Restore focus to previous active view
     if not previous_active is None:
@@ -126,37 +234,71 @@ def show_content(data, content=None):
     Show content for specific data type in assigned window view.
     Note: When view does not exists, it will create one.
     """
-    # Get active window and set reference to active view
-    window = sublime.active_window()
-    previous_active = window.active_view_in_group(0)
 
-    # Determine data type
-    if data == DATA_CONTEXT:
-        group = 1
-        title = TITLE_WINDOW_CONTEXT
-    if data == DATA_WATCH:
-        group = 1
-        title = TITLE_WINDOW_WATCH
-        content = get_watch_values()
-    if data == DATA_STACK:
-        group = 2
-        title = TITLE_WINDOW_STACK
+    # Hande data type
     if data == DATA_BREAKPOINT:
-        group = 2
         title = TITLE_WINDOW_BREAKPOINT
         content = get_breakpoint_values()
+    elif data == DATA_CONTEXT:
+        title = TITLE_WINDOW_CONTEXT
+    elif data == DATA_STACK:
+        title = TITLE_WINDOW_STACK
+    elif data == DATA_WATCH:
+        title = TITLE_WINDOW_WATCH
+        content = get_watch_values()
+    else:
+        return
 
-    # Search for view assigned to data type
+    # Get list of group/index for all debug views
+    debug_index = get_debug_index()
+
+    # Find group/index of debug view for current data type
+    try:
+        key = [debug[2] for debug in debug_index].index(title)
+    except ValueError:
+        return
+    # Set group and index position
+    group, index, _ = debug_index[key]
+
+    # Get active window and set reference to active view
+    window = sublime.active_window()
+    previous_active = window.active_view_in_group(window.active_group())
+
+    # Loop through views in active window
     found = False
     view = None
-    for view in window.views():
-        if view.name() == title:
+    previous_key = -1
+    active_debug = None
+    for v in window.views():
+        # Search for view assigned to data type
+        if v.name() == title:
             found = True
-            # Make sure the view is in the right group
-            view_group, view_index = window.get_view_index(view)
-            if view_group != group:
-                window.set_view_index(view, group, 0)
-            break
+            view = v
+            continue
+        # Adjust group/index of debug view depending on other debug view(s)
+        if is_debug_view(v):
+            try:
+                current_key = [debug[2] for debug in debug_index].index(v.name())
+            except ValueError:
+                continue
+            # Get current position of view
+            view_group, view_index = window.get_view_index(v)
+            # Recalculate group/index for debug view
+            current_group, current_index, _ = debug_index[current_key]
+            if group == current_group:
+                if key > previous_key and key < current_key:
+                    index = view_index
+                if key > current_key:
+                    index = view_index + 1
+                    # Remember debug view for setting focus
+                    if v == window.active_view_in_group(group):
+                        active_debug = v
+            previous_key = current_key
+
+    # Make sure index position is not out of boundary
+    index_limit = len(window.views_in_group(group))
+    if index > index_limit:
+        index = index_limit
 
     # Create new view if it does not exists
     if not found:
@@ -164,7 +306,9 @@ def show_content(data, content=None):
         view.set_scratch(True)
         view.set_read_only(True)
         view.set_name(title)
-        window.set_view_index(view, group, 0)
+        window.set_view_index(view, group, index)
+        # Set focus back to active debug view
+        window.focus_view(active_debug)
 
     # Strip .sublime-package of package name for syntax file
     package_extension = ".sublime-package"

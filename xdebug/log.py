@@ -17,8 +17,7 @@ def clear_output():
 
 
 def debug(message=None):
-    debug = S.get_project_value('debug') or S.get_package_value('debug') or S.DEBUG
-    if not debug or message is None:
+    if not S.get_config_value('debug') or message is None:
         return
     # Write message to output file
     logging.debug(message)
@@ -27,4 +26,5 @@ def debug(message=None):
 def info(message=None):
     if message is None:
         return
+    # Write message to output file
     logging.info(message)

@@ -1,7 +1,5 @@
 import sublime
 
-DEBUG = False
-
 DEFAULT_PORT = 9000
 DEFAULT_IDE_KEY = 'sublime.xdebug'
 
@@ -39,7 +37,6 @@ LAYOUT_NORMAL = {
                 "rows": [0.0, 1.0],
                 "cells": [[0, 0, 1, 1]]
                 }
-CLOSE_ON_STOP = False
 
 RESTORE_LAYOUT = None
 RESTORE_INDEX = None
@@ -60,6 +57,14 @@ SHOW_ROW_ONLOAD = {}
 MAX_CHILDREN = 0
 # Maximum amount of nested levels to retrieve of array elements and object properties
 MAX_DEPTH = 1023
+
+
+def get_config_value(key, default_value=None):
+    """
+    Get value from package/project configuration settings.
+    """
+    value = get_project_value(key) or get_package_value(key)
+    return value if value is not None else default_value
 
 
 def get_package_value(key, default_value=None):
