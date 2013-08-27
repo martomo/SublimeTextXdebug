@@ -308,7 +308,8 @@ def show_content(data, content=None):
         view.set_name(title)
         window.set_view_index(view, group, index)
         # Set focus back to active debug view
-        window.focus_view(active_debug)
+        if active_debug is not None:
+            window.focus_view(active_debug)
 
     # Strip .sublime-package of package name for syntax file
     package_extension = ".sublime-package"
@@ -326,7 +327,7 @@ def show_content(data, content=None):
         view.run_command('fold_all')
 
     # Restore focus to previous active view/group
-    if not previous_active is None:
+    if previous_active is not None:
         window.focus_view(previous_active)
     else:
         window.focus_group(0)
