@@ -47,7 +47,10 @@
     "close_on_stop": false,
 
     // Do not show possible password values in context output.
-    "hide_password": true,
+    "hide_password": false,
+
+    // Show in output parsed response instead of raw XML.
+    "pretty_output": false,
 
     // Always launch browser on session start/stop.
     // Note: This will only work if you have the 'url' setting configured.

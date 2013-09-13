@@ -9,7 +9,7 @@ except:
     import settings as S
 
 # Load modules
-from .view import DATA_BREAKPOINT, DATA_CONTEXT, DATA_STACK, DATA_WATCH, has_debug_view, show_content, render_regions
+from .view import DATA_BREAKPOINT, DATA_CONTEXT, DATA_STACK, DATA_WATCH, TITLE_WINDOW_BREAKPOINT, TITLE_WINDOW_CONTEXT, TITLE_WINDOW_STACK, TITLE_WINDOW_WATCH, has_debug_view, show_content, render_regions
 from .util import load_breakpoint_data, load_watch_data
 from .log import clear_output, debug, info
 
@@ -32,13 +32,13 @@ def xdebug():
     load_watch_data()
 
     # Clear/Reset content in debug windows
-    if has_debug_view(DATA_BREAKPOINT):
+    if has_debug_view(TITLE_WINDOW_BREAKPOINT):
         show_content(DATA_BREAKPOINT)
-    if has_debug_view(DATA_CONTEXT):
+    if has_debug_view(TITLE_WINDOW_CONTEXT):
         show_content(DATA_CONTEXT)
-    if has_debug_view(DATA_STACK):
+    if has_debug_view(TITLE_WINDOW_STACK):
         show_content(DATA_STACK)
-    if has_debug_view(DATA_WATCH):
+    if has_debug_view(TITLE_WINDOW_WATCH):
         show_content(DATA_WATCH)
 
     # Check for conflicting packages

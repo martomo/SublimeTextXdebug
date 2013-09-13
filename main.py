@@ -2,7 +2,6 @@ import sublime
 import sublime_plugin
 
 import os
-import socket
 import sys
 import threading
 
@@ -96,7 +95,7 @@ class XdebugBreakpointCommand(sublime_plugin.TextCommand):
                     try:
                         S.SESSION.send(dbgp.BREAKPOINT_REMOVE, d=S.BREAKPOINT[filename][row]['id'])
                         response = S.SESSION.read()
-                    except (socket.error, session.ProtocolConnectionException):
+                    except protocol.ProtocolConnectionException:
                         e = sys.exc_info()[1]
                         session.connection_error("%s" % e)
                 if enabled is False:
@@ -121,7 +120,7 @@ class XdebugBreakpointCommand(sublime_plugin.TextCommand):
                         breakpoint_id = response.get(dbgp.ATTRIBUTE_BREAKPOINT_ID)
                         if breakpoint_id:
                             S.BREAKPOINT[filename][row]['id'] = breakpoint_id
-                    except (socket.error, session.ProtocolConnectionException):
+                    except protocol.ProtocolConnectionException:
                         e = sys.exc_info()[1]
                         session.connection_error("%s" % e)
 
@@ -210,9 +209,9 @@ class XdebugSessionStartCommand(sublime_plugin.WindowCommand):
     """
     Start Xdebug session, listen for request response from debugger engine.
     """
-    def run(self, launch_browser=False):
+    def run(self, launch_browser=False, restart=False):
         # Define new session with DBGp protocol
-        S.SESSION = session.Protocol()
+        S.SESSION = protocol.Protocol()
         S.BREAKPOINT_ROW = None
         S.CONTEXT_DATA.clear()
         # Remove temporary breakpoint
@@ -222,7 +221,7 @@ class XdebugSessionStartCommand(sublime_plugin.WindowCommand):
         # Set debug layout
         self.window.run_command('xdebug_layout')
         # Launch browser
-        if launch_browser or S.get_config_value('launch_browser'):
+        if launch_browser or (S.get_config_value('launch_browser') and not restart):
             util.launch_browser()
 
         # Start thread which will run method that listens for response on configured port
@@ -294,7 +293,7 @@ class XdebugSessionStartCommand(sublime_plugin.WindowCommand):
             else:
                 # Tell script to run it's process
                 self.window.run_command('xdebug_execute', {'command': 'run'})
-        except (socket.error, session.ProtocolConnectionException):
+        except protocol.ProtocolConnectionException:
             e = sys.exc_info()[1]
             session.connection_error("%s" % e)
 
@@ -315,7 +314,7 @@ class XdebugSessionStopCommand(sublime_plugin.WindowCommand):
     """
     Stop Xdebug session, close connection and stop listening to debugger engine.
     """
-    def run(self, close_windows=False, launch_browser=False):
+    def run(self, close_windows=False, launch_browser=False, restart=False):
         try:
             S.SESSION.clear()
         except:
@@ -329,7 +328,7 @@ class XdebugSessionStopCommand(sublime_plugin.WindowCommand):
                 self.window.active_view().run_command('xdebug_breakpoint', {'rows': [S.BREAKPOINT_RUN['lineno']], 'filename': S.BREAKPOINT_RUN['filename']})
             S.BREAKPOINT_RUN = None
         # Launch browser
-        if launch_browser or S.get_config_value('launch_browser'):
+        if launch_browser or (S.get_config_value('launch_browser') and not restart):
             util.launch_browser()
         # Close or reset debug layout
         if close_windows or S.get_config_value('close_on_stop'):
@@ -421,11 +420,11 @@ class XdebugExecuteCommand(sublime_plugin.WindowCommand):
 
             # Reload session when session stopped, by reaching end of file or interruption
             if response.get(dbgp.ATTRIBUTE_STATUS) == dbgp.STATUS_STOPPING or response.get(dbgp.ATTRIBUTE_STATUS) == dbgp.STATUS_STOPPED:
-                self.window.run_command('xdebug_session_stop')
-                self.window.run_command('xdebug_session_start')
+                self.window.run_command('xdebug_session_stop', {'restart': True})
+                self.window.run_command('xdebug_session_start', {'restart': True})
                 sublime.status_message('Xdebug: Finished executing file on server. Reload page to continue debugging.')
 
-        except (socket.error, session.ProtocolConnectionException):
+        except protocol.ProtocolConnectionException:
             e = sys.exc_info()[1]
             session.connection_error("%s" % e)
 
@@ -486,7 +485,7 @@ class XdebugStatusCommand(sublime_plugin.WindowCommand):
             response = S.SESSION.read()
             # Show response in status bar
             sublime.status_message("Xdebug status: " + response.get(dbgp.ATTRIBUTE_REASON) + ' - ' + response.get(dbgp.ATTRIBUTE_STATUS))
-        except (socket.error, session.ProtocolConnectionException):
+        except protocol.ProtocolConnectionException:
             e = sys.exc_info()[1]
             session.connection_error("%s" % e)
 
@@ -505,7 +504,12 @@ class XdebugEvaluateCommand(sublime_plugin.WindowCommand):
         try:
             # Send 'eval' command to debugger engine with code to evaluate
             S.SESSION.send(dbgp.EVAL, expression=expression)
-            response = S.SESSION.read(return_string=True)
+            if S.get_config_value('pretty_output'):
+                response = S.SESSION.read()
+                properties = session.get_response_properties(response, expression)
+                response = session.generate_context_output(properties)
+            else:
+                response = S.SESSION.read(return_string=True)
 
             # Show response data in output panel
             try:
@@ -516,7 +520,7 @@ class XdebugEvaluateCommand(sublime_plugin.WindowCommand):
                 window.run_command('show_panel', {'panel': 'output.xdebug'})
             except:
                 print(response)
-        except (socket.error, session.ProtocolConnectionException):
+        except protocol.ProtocolConnectionException:
             e = sys.exc_info()[1]
             session.connection_error("%s" % e)
 
@@ -562,7 +566,7 @@ class XdebugUserExecuteCommand(sublime_plugin.WindowCommand):
                 window.run_command('show_panel', {'panel': 'output.xdebug'})
             except:
                 print(response)
-        except (socket.error, session.ProtocolConnectionException):
+        except protocol.ProtocolConnectionException:
             e = sys.exc_info()[1]
             session.connection_error("%s" % e)
 
