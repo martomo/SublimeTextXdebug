@@ -1,6 +1,7 @@
 import sublime
 
 import sys
+import threading
 
 # Helper module
 try:
@@ -25,6 +26,22 @@ from .log import debug, info
 
 # Protocol module
 from .protocol import ProtocolConnectionException
+
+# Util module
+from .util import get_real_path
+
+# View module
+from .view import DATA_CONTEXT, DATA_STACK, DATA_WATCH, TITLE_WINDOW_WATCH, generate_context_output, generate_stack_output, get_response_properties, has_debug_view, render_regions, show_content, show_file
+
+
+ACTION_EVALUATE = "action_evaluate"
+ACTION_EXECUTE = "action_execute"
+ACTION_INIT = "action_init"
+ACTION_REMOVE_BREAKPOINT = "action_remove_breakpoint"
+ACTION_SET_BREAKPOINT = "action_set_breakpoint"
+ACTION_STATUS = "action_status"
+ACTION_USER_EXECUTE = "action_user_execute"
+ACTION_WATCH = "action_watch"
 
 
 def is_connected(show_status=False):
@@ -60,48 +77,166 @@ def connection_error(message):
         pass
     finally:
         S.SESSION = None
+        S.SESSION_BUSY = False
+        S.BREAKPOINT_ROW = None
+        S.BREAKPOINT_RUN = None
+        S.CONTEXT_DATA.clear()
+        async_session = SocketHandler(ACTION_WATCH)
+        async_session.start()
+    # Reset layout
+    sublime.active_window().run_command('xdebug_layout')
+    # Render breakpoint markers
+    render_regions()
+
+
+class SocketHandler(threading.Thread):
+    def __init__(self, action, command=None, filename=None, lineno=None, expression=None, args=None, breakpoint_id=None, check_debug_view=False):
+        threading.Thread.__init__(self)
+        self.action = action
+        self.command = command
+        self.filename = filename
+        self.lineno = lineno
+        self.expression = expression
+        self.args = args
+        self.breakpoint_id = breakpoint_id
+        self.check_debug_view = check_debug_view
+
+
+    def run(self):
+        # Make sure an action is defined
+        if not self.action:
+            return
+        try:
+            S.SESSION_BUSY = True
+            sublime.status_message('Xdebug: Waiting for response from debugger engine.')
+            # Evaluate
+            if self.action == ACTION_EVALUATE:
+                self.evaluate(self.expression)
+            # Execute
+            elif self.action == ACTION_EXECUTE:
+                self.execute(self.command)
+            # Init
+            elif self.action == ACTION_INIT:
+                self.init()
+            # Remove breakpoint
+            elif self.action == ACTION_REMOVE_BREAKPOINT:
+                self.remove_breakpoint(self.breakpoint_id)
+            # Set breakpoint
+            elif self.action == ACTION_SET_BREAKPOINT:
+                self.set_breakpoint(self.filename, self.lineno, self.expression)
+            # Status
+            elif self.action == ACTION_STATUS:
+                self.status()
+            # User defined execute
+            elif self.action == ACTION_USER_EXECUTE:
+                self.user_execute(self.command, self.args)
+            # Watch expression
+            elif self.action == ACTION_WATCH:
+                self.watch_expression()
+        # Show dialog on connection error
+        except ProtocolConnectionException:
+            e = sys.exc_info()[1]
+            connection_error("%s" % e)
+        finally:
+            S.SESSION_BUSY = False
+            sublime.status_message('')
+
+
+    def evaluate(self, expression):
+        if not expression or not is_connected():
+            return
+        # Send 'eval' command to debugger engine with code to evaluate
+        S.SESSION.send(dbgp.EVAL, expression=expression)
+        if S.get_config_value('pretty_output'):
+            response = S.SESSION.read()
+            properties = get_response_properties(response, expression)
+            response = generate_context_output(properties)
+        else:
+            response = S.SESSION.read(return_string=True)
+
+        # Show response data in output panel
+        try:
+            window = sublime.active_window()
+            panel = window.get_output_panel('xdebug')
+            panel.run_command('xdebug_view_update', {'data': response})
+            panel.run_command('set_setting', {"setting": 'word_wrap', "value": True})
+            window.run_command('show_panel', {'panel': 'output.xdebug'})
+        except:
+            print(response)
+
+
+    def execute(self, command):
+        # Do not execute if no command is set
+        if not command or not is_connected():
+            return
+
+        # Send command to debugger engine
+        S.SESSION.send(command)
+        response = S.SESSION.read()
+
+        # Reset previous breakpoint values
         S.BREAKPOINT_ROW = None
         S.CONTEXT_DATA.clear()
+        self.watch_expression()
+        # Set debug layout
+        window = sublime.active_window()
+        window.run_command('xdebug_layout')
 
-
-def get_breakpoint_values():
-    """
-    Get list of all configured breakpoints.
-    """
-    # Get breakpoints for files
-    values = H.unicode_string('')
-    if S.BREAKPOINT is None:
-        return values
-    for filename, breakpoint_data in sorted(S.BREAKPOINT.items()):
-        breakpoint_entry = ''
-        if breakpoint_data:
-            breakpoint_entry += "=> %s\n" % filename
-            # Sort breakpoint data by line number
-            for lineno, bp in sorted(breakpoint_data.items(), key=lambda item: (int(item[0]) if isinstance(item[0], int) or H.is_digit(item[0]) else float('inf'), item[0])):
-                # Do not show temporary breakpoint
+        # Handle breakpoint hit
+        for child in response:
+            if child.tag == dbgp.ELEMENT_BREAKPOINT or child.tag == dbgp.ELEMENT_PATH_BREAKPOINT:
+                # Get breakpoint attribute values
+                fileuri = child.get(dbgp.BREAKPOINT_FILENAME)
+                lineno = child.get(dbgp.BREAKPOINT_LINENO)
+                filename = get_real_path(fileuri)
+                # Check if temporary breakpoint is set and hit
                 if S.BREAKPOINT_RUN is not None and S.BREAKPOINT_RUN['filename'] == filename and S.BREAKPOINT_RUN['lineno'] == lineno:
-                    continue
-                # Whether breakpoint is enabled or disabled
-                breakpoint_entry += '\t'
-                if bp['enabled']:
-                    breakpoint_entry += '|+|'
-                else:
-                    breakpoint_entry += '|-|'
-                # Line number
-                breakpoint_entry += ' %s' % lineno
-                # Conditional expression
-                if bp['expression'] is not None:
-                    breakpoint_entry += ' -- "%s"' % bp['expression']
-                breakpoint_entry += "\n"
-        values += H.unicode_string(breakpoint_entry)
-    return values
+                    # Remove temporary breakpoint
+                    if S.BREAKPOINT_RUN['filename'] in S.BREAKPOINT and S.BREAKPOINT_RUN['lineno'] in S.BREAKPOINT[S.BREAKPOINT_RUN['filename']]:
+                        window.active_view().run_command('xdebug_breakpoint', {'rows': [S.BREAKPOINT_RUN['lineno']], 'filename': S.BREAKPOINT_RUN['filename']})
+                    S.BREAKPOINT_RUN = None
+                # Skip if temporary breakpoint was not hit
+                if S.BREAKPOINT_RUN is not None and (S.BREAKPOINT_RUN['filename'] != filename or S.BREAKPOINT_RUN['lineno'] != lineno):
+                    window.run_command('xdebug_execute', {'command': 'run'})
+                    return
+                # Show debug/status output
+                sublime.status_message('Xdebug: Breakpoint')
+                info('Break: ' + filename + ':' + lineno)
+                # Store line number of breakpoint for displaying region marker
+                S.BREAKPOINT_ROW = { 'filename': filename, 'lineno': lineno }
+                # Focus/Open file window view
+                show_file(filename, lineno)
+
+        # On breakpoint get context variables and stack history
+        if response.get(dbgp.ATTRIBUTE_STATUS) == dbgp.STATUS_BREAK:
+            # Context variables
+            context = self.get_context_values()
+            show_content(DATA_CONTEXT, context)
+
+            # Stack history
+            stack = self.get_stack_values()
+            show_content(DATA_STACK, stack)
+
+            # Watch expressions
+            self.watch_expression()
+
+        # Reload session when session stopped, by reaching end of file or interruption
+        if response.get(dbgp.ATTRIBUTE_STATUS) == dbgp.STATUS_STOPPING or response.get(dbgp.ATTRIBUTE_STATUS) == dbgp.STATUS_STOPPED:
+            window.run_command('xdebug_session_stop', {'restart': True})
+            window.run_command('xdebug_session_start', {'restart': True})
+            sublime.status_message('Xdebug: Finished executing file on server. Reload page to continue debugging.')
+
+        # Render breakpoint markers
+        render_regions()
 
 
-def get_context_values():
-    """
-    Get variables in current context.
-    """
-    if S.SESSION:
+    def get_context_values(self):
+        """
+        Get variables in current context.
+        """
+        if not is_connected():
+            return
+
         context = H.new_dictionary()
         try:
             # Super global variables
@@ -124,230 +259,158 @@ def get_context_values():
         return generate_context_output(context)
 
 
-def get_context_variable(context, variable_name):
-    """
-    Find a variable in the context data.
-
-    Keyword arguments:
-    context -- Dictionary with context data to search.
-    variable_name -- Name of variable to find.
-    """
-    if isinstance(context, dict):
-        if variable_name in context:
-            return context[variable_name]
-        for variable in context.values():
-            if isinstance(variable['children'], dict):
-                children = get_context_variable(variable['children'], variable_name)
-                if children:
-                    return children
-
-
-def get_response_properties(response, default_key=None):
-    """
-    Return a dictionary with available properties from response.
-
-    Keyword arguments:
-    response -- Response from debugger engine.
-    default_key -- Index key to use when property has no name.
-    """
-    properties = H.new_dictionary()
-    # Walk through elements in response
-    for child in response:
-        # Read property elements
-        if child.tag == dbgp.ELEMENT_PROPERTY or child.tag == dbgp.ELEMENT_PATH_PROPERTY:
-            # Get property attribute values
-            property_name_short = child.get(dbgp.PROPERTY_NAME)
-            property_name = child.get(dbgp.PROPERTY_FULLNAME, property_name_short)
-            property_type = child.get(dbgp.PROPERTY_TYPE)
-            property_children = child.get(dbgp.PROPERTY_CHILDREN)
-            property_numchildren = child.get(dbgp.PROPERTY_NUMCHILDREN)
-            property_classname = child.get(dbgp.PROPERTY_CLASSNAME)
-            property_value = None
-            if child.text:
-                try:
-                    # Try to base64 decode value
-                    property_value = H.base64_decode(child.text)
-                except:
-                    # Return raw value
-                    property_value = child.text
-
-            if property_name is not None and len(property_name) > 0:
-                property_key = property_name
-                # Ignore following properties
-                if property_name == "::":
-                    continue
-
-                # Avoid nasty static functions/variables from turning in an infinitive loop
-                if property_name.count("::") > 1:
-                    continue
-
-                # Filter password values
-                if S.get_config_value('hide_password', True) and property_name.lower().find('password') != -1 and property_value is not None:
-                    property_value = '******'
-            else:
-                property_key = default_key
-
-            # Store property
-            if property_key:
-                properties[property_key] = { 'name': property_name, 'type': property_type, 'value': property_value, 'numchildren': property_numchildren, 'children' : None }
-
-                # Get values for children
-                if property_children:
-                    properties[property_key]['children'] = get_response_properties(child, default_key)
-
-                # Set classname, if available, as type for object
-                if property_classname and property_type == 'object':
-                    properties[property_key]['type'] = property_classname
-        # Handle error elements
-        elif child.tag == dbgp.ELEMENT_ERROR or child.tag == dbgp.ELEMENT_PATH_ERROR:
-            message = 'error'
-            for step_child in child:
-                if step_child.tag == dbgp.ELEMENT_MESSAGE or step_child.tag == dbgp.ELEMENT_PATH_MESSAGE and step_child.text:
-                    message = step_child.text
-                    break
-            if default_key:
-                properties[default_key] = { 'name': None, 'type': message, 'value': None, 'numchildren': None, 'children': None }
-    return properties
-
-
-def get_stack_values():
-    """
-    Get stack information for current context.
-    """
-    values = H.unicode_string('')
-    if S.SESSION:
-        try:
-            # Get stack information
-            S.SESSION.send(dbgp.STACK_GET)
-            response = S.SESSION.read()
-
-            for child in response:
-                # Get stack attribute values
-                if child.tag == dbgp.ELEMENT_STACK or child.tag == dbgp.ELEMENT_PATH_STACK:
-                    stack_level = child.get(dbgp.STACK_LEVEL, 0)
-                    stack_type = child.get(dbgp.STACK_TYPE)
-                    stack_file = H.url_decode(child.get(dbgp.STACK_FILENAME))
-                    stack_line = child.get(dbgp.STACK_LINENO, 0)
-                    stack_where = child.get(dbgp.STACK_WHERE, '{unknown}')
-                    # Append values
-                    values += H.unicode_string('[{level}] {filename}.{where}:{lineno}\n' \
-                                              .format(level=stack_level, type=stack_type, where=stack_where, lineno=stack_line, filename=stack_file))
-        except ProtocolConnectionException:
-            e = sys.exc_info()[1]
-            connection_error("%s" % e)
-    return values
-
-
-def get_watch_values():
-    """
-    Get list of all watch expressions.
-    """
-    for index, item in enumerate(S.WATCH):
-        # Reset value for watch expression
-        S.WATCH[index]['value'] = None
-        # Evaluate watch expression when connected to debugger engine
+    def get_stack_values(self):
+        """
+        Get stack information for current context.
+        """
+        response = None
         if is_connected():
             try:
+                # Get stack information
+                S.SESSION.send(dbgp.STACK_GET)
+                response = S.SESSION.read()
+            except ProtocolConnectionException:
+                e = sys.exc_info()[1]
+                connection_error("%s" % e)
+        return generate_stack_output(response)
+
+
+    def get_watch_values(self):
+        """
+        Evaluate all watch expressions in current context.
+        """
+        for index, item in enumerate(S.WATCH):
+            # Reset value for watch expression
+            S.WATCH[index]['value'] = None
+
+            # Evaluate watch expression when connected to debugger engine
+            if is_connected():
                 if item['enabled']:
-                    S.WATCH[index]['value'] = eval_watch_expression(item['expression'])
-            except:
-                pass
-    return generate_watch_output(S.WATCH)
+                    watch_value = None
+                    try:
+                        S.SESSION.send(dbgp.EVAL, expression=item['expression'])
+                        response = S.SESSION.read()
+
+                        watch_value = get_response_properties(response, item['expression'])
+                    except ProtocolConnectionException:
+                        pass
+
+                    S.WATCH[index]['value'] = watch_value
 
 
-def eval_watch_expression(expression):
-    if S.SESSION:
-        try:
-            S.SESSION.send(dbgp.EVAL, expression=expression)
-            response = S.SESSION.read()
+    def init(self):
+        if not is_connected():
+            return
 
-            return get_response_properties(response, expression)
-        except ProtocolConnectionException:
-            pass
+        # Connection initialization
+        init = S.SESSION.read()
 
-    return None
+        # More detailed internal information on properties
+        S.SESSION.send(dbgp.FEATURE_SET, n='show_hidden', v=1)
+        response = S.SESSION.read()
 
+        # Set max depth limit
+        max_depth = S.get_config_value('max_depth', S.MAX_DEPTH)
+        S.SESSION.send(dbgp.FEATURE_SET, n=dbgp.FEATURE_NAME_MAXDEPTH, v=max_depth)
+        response = S.SESSION.read()
 
-def generate_watch_output(watch, indent=0):
-    values = H.unicode_string('')
-    if not isinstance(watch, list):
-        return values
-    for watch_data in watch:
-        watch_entry = ''
-        if watch_data and isinstance(watch_data, dict):
-            # Whether watch expression is enabled or disabled
-            if 'enabled' in watch_data.keys():
-                if watch_data['enabled']:
-                    watch_entry += '|+|'
-                else:
-                    watch_entry += '|-|'
-            # Watch expression
-            if 'expression' in watch_data.keys():
-                watch_entry += ' "%s"' % watch_data['expression']
-            # Evaluated value
-            if watch_data['value'] is not None:
-                watch_entry += ' = ' + generate_context_output(watch_data['value'])
-            else:
-                watch_entry += "\n"
-        values += H.unicode_string(watch_entry)
-    return values
+        # Set max children limit
+        max_children = S.get_config_value('max_children', S.MAX_CHILDREN)
+        S.SESSION.send(dbgp.FEATURE_SET, n=dbgp.FEATURE_NAME_MAXCHILDREN, v=max_children)
+        response = S.SESSION.read()
 
+        # Set breakpoints for files
+        for filename, breakpoint_data in S.BREAKPOINT.items():
+            if breakpoint_data:
+                for lineno, bp in breakpoint_data.items():
+                    if bp['enabled']:
+                        self.set_breakpoint(filename, lineno, bp['expression'])
+                        debug('breakpoint_set: ' + filename + ':' + lineno)
 
-def generate_context_output(context, indent=0):
-    """
-    Generate readable context from dictionary with context data.
+        # Determine if client should break at first line on connect
+        if S.get_config_value('break_on_start'):
+            # Get init attribute values
+            fileuri = init.get(dbgp.INIT_FILEURI)
+            filename = get_real_path(fileuri)
+            # Show debug/status output
+            sublime.status_message('Xdebug: Break on start')
+            info('Break on start: ' + filename )
+            # Store line number of breakpoint for displaying region marker
+            S.BREAKPOINT_ROW = { 'filename': filename, 'lineno': 1 }
+            # Focus/Open file window view
+            show_file(filename, 1)
 
-    Keyword arguments:
-    context -- Dictionary with context data.
-    indent -- Indent level.
-    """
-    # Generate output text for values
-    values = H.unicode_string('')
-    if not isinstance(context, dict):
-        return values
-    for variable in context.values():
-        has_children = False
-        property_text = ''
-        # Set indentation
-        for i in range(indent): property_text += '\t'
-        # Property with value
-        if variable['value'] is not None:
-            if variable['name']:
-                property_text += '{name} = '
-            property_text += '({type}) {value}\n'
-        # Property with children
-        elif isinstance(variable['children'], dict) and variable['numchildren'] is not None:
-            has_children = True
-            if variable['name']:
-                property_text += '{name} = '
-            property_text += '{type}[{numchildren}]\n'
-        # Unknown property
+            # Context variables
+            context = self.get_context_values()
+            show_content(DATA_CONTEXT, context)
+
+            # Stack history
+            stack = self.get_stack_values()
+            if not stack:
+                stack = H.unicode_string('[{level}] {filename}.{where}:{lineno}\n' \
+                                          .format(level=0, where='{main}', lineno=1, filename=fileuri))
+            show_content(DATA_STACK, stack)
+
+            # Watch expressions
+            self.watch_expression()
         else:
-            if variable['name']:
-                property_text += '{name} = '
-            property_text += '<{type}>\n'
+            # Tell script to run it's process
+            sublime.active_window().run_command('xdebug_execute', {'command': 'run'})
 
-        # Remove newlines in value to prevent incorrect indentation
-        value = ''
-        if variable['value'] and len(variable['value']) > 0:
-            value = variable['value'].replace("\r\n", "\n").replace("\n", " ")
 
-        # Format string and append to output
-        values += H.unicode_string(property_text \
-                        .format(value=value, type=variable['type'], name=variable['name'], numchildren=variable['numchildren']))
+    def remove_breakpoint(self, breakpoint_id):
+        if not breakpoint_id or not is_connected():
+            return
 
-        # Append property children to output
-        if has_children:
-            # Get children for property (no need to convert, already unicode)
-            values += generate_context_output(variable['children'], indent+1)
-            # Use ellipsis to indicate that results have been truncated
-            limited = False
-            if isinstance(variable['numchildren'], int) or H.is_digit(variable['numchildren']):
-                if int(variable['numchildren']) != len(variable['children']):
-                    limited = True
-            elif len(variable['children']) > 0 and not variable['numchildren']:
-                limited = True
-            if limited:
-                for i in range(indent+1): values += H.unicode_string('\t')
-                values += H.unicode_string('...\n')
-    return values
+        S.SESSION.send(dbgp.BREAKPOINT_REMOVE, d=breakpoint_id)
+        response = S.SESSION.read()
+
+
+    def set_breakpoint(self, filename, lineno, expression=None):
+        if not filename or not lineno or not is_connected():
+            return
+
+        # Get path of file on server
+        fileuri = get_real_path(filename, True)
+        # Set breakpoint
+        S.SESSION.send(dbgp.BREAKPOINT_SET, t='line', f=fileuri, n=lineno, expression=expression)
+        response = S.SESSION.read()
+        # Update breakpoint id
+        breakpoint_id = response.get(dbgp.ATTRIBUTE_BREAKPOINT_ID)
+        if breakpoint_id:
+            S.BREAKPOINT[filename][lineno]['id'] = breakpoint_id
+
+
+    def status(self):
+        if not is_connected():
+            return
+
+        # Send 'status' command to debugger engine
+        S.SESSION.send(dbgp.STATUS)
+        response = S.SESSION.read()
+        # Show response in status bar
+        sublime.status_message("Xdebug status: " + response.get(dbgp.ATTRIBUTE_REASON) + ' - ' + response.get(dbgp.ATTRIBUTE_STATUS))
+
+
+    def user_execute(self, command, args=None):
+        if not command or not is_connected():
+            return
+
+        # Send command to debugger engine
+        S.SESSION.send(command, args)
+        response = S.SESSION.read(return_string=True)
+
+        # Show response data in output panel
+        try:
+            window = sublime.active_window()
+            panel = window.get_output_panel('xdebug')
+            panel.run_command('xdebug_view_update', {'data': response})
+            panel.run_command('set_setting', {"setting": 'word_wrap', "value": True})
+            window.run_command('show_panel', {'panel': 'output.xdebug'})
+        except:
+            print(response)
+
+    def watch_expression(self):
+        self.get_watch_values()
+        if not self.check_debug_view or has_debug_view(TITLE_WINDOW_WATCH):
+            show_content(DATA_WATCH)

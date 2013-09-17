@@ -252,10 +252,16 @@ def load_watch_data():
         debug(e)
 
     # Check if expression is not already defined
-    for entry in data:
+    duplicates = []
+    for index, entry in enumerate(data):
         matches = [x for x in S.WATCH if x['expression'] == entry['expression']]
         if matches:
-            data.remove(entry)
+            duplicates.append(entry)
+        else:
+            # Unset any previous value
+            data[index]['value'] = None
+    for duplicate in duplicates:
+        data.remove(duplicate)
 
     if not isinstance(S.WATCH, list):
         S.WATCH = []
