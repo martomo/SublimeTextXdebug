@@ -203,7 +203,7 @@ class XdebugSessionStartCommand(sublime_plugin.WindowCommand):
         S.SESSION_BUSY = False
         S.BREAKPOINT_ROW = None
         S.CONTEXT_DATA.clear()
-        async_session = session.SocketHandler(session.ACTION_WATCH, check_debug_view=True)
+        async_session = session.SocketHandler(session.ACTION_WATCH, has_watch_view=V.has_debug_view(V.TITLE_WINDOW_WATCH))
         async_session.start()
         # Remove temporary breakpoint
         if S.BREAKPOINT_RUN is not None and S.BREAKPOINT_RUN['filename'] in S.BREAKPOINT and S.BREAKPOINT_RUN['lineno'] in S.BREAKPOINT[S.BREAKPOINT_RUN['filename']]:
@@ -227,7 +227,8 @@ class XdebugSessionStartCommand(sublime_plugin.WindowCommand):
 
     def connected(self):
         sublime.status_message('Xdebug: Connected')
-        async_session = session.SocketHandler(session.ACTION_INIT)
+
+        async_session = session.SocketHandler(session.ACTION_INIT, max_depth=S.get_config_value('max_depth'), max_children=S.get_config_value('max_children'), break_on_start=S.get_config_value('break_on_start'), super_globals=S.get_config_value('super_globals'))
         async_session.start()
 
     def is_enabled(self):
@@ -257,7 +258,7 @@ class XdebugSessionStopCommand(sublime_plugin.WindowCommand):
             S.SESSION_BUSY = False
             S.BREAKPOINT_ROW = None
             S.CONTEXT_DATA.clear()
-            async_session = session.SocketHandler(session.ACTION_WATCH, check_debug_view=True)
+            async_session = session.SocketHandler(session.ACTION_WATCH, has_watch_view=V.has_debug_view(V.TITLE_WINDOW_WATCH))
             async_session.start()
             # Remove temporary breakpoint
             if S.BREAKPOINT_RUN is not None and S.BREAKPOINT_RUN['filename'] in S.BREAKPOINT and S.BREAKPOINT_RUN['lineno'] in S.BREAKPOINT[S.BREAKPOINT_RUN['filename']]:
@@ -300,7 +301,7 @@ class XdebugExecuteCommand(sublime_plugin.WindowCommand):
     command -- Command to send to debugger engine.
     """
     def run(self, command=None):
-        async_session = session.SocketHandler(session.ACTION_EXECUTE, command=command)
+        async_session = session.SocketHandler(session.ACTION_EXECUTE, command=command, super_globals=S.get_config_value('super_globals'))
         async_session.start()
 
     def is_enabled(self):
@@ -366,7 +367,7 @@ class XdebugEvaluateCommand(sublime_plugin.WindowCommand):
         self.window.show_input_panel('Evaluate', '', self.on_done, self.on_change, self.on_cancel)
 
     def on_done(self, expression):
-        async_session = session.SocketHandler(session.ACTION_EVALUATE, expression=expression)
+        async_session = session.SocketHandler(session.ACTION_EVALUATE, expression=expression, pretty_output=S.get_config_value('pretty_output'))
         async_session.start()
 
     def on_change(self, expression):
@@ -492,7 +493,7 @@ class XdebugWatchCommand(sublime_plugin.WindowCommand):
         self.window.show_input_panel('Watch expression', '', self.on_done, self.on_change, self.on_cancel)
 
     def update_view(self):
-        async_session = session.SocketHandler(session.ACTION_WATCH, check_debug_view=True)
+        async_session = session.SocketHandler(session.ACTION_WATCH, has_watch_view=V.has_debug_view(V.TITLE_WINDOW_WATCH))
         async_session.start()
         # Save watch data to file
         util.save_watch_data()

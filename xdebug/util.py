@@ -74,7 +74,7 @@ def get_real_path(uri, server=False):
                     uri = uri.replace(server_path, local_path)
                     break
     else:
-        sublime.status_message("Xdebug: No path mapping defined, returning given path.")
+        sublime.set_timeout(lambda: sublime.status_message("Xdebug: No path mapping defined, returning given path."), 0)
 
     # Replace slashes
     if not drive_pattern.match(uri):

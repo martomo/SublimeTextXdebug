@@ -108,5 +108,14 @@
         "caption": "Xdebug: Restore Layout",
         "command": "xdebug_layout",
         "args"   : {"restore" : true}
+    },
+    {
+        "caption": "Preferences: Xdebug Settings – Default",
+        "command": "xdebug_settings"
+    },
+    {
+        "caption": "Preferences: Xdebug Settings – User",
+        "command": "open_file",
+        "args"   : {"file" : "${packages}/User/Xdebug.sublime-settings"}
     }
 ]

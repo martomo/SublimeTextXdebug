@@ -4,10 +4,12 @@
         "children":
         [
             {
+                "id": "end"
+            },
+            {
                 "caption": "Xdebug",
-                "mnemonic": "X",
-                "id": "xdebug",
-                "children": [
+                "children":
+                [
                     {
                         "caption": "Start Debugging",
                         "command": "xdebug_session_start"
@@ -140,13 +142,15 @@
                     {
                         "caption": "Settings - User",
                         "command": "open_file",
-                        "args"   : {"file": "${packages}/User/Xdebug.sublime-settings"}
+                        "args"   : {"file" : "${packages}/User/Xdebug.sublime-settings"}
                     }
                 ]
             }
         ]
     },
     {
+        "caption": "Preferences",
+        "mnemonic": "n",
         "id": "preferences",
         "children":
         [
@@ -154,11 +158,12 @@
                 "caption": "Package Settings",
                 "mnemonic": "P",
                 "id": "package-settings",
-                "children": [
+                "children":
+                [
                     {
                         "caption": "Xdebug",
-                        "mnemonic": "X",
-                        "children": [
+                        "children":
+                        [
                             {
                                 "caption": "Settings – Default",
                                 "command": "xdebug_settings"

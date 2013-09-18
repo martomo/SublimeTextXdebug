@@ -1,9 +1,8 @@
 [
     {
         "caption": "Xdebug",
-        "mnemonic": "X",
-        "id": "xdebug",
-        "children": [
+        "children":
+        [
             {
                 "caption": "Add/Remove Breakpoint",
                 "command": "xdebug_breakpoint"

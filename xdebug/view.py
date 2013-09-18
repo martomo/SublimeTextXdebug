@@ -293,14 +293,18 @@ def get_response_properties(response, default_key=None):
             property_children = child.get(dbgp.PROPERTY_CHILDREN)
             property_numchildren = child.get(dbgp.PROPERTY_NUMCHILDREN)
             property_classname = child.get(dbgp.PROPERTY_CLASSNAME)
+            property_encoding = child.get(dbgp.PROPERTY_ENCODING)
             property_value = None
+
+            # Set property value
             if child.text:
-                try:
-                    # Try to base64 decode value
-                    property_value = H.base64_decode(child.text)
-                except:
-                    # Return raw value
-                    property_value = child.text
+                property_value = child.text
+                # Try to decode property value when encoded with base64
+                if property_encoding is not None and property_encoding == 'base64':
+                    try:
+                        property_value = H.base64_decode(child.text)
+                    except:
+                        pass
 
             if property_name is not None and len(property_name) > 0:
                 property_key = property_name
@@ -590,6 +594,18 @@ def show_file(filename, row=None):
             window.focus_view(view)
             # Set focus to row (line number) when file is loaded
             S.SHOW_ROW_ONLOAD[filename] = row
+
+
+def show_panel_content(content):
+    # Show response data in output panel
+    try:
+        window = sublime.active_window()
+        panel = window.get_output_panel('xdebug')
+        panel.run_command('xdebug_view_update', {'data': content})
+        panel.run_command('set_setting', {"setting": 'word_wrap', "value": True})
+        window.run_command('show_panel', {'panel': 'output.xdebug'})
+    except:
+        print(content)
 
 
 def show_at_row(view, row=None):
