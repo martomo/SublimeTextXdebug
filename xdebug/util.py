@@ -56,7 +56,7 @@ def get_real_path(uri, server=False):
     if not drive_pattern.match(uri) and not os.path.isabs(uri):
         uri = os.path.normpath('/' + uri)
 
-    path_mapping = S.get_config_value('path_mapping')
+    path_mapping = S.PATH_MAPPING
     if isinstance(path_mapping, dict):
         # Go through path mappings
         for server_path, local_path in path_mapping.items():
