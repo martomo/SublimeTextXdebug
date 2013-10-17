@@ -199,6 +199,8 @@ class XdebugSessionStartCommand(sublime_plugin.WindowCommand):
     """
     def run(self, launch_browser=False, restart=False):
         # Define new session with DBGp protocol
+        # Get the path mapping now before we run into problems with the async thread
+        S.PATH_MAPPING = S.get_config_value('path_mapping')
         S.SESSION = protocol.Protocol()
         S.SESSION_BUSY = False
         S.BREAKPOINT_ROW = None
