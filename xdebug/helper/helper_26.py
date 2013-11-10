@@ -7,7 +7,7 @@ Helper module for Python version 2.6 and below
 """
 
 import base64
-import urllib2
+from urllib import unquote, quote
 try:
 	from ordereddict import OrderedDict
 except:
@@ -17,10 +17,10 @@ def modulename():
 	return "Helper module for Python version 2.6 and below"
 
 def url_decode(uri):
-	return urllib2.unquote(uri)
+	return unquote(uri)
 
 def url_encode(uri):
-	return urllib2.quote(uri)
+	return quote(uri)
 
 def new_dictionary():
 	try:

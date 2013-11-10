@@ -7,17 +7,17 @@ Helper module for Python version 2.7
 """
 
 import base64
-import urllib.parse
+from urllib import unquote, quote
 from collections import OrderedDict
 
 def modulename():
 	return "Helper module for Python version 2.7"
 
 def url_decode(uri):
-	return urllib.parse.unquote(uri)
+	return unquote(uri)
 
 def url_encode(uri):
-	return urllib.parse.quote(uri)
+	return quote(uri)
 
 def new_dictionary():
 	return OrderedDict()
