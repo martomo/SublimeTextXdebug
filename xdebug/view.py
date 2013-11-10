@@ -22,6 +22,9 @@ try:
 except:
     import dbgp
 
+# Config module
+from .config import get_value, get_window_value, set_window_value
+
 # Util module
 from .util import get_region_icon, save_watch_data
 
@@ -220,14 +223,14 @@ def get_debug_index(name=None):
     name -- Name of debug view to get group/index position.
     """
     # Set group and index for each debug view
-    breakpoint_group = S.get_config_value('breakpoint_group', -1)
-    breakpoint_index = S.get_config_value('breakpoint_index', 0)
-    context_group = S.get_config_value('context_group', -1)
-    context_index = S.get_config_value('context_index', 0)
-    stack_group = S.get_config_value('stack_group', -1)
-    stack_index = S.get_config_value('stack_index', 0)
-    watch_group = S.get_config_value('watch_group', -1)
-    watch_index = S.get_config_value('watch_index', 0)
+    breakpoint_group = get_value('breakpoint_group', -1)
+    breakpoint_index = get_value('breakpoint_index', 0)
+    context_group = get_value('context_group', -1)
+    context_index = get_value('context_index', 0)
+    stack_group = get_value('stack_group', -1)
+    stack_index = get_value('stack_index', 0)
+    watch_group = get_value('watch_group', -1)
+    watch_index = get_value('watch_index', 0)
 
     # Create list with all debug views and sort by group/index
     debug_list = []
@@ -317,7 +320,7 @@ def get_response_properties(response, default_key=None):
                     continue
 
                 # Filter password values
-                if S.get_config_value('hide_password', True) and property_name.lower().find('password') != -1 and property_value is not None:
+                if get_value('hide_password', True) and property_name.lower().find('password') != -1 and property_value is not None:
                     property_value = '******'
             else:
                 property_key = default_key
@@ -381,27 +384,27 @@ def set_layout(layout):
     previous_active = window.active_view()
 
     # Do not set layout when disabled
-    if S.get_config_value('disable_layout'):
+    if get_value('disable_layout'):
         S.RESTORE_LAYOUT = window.get_layout()
-        S.set_window_value('restore_layout', S.RESTORE_LAYOUT)
+        set_window_value('restore_layout', S.RESTORE_LAYOUT)
         S.RESTORE_INDEX = H.new_dictionary()
-        S.set_window_value('restore_index', S.RESTORE_INDEX)
+        set_window_value('restore_index', S.RESTORE_INDEX)
         return
 
     # Show debug layout
     if layout == 'debug':
-        debug_layout = S.get_config_value('debug_layout', S.LAYOUT_DEBUG)
+        debug_layout = get_value('debug_layout', S.LAYOUT_DEBUG)
         if window.get_layout() != debug_layout:
             # Save current layout
             S.RESTORE_LAYOUT = window.get_layout()
-            S.set_window_value('restore_layout', S.RESTORE_LAYOUT)
+            set_window_value('restore_layout', S.RESTORE_LAYOUT)
             # Remember view indexes
             S.RESTORE_INDEX = H.new_dictionary()
             for view in window.views():
                 view_id = "%d" % view.id()
                 group, index = window.get_view_index(view)
                 S.RESTORE_INDEX[view_id] = { "group": group, "index": index }
-            S.set_window_value('restore_index', S.RESTORE_INDEX)
+            set_window_value('restore_index', S.RESTORE_INDEX)
             # Set debug layout
             window.set_layout(S.LAYOUT_NORMAL)
         window.set_layout(debug_layout)
@@ -409,9 +412,9 @@ def set_layout(layout):
     else:
         # Get previous layout configuration
         if S.RESTORE_LAYOUT is None:
-            S.RESTORE_LAYOUT = S.get_window_value('restore_layout', S.LAYOUT_NORMAL)
+            S.RESTORE_LAYOUT = get_window_value('restore_layout', S.LAYOUT_NORMAL)
         if S.RESTORE_INDEX is None:
-            S.RESTORE_INDEX = S.get_window_value('restore_index', {})
+            S.RESTORE_INDEX = get_window_value('restore_index', {})
         # Restore layout
         window.set_layout(S.LAYOUT_NORMAL)
         window.set_layout(S.RESTORE_LAYOUT)

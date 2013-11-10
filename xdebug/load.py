@@ -12,6 +12,7 @@ except:
 from .view import DATA_BREAKPOINT, DATA_CONTEXT, DATA_STACK, DATA_WATCH, TITLE_WINDOW_BREAKPOINT, TITLE_WINDOW_CONTEXT, TITLE_WINDOW_STACK, TITLE_WINDOW_WATCH, has_debug_view, render_regions, show_content
 from .util import load_breakpoint_data, load_watch_data
 from .log import clear_output, debug, info
+from .config import get_window_value, set_window_value, load_package_values, load_project_values
 
 
 def xdebug():
@@ -20,6 +21,10 @@ def xdebug():
     if not S.PACKAGE_FOLDER:
         info("Unable to resolve current path for package.")
     info("==== Loading '%s' package ====" % S.PACKAGE_FOLDER)
+
+    # Load config in package/project configuration
+    load_package_values()
+    load_project_values()
 
     # Load breakpoint data
     try:
@@ -72,9 +77,9 @@ def xdebug():
         if conflict:
             info("Conflicting packages detected.")
             debug(conflict)
-            if not S.get_window_value('hide_conflict', False):
+            if not get_window_value('hide_conflict', False):
                 sublime.error_message("The following package(s) could cause conflicts with '{package}':\n\n{other}\n\nPlease consider removing the package(s) above when experiencing any complications." \
                                         .format(package=S.PACKAGE_FOLDER, other='\n'.join(conflict)))
-                S.set_window_value('hide_conflict', True)
+                set_window_value('hide_conflict', True)
         else:
-            S.set_window_value('hide_conflict', False)
+            set_window_value('hide_conflict', False)

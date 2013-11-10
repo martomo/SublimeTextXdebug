@@ -18,6 +18,9 @@ try:
 except:
     import settings as S
 
+# Config module
+from .config import get_value
+
 # Log module
 from .log import debug, info
 
@@ -56,7 +59,7 @@ def get_real_path(uri, server=False):
     if not drive_pattern.match(uri) and not os.path.isabs(uri):
         uri = os.path.normpath('/' + uri)
 
-    path_mapping = S.get_config_value('path_mapping')
+    path_mapping = get_value('path_mapping')
     if isinstance(path_mapping, dict):
         # Go through path mappings
         for server_path, local_path in path_mapping.items():
@@ -128,10 +131,10 @@ def get_region_icon(icon):
         icon_list.append(icon_path.format(package_current_line))
 
     # Get user defined icons from settings
-    breakpoint_current = S.get_config_value(S.KEY_BREAKPOINT_CURRENT)
-    breakpoint_disabled = S.get_config_value(S.KEY_BREAKPOINT_DISABLED)
-    breakpoint_enabled = S.get_config_value(S.KEY_BREAKPOINT_ENABLED)
-    current_line = S.get_config_value(S.KEY_CURRENT_LINE)
+    breakpoint_current = get_value(S.KEY_BREAKPOINT_CURRENT)
+    breakpoint_disabled = get_value(S.KEY_BREAKPOINT_DISABLED)
+    breakpoint_enabled = get_value(S.KEY_BREAKPOINT_ENABLED)
+    current_line = get_value(S.KEY_CURRENT_LINE)
 
     # Duplicate check, enabled breakpoint
     if breakpoint_enabled not in icon_list:
@@ -179,11 +182,11 @@ def get_region_icon(icon):
 
 
 def launch_browser():
-    url = S.get_config_value('url')
+    url = get_value('url')
     if not url:
         sublime.status_message('Xdebug: No URL defined in (project) settings file.')
         return
-    ide_key = S.get_config_value('ide_key', S.DEFAULT_IDE_KEY)
+    ide_key = get_value('ide_key', S.DEFAULT_IDE_KEY)
     operator = '?'
 
     # Check if url already has query string
@@ -196,7 +199,7 @@ def launch_browser():
     # Stop debug session
     else:
         # Check if we should execute script
-        if S.get_config_value('browser_no_execute'):
+        if get_value('browser_no_execute'):
             # Without executing script
             webbrowser.open(url + operator + 'XDEBUG_SESSION_STOP_NO_EXEC=' + ide_key)
         else:

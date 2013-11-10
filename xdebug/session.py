@@ -21,6 +21,9 @@ try:
 except:
     import dbgp
 
+# Config module
+from .config import get_value
+
 # Log module
 from .log import debug, info
 
@@ -31,7 +34,7 @@ from .protocol import ProtocolConnectionException
 from .util import get_real_path
 
 # View module
-from .view import DATA_CONTEXT, DATA_STACK, DATA_WATCH, generate_context_output, generate_stack_output, get_response_properties, render_regions, show_content, show_file, show_panel_content
+from .view import DATA_CONTEXT, DATA_STACK, DATA_WATCH, TITLE_WINDOW_WATCH, generate_context_output, generate_stack_output, get_response_properties, has_debug_view, render_regions, show_content, show_file, show_panel_content
 
 
 ACTION_EVALUATE = "action_evaluate"
@@ -103,12 +106,26 @@ class SocketHandler(threading.Thread):
     def run_command(self, command, args=None):
         if not isinstance(args, dict):
             args = {}
-        self.timeout(lambda: sublime.active_window().run_command(command, args))
+        self.timeout(lambda: self._run_command(command, args))
+
+    def _run_command(self, command, args=None):
+        try:
+            sublime.active_window().run_command(command, args)
+        except:
+            # In case active_window() is not available
+            pass
 
     def run_view_command(self, command, args=None):
         if not isinstance(args, dict):
             args = {}
-        self.timeout(lambda: sublime.active_window().active_view().run_command(command, args))
+        self.timeout(lambda: self._run_view_command)
+
+    def _run_view_command(self, command, args=None):
+        try:
+            sublime.active_window().active_view().run_command(command, args)
+        except:
+            # In case there is no active_view() available
+            pass
 
     def status_message(self, message):
         self.timeout(lambda: sublime.status_message(message))
@@ -159,7 +176,7 @@ class SocketHandler(threading.Thread):
             return
         # Send 'eval' command to debugger engine with code to evaluate
         S.SESSION.send(dbgp.EVAL, expression=expression)
-        if self.get_option('pretty_output'):
+        if get_value('pretty_output'):
             response = S.SESSION.read()
             properties = get_response_properties(response, expression)
             response = generate_context_output(properties)
@@ -244,7 +261,7 @@ class SocketHandler(threading.Thread):
         context = H.new_dictionary()
         try:
             # Super global variables
-            if self.get_option('super_globals'):
+            if get_value('super_globals'):
                 S.SESSION.send(dbgp.CONTEXT_GET, c=1)
                 response = S.SESSION.read()
                 context.update(get_response_properties(response))
@@ -314,12 +331,12 @@ class SocketHandler(threading.Thread):
         response = S.SESSION.read()
 
         # Set max depth limit
-        max_depth = self.get_option('max_depth', S.MAX_DEPTH)
+        max_depth = get_value('max_depth', S.MAX_DEPTH)
         S.SESSION.send(dbgp.FEATURE_SET, n=dbgp.FEATURE_NAME_MAXDEPTH, v=max_depth)
         response = S.SESSION.read()
 
         # Set max children limit
-        max_children = self.get_option('max_children', S.MAX_CHILDREN)
+        max_children = get_value('max_children', S.MAX_CHILDREN)
         S.SESSION.send(dbgp.FEATURE_SET, n=dbgp.FEATURE_NAME_MAXCHILDREN, v=max_children)
         response = S.SESSION.read()
 
@@ -332,7 +349,7 @@ class SocketHandler(threading.Thread):
                         debug('breakpoint_set: ' + filename + ':' + lineno)
 
         # Determine if client should break at first line on connect
-        if self.get_option('break_on_start'):
+        if get_value('break_on_start'):
             # Get init attribute values
             fileuri = init.get(dbgp.INIT_FILEURI)
             filename = get_real_path(fileuri)
@@ -409,6 +426,15 @@ class SocketHandler(threading.Thread):
 
 
     def watch_expression(self):
+        # Evaluate watch expressions
         self.get_watch_values()
-        if self.get_option('has_watch_view', True):
-            self.timeout(lambda: show_content(DATA_WATCH))
+        # Show watch expression
+        self.timeout(lambda: self._watch_expression(self.get_option('check_watch_view', False)))
+
+
+    def _watch_expression(self, check_watch_view):
+        # Do not show if we only want to show content when Watch view is not available
+        if check_watch_view and not has_debug_view(TITLE_WINDOW_WATCH):
+            return
+
+        show_content(DATA_WATCH)

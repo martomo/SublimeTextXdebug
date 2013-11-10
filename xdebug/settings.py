@@ -1,5 +1,3 @@
-import sublime
-
 DEFAULT_PORT = 9000
 DEFAULT_IDE_KEY = 'sublime.xdebug'
 
@@ -14,11 +12,40 @@ FILE_WATCH_DATA = 'Xdebug.expressions'
 KEY_SETTINGS = 'settings'
 KEY_XDEBUG = 'xdebug'
 
-KEY_CURRENT_LINE = 'current_line'
+KEY_PATH_MAPPING = "path_mapping"
+KEY_URL = "url"
+KEY_IDE_KEY = "ide_key"
+KEY_PORT = "port"
+KEY_SUPER_GLOBALS = "super_globals"
+KEY_MAX_CHILDREN = "max_children"
+KEY_MAX_DEPTH = "max_depth"
+KEY_BREAK_ON_START = "break_on_start"
+KEY_CLOSE_ON_STOP = "close_on_stop"
+KEY_HIDE_PASSWORD = "hide_password"
+KEY_PRETTY_OUTPUT = "pretty_output"
+KEY_LAUNCH_BROWSER = "launch_browser"
+KEY_BROWSER_NO_EXECUTE = "browser_no_execute"
+KEY_DISABLE_LAYOUT = "disable_layout"
+KEY_DEBUG_LAYOUT = "debug_layout"
+
+KEY_BREAKPOINT_GROUP = "breakpoint_group"
+KEY_BREAKPOINT_INDEX = "breakpoint_index"
+KEY_CONTEXT_GROUP = "context_group"
+KEY_CONTEXT_INDEX = "context_index"
+KEY_STACK_GROUP = "stack_group"
+KEY_STACK_INDEX = "stack_index"
+KEY_WATCH_GROUP = "watch_group"
+KEY_WATCH_INDEX = "watch_index"
+
 KEY_BREAKPOINT_CURRENT = 'breakpoint_current'
 KEY_BREAKPOINT_DISABLED = 'breakpoint_disabled'
 KEY_BREAKPOINT_ENABLED = 'breakpoint_enabled'
+KEY_CURRENT_LINE = 'current_line'
 
+KEY_PYTHON_PATH = "python_path"
+KEY_DEBUG = "debug"
+
+# Region scope sources
 REGION_KEY_BREAKPOINT = 'xdebug_breakpoint'
 REGION_KEY_CURRENT = 'xdebug_current'
 REGION_KEY_DISABLED = 'xdebug_disabled'
@@ -61,117 +88,36 @@ MAX_CHILDREN = 0
 MAX_DEPTH = 1023
 
 
-def get_config_value(key, default_value=None):
-    """
-    Get value from package/project configuration settings.
-    """
-    value = get_project_value(key) or get_package_value(key)
-    return value if value is not None else default_value
-
-
-def get_package_value(key, default_value=None):
-    """
-    Get value from package configuration settings.
-    """
-    try:
-        config = sublime.load_settings(FILE_PACKAGE_SETTINGS)
-        if config and config.has(key):
-            return config.get(key)
-    except:
-        pass
-    return default_value
-
-
-def get_project_value(key, default_value=None):
-    """
-    Get value from project configuration settings.
-    """
-    try:
-        project = sublime.active_window().active_view().settings()
-        # Use 'xdebug' as key which contains dictionary with project values for package
-        config = project.get(KEY_XDEBUG)
-        if config:
-            if key in config:
-                return config[key]
-    except:
-        pass
-    return default_value
-
-
-def get_window_value(key, default_value=None):
-    """
-    Get value from window session settings.
-
-    NOTE: Window object in Sublime Text 2 has no Settings.
-    """
-    try:
-        settings = sublime.active_window().settings()
-        if settings.has(KEY_XDEBUG):
-            xdebug = settings.get(KEY_XDEBUG)
-            if isinstance(xdebug, dict) and key in xdebug.keys():
-                return xdebug[key]
-    except:
-        pass
-    return default_value
-
-
-def set_package_value(key, value=None):
-    """
-    Set value in package configuration settings.
-    """
-    try:
-        config = sublime.load_settings(FILE_PACKAGE_SETTINGS)
-        if value is not None:
-            config.set(key, value)
-        elif config and config.has(key):
-            return config.erase(key)
-    except:
-        pass
-
-
-def set_project_value(key, value=None):
-    """
-    Set value in project configuration settings.
-    """
-    # Unable to set project value if no project file
-    if not sublime.active_window().project_file_name():
-        return False
-    # Get current project data
-    project = sublime.active_window().project_data()
-    # Make sure project data is a dictionary
-    if not isinstance(project, dict):
-        project = {}
-    # Create settings entries if they are undefined
-    if KEY_SETTINGS not in project.keys() or not isinstance(project[KEY_SETTINGS], dict):
-        project[KEY_SETTINGS] = {}
-    if KEY_XDEBUG not in project[KEY_SETTINGS].keys() or not isinstance(project[KEY_SETTINGS][KEY_XDEBUG], dict):
-        project[KEY_SETTINGS][KEY_XDEBUG] = {}
-    # Update Xdebug settings
-    if value is not None:
-        project[KEY_SETTINGS][KEY_XDEBUG][key] = value
-    elif key in project[KEY_SETTINGS][KEY_XDEBUG].keys():
-        del project[KEY_SETTINGS][KEY_XDEBUG][key]
-    # Save project data
-    sublime.active_window().set_project_data(project)
-    return True
-
-
-def set_window_value(key, value=None):
-    """
-    Set value in window session settings.
-
-    NOTE: Window object in Sublime Text 2 has no Settings.
-    """
-    try:
-        settings = sublime.active_window().settings()
-        if settings.has(KEY_XDEBUG):
-            xdebug = settings.get(KEY_XDEBUG)
-        else:
-            xdebug = {}
-        if value is not None:
-            xdebug[key] = value
-        elif key in xdebug.keys():
-            del xdebug[key]
-        settings.set(KEY_XDEBUG, xdebug)
-    except:
-        pass
+CONFIG_PROJECT = None
+CONFIG_PACKAGE = None
+CONFIG_KEYS = [
+	KEY_PATH_MAPPING,
+	KEY_URL,
+	KEY_IDE_KEY,
+	KEY_PORT,
+	KEY_SUPER_GLOBALS,
+	KEY_MAX_CHILDREN,
+	KEY_MAX_DEPTH,
+	KEY_BREAK_ON_START,
+	KEY_CLOSE_ON_STOP,
+	KEY_HIDE_PASSWORD,
+	KEY_PRETTY_OUTPUT,
+	KEY_LAUNCH_BROWSER,
+	KEY_BROWSER_NO_EXECUTE,
+	KEY_DISABLE_LAYOUT,
+	KEY_DEBUG_LAYOUT,
+	KEY_BREAKPOINT_GROUP,
+	KEY_BREAKPOINT_INDEX,
+	KEY_CONTEXT_GROUP,
+	KEY_CONTEXT_INDEX,
+	KEY_STACK_GROUP,
+	KEY_STACK_INDEX,
+	KEY_WATCH_GROUP,
+	KEY_WATCH_INDEX,
+	KEY_BREAKPOINT_CURRENT,
+	KEY_BREAKPOINT_DISABLED,
+	KEY_BREAKPOINT_ENABLED,
+	KEY_CURRENT_LINE,
+	KEY_PYTHON_PATH,
+	KEY_DEBUG
+]

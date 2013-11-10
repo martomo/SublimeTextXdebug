@@ -13,6 +13,9 @@ try:
 except:
     import settings as S
 
+# Config module
+from .config import get_value
+
 # Log module
 from .log import debug
 
@@ -32,6 +35,7 @@ except ImportError:
     ET.XMLTreeBuilder = SimpleXMLTreeBuilder.TreeBuilder
 
 
+
 class Protocol(object):
     """
     Class for connecting with debugger engine which uses DBGp protocol.
@@ -42,7 +46,7 @@ class Protocol(object):
 
     def __init__(self):
         # Set port number to listen for response
-        self.port = S.get_config_value('port', S.DEFAULT_PORT)
+        self.port = get_value('port', S.DEFAULT_PORT)
         self.clear()
 
     def transaction_id():
