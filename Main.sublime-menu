@@ -20,6 +20,10 @@
                         "args"   : {"launch_browser" : true}
                     },
                     {
+                        "caption": "Restart Session",
+                        "command": "xdebug_session_restart"
+                    },
+                    {
                         "caption": "Stop Debugging",
                         "command": "xdebug_session_stop"
                     },
@@ -47,6 +51,10 @@
                     {
                         "caption": "Clear Breakpoints",
                         "command": "xdebug_clear_breakpoints"
+                    },
+                    {
+                        "caption": "Clear All Breakpoints",
+                        "command": "xdebug_clear_all_breakpoints"
                     },
                     {
                         "caption": "-"

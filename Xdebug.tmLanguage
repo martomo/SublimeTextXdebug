@@ -125,11 +125,40 @@
 					<key>name</key>
 					<string>variable.parameter.settings</string>
 				</dict>
+				<key>5</key>
+				<dict>
+					<key>name</key>
+					<string>comment.line.settings</string>
+				</dict>
+				<key>6</key>
+				<dict>
+					<key>name</key>
+					<string>support.type.settings</string>
+				</dict>
 			</dict>
 			<key>match</key>
-			<string>^(\[\d+\])\s*(.*)(\..*)(\s*:.*\d+)</string>
+			<string>^(\[\d+\])\s*(.*)(\..*)(\s*:.*?\d+)\s*(\((.*?):.*\)|$)</string>
 			<key>name</key>
 			<string>xdebug.output.stack.entry</string>
+		</dict>
+		<dict>
+			<key>captures</key>
+			<dict>
+				<key>1</key>
+				<dict>
+					<key>name</key>
+					<string>support.type.settings</string>
+				</dict>
+				<key>2</key>
+				<dict>
+					<key>name</key>
+					<string>comment.line.settings</string>
+				</dict>
+			</dict>
+			<key>match</key>
+			<string>^(\[.*?\])\s*(.*)</string>
+			<key>name</key>
+			<string>xdebug.output.stack.exception</string>
 		</dict>
 		<dict>
 			<key>captures</key>

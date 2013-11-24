@@ -77,7 +77,7 @@ def get_real_path(uri, server=False):
                     uri = uri.replace(server_path, local_path)
                     break
     else:
-        sublime.set_timeout(lambda: sublime.status_message("Xdebug: No path mapping defined, returning given path."), 0)
+        sublime.set_timeout(lambda: sublime.status_message("Xdebug: No path mapping defined, returning given path."), 100)
 
     # Replace slashes
     if not drive_pattern.match(uri):
@@ -184,7 +184,7 @@ def get_region_icon(icon):
 def launch_browser():
     url = get_value('url')
     if not url:
-        sublime.status_message('Xdebug: No URL defined in (project) settings file.')
+        sublime.set_timeout(lambda: sublime.status_message('Xdebug: No URL defined in (project) settings file.'), 100)
         return
     ide_key = get_value('ide_key', S.DEFAULT_IDE_KEY)
     operator = '?'

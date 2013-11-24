@@ -9,6 +9,10 @@
         "args"   : {"launch_browser" : true}
     },
     {
+        "caption": "Xdebug: Restart Session",
+        "command": "xdebug_session_restart"
+    },
+    {
         "caption": "Xdebug: Stop Debugging",
         "command": "xdebug_session_stop"
     },
@@ -33,6 +37,10 @@
     {
         "caption": "Xdebug: Clear Breakpoints",
         "command": "xdebug_clear_breakpoints"
+    },
+    {
+        "caption": "Xdebug: Clear All Breakpoints",
+        "command": "xdebug_clear_all_breakpoints"
     },
     {
         "caption": "Xdebug: Set Watch Expression",

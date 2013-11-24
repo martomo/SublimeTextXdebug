@@ -20,6 +20,7 @@ KEY_SUPER_GLOBALS = "super_globals"
 KEY_MAX_CHILDREN = "max_children"
 KEY_MAX_DEPTH = "max_depth"
 KEY_BREAK_ON_START = "break_on_start"
+KEY_BREAK_ON_EXCEPTION = "break_on_exception"
 KEY_CLOSE_ON_STOP = "close_on_stop"
 KEY_HIDE_PASSWORD = "hide_password"
 KEY_PRETTY_OUTPUT = "pretty_output"
@@ -75,6 +76,7 @@ BREAKPOINT = {}
 CONTEXT_DATA = {}
 WATCH = []
 
+BREAKPOINT_EXCEPTION = None
 # Breakpoint line number in script being debugged
 BREAKPOINT_ROW = None
 # Placholder for temporary breakpoint filename and line number
@@ -99,6 +101,7 @@ CONFIG_KEYS = [
 	KEY_MAX_CHILDREN,
 	KEY_MAX_DEPTH,
 	KEY_BREAK_ON_START,
+	KEY_BREAK_ON_EXCEPTION,
 	KEY_CLOSE_ON_STOP,
 	KEY_HIDE_PASSWORD,
 	KEY_PRETTY_OUTPUT,

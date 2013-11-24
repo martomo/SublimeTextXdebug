@@ -62,6 +62,8 @@ class EventListener(sublime_plugin.EventListener):
             V.show_context_output(view)
         elif view.name() == V.TITLE_WINDOW_BREAKPOINT:
             V.toggle_breakpoint(view)
+        elif view.name() == V.TITLE_WINDOW_STACK:
+            V.toggle_stack(view)
         elif view.name() == V.TITLE_WINDOW_WATCH:
             V.toggle_watch(view)
         else:
@@ -150,7 +152,7 @@ class XdebugConditionalBreakpointCommand(sublime_plugin.TextCommand):
 
 class XdebugClearBreakpointsCommand(sublime_plugin.TextCommand):
     """
-    Clear all breakpoints in selected view.
+    Clear breakpoints in selected view.
     """
     def run(self, edit):
         filename = self.view.file_name()
@@ -160,6 +162,46 @@ class XdebugClearBreakpointsCommand(sublime_plugin.TextCommand):
             # Continue debug session when breakpoints are cleared on current script being debugged
             if S.BREAKPOINT_ROW and self.view.file_name() == S.BREAKPOINT_ROW['filename']:
                 self.view.window().run_command('xdebug_execute', {'command': 'run'})
+
+    def is_enabled(self):
+        filename = self.view.file_name()
+        return filename and S.BREAKPOINT and filename in S.BREAKPOINT and S.BREAKPOINT[filename]
+
+    def is_visible(self):
+        filename = self.view.file_name()
+        return filename and S.BREAKPOINT and filename in S.BREAKPOINT and S.BREAKPOINT[filename]
+
+
+class XdebugClearAllBreakpointsCommand(sublime_plugin.WindowCommand):
+    """
+    Clear breakpoints from all views.
+    """
+    def run(self):
+        view = sublime.active_window().active_view()
+        # Unable to run to line when no view available
+        if view is None:
+            return
+
+        for filename, breakpoint_data in S.BREAKPOINT.items():
+            if breakpoint_data:
+                rows = H.dictionary_keys(breakpoint_data)
+                view.run_command('xdebug_breakpoint', {'rows': rows, 'filename': filename})
+        # Continue debug session when breakpoints are cleared on current script being debugged
+        self.window.run_command('xdebug_execute', {'command': 'run'})
+
+    def is_enabled(self):
+        if S.BREAKPOINT:
+            for filename, breakpoint_data in S.BREAKPOINT.items():
+                if breakpoint_data:
+                    return True
+        return False
+
+    def is_visible(self):
+        if S.BREAKPOINT:
+            for filename, breakpoint_data in S.BREAKPOINT.items():
+                if breakpoint_data:
+                    return True
+        return False
 
 
 class XdebugRunToLineCommand(sublime_plugin.WindowCommand):
@@ -206,6 +248,7 @@ class XdebugSessionStartCommand(sublime_plugin.WindowCommand):
         # Define new session with DBGp protocol
         S.SESSION = protocol.Protocol()
         S.SESSION_BUSY = False
+        S.BREAKPOINT_EXCEPTION = None
         S.BREAKPOINT_ROW = None
         S.CONTEXT_DATA.clear()
         async_session = session.SocketHandler(session.ACTION_WATCH, check_watch_view=True)
@@ -231,7 +274,7 @@ class XdebugSessionStartCommand(sublime_plugin.WindowCommand):
             sublime.set_timeout(self.connected, 0)
 
     def connected(self):
-        sublime.status_message('Xdebug: Connected')
+        sublime.set_timeout(lambda: sublime.status_message('Xdebug: Connected'), 100)
 
         async_session = session.SocketHandler(session.ACTION_INIT)
         async_session.start()
@@ -249,6 +292,23 @@ class XdebugSessionStartCommand(sublime_plugin.WindowCommand):
         return True
 
 
+class XdebugSessionRestartCommand(sublime_plugin.WindowCommand):
+    def run(self):
+        self.window.run_command('xdebug_session_stop', {'restart': True})
+        self.window.run_command('xdebug_session_start', {'restart': True})
+        sublime.set_timeout(lambda: sublime.status_message('Xdebug: Restarted debugging session. Reload page to continue debugging.'), 100)
+
+    def is_enabled(self):
+        if S.SESSION:
+            return True
+        return False
+
+    def is_visible(self):
+        if S.SESSION:
+            return True
+        return False
+
+
 class XdebugSessionStopCommand(sublime_plugin.WindowCommand):
     """
     Stop Xdebug session, close connection and stop listening to debugger engine.
@@ -261,6 +321,7 @@ class XdebugSessionStopCommand(sublime_plugin.WindowCommand):
         finally:
             S.SESSION = None
             S.SESSION_BUSY = False
+            S.BREAKPOINT_EXCEPTION = None
             S.BREAKPOINT_ROW = None
             S.CONTEXT_DATA.clear()
             async_session = session.SocketHandler(session.ACTION_WATCH, check_watch_view=True)

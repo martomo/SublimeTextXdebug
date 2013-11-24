@@ -16,6 +16,10 @@
                 "command": "xdebug_clear_breakpoints"
             },
             {
+                "caption": "Clear All Breakpoints",
+                "command": "xdebug_clear_all_breakpoints"
+            },
+            {
                 "caption": "-"
             },
             {

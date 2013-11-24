@@ -81,6 +81,7 @@ def connection_error(message):
     finally:
         S.SESSION = None
         S.SESSION_BUSY = False
+        S.BREAKPOINT_EXCEPTION = None
         S.BREAKPOINT_ROW = None
         S.BREAKPOINT_RUN = None
         S.CONTEXT_DATA.clear()
@@ -128,7 +129,7 @@ class SocketHandler(threading.Thread):
             pass
 
     def status_message(self, message):
-        self.timeout(lambda: sublime.status_message(message))
+        sublime.set_timeout(lambda: sublime.status_message(message), 100)
 
     def timeout(self, function):
         sublime.set_timeout(function, 0)
@@ -197,6 +198,7 @@ class SocketHandler(threading.Thread):
         response = S.SESSION.read()
 
         # Reset previous breakpoint values
+        S.BREAKPOINT_EXCEPTION = None
         S.BREAKPOINT_ROW = None
         S.CONTEXT_DATA.clear()
         self.watch_expression()
@@ -209,7 +211,13 @@ class SocketHandler(threading.Thread):
                 # Get breakpoint attribute values
                 fileuri = child.get(dbgp.BREAKPOINT_FILENAME)
                 lineno = child.get(dbgp.BREAKPOINT_LINENO)
+                exception = child.get(dbgp.BREAKPOINT_EXCEPTION)
                 filename = get_real_path(fileuri)
+                if (exception):
+                    info(exception + ': ' + child.text)
+                    # Remember Exception name and first line of message
+                    S.BREAKPOINT_EXCEPTION = { 'name': exception, 'message': child.text.split('\n')[0], 'filename': fileuri, 'lineno': lineno }
+
                 # Check if temporary breakpoint is set and hit
                 if S.BREAKPOINT_RUN is not None and S.BREAKPOINT_RUN['filename'] == filename and S.BREAKPOINT_RUN['lineno'] == lineno:
                     # Remove temporary breakpoint
@@ -348,6 +356,12 @@ class SocketHandler(threading.Thread):
                         self.set_breakpoint(filename, lineno, bp['expression'])
                         debug('breakpoint_set: ' + filename + ':' + lineno)
 
+        # Set breakpoints for exceptions
+        break_on_exception = get_value('break_on_exception')
+        if isinstance(break_on_exception, list):
+            for exception_name in break_on_exception:
+                self.set_exception(exception_name)
+
         # Determine if client should break at first line on connect
         if get_value('break_on_start'):
             # Get init attribute values
@@ -400,6 +414,14 @@ class SocketHandler(threading.Thread):
         breakpoint_id = response.get(dbgp.ATTRIBUTE_BREAKPOINT_ID)
         if breakpoint_id:
             S.BREAKPOINT[filename][lineno]['id'] = breakpoint_id
+
+
+    def set_exception(self, exception):
+        if not is_connected():
+            return
+
+        S.SESSION.send(dbgp.BREAKPOINT_SET, t='exception', x='"%s"' % exception)
+        response = S.SESSION.read()
 
 
     def status(self):

@@ -26,7 +26,7 @@ except:
 from .config import get_value, get_window_value, set_window_value
 
 # Util module
-from .util import get_region_icon, save_watch_data
+from .util import get_real_path, get_region_icon, save_watch_data
 
 
 DATA_BREAKPOINT = 'breakpoint'
@@ -147,7 +147,14 @@ def generate_context_output(context, indent=0):
 
 def generate_stack_output(response):
     values = H.unicode_string('')
+
+    # Display exception name and message
+    if S.BREAKPOINT_EXCEPTION:
+        values += H.unicode_string('[{name}] {message}\n' \
+                                  .format(name=S.BREAKPOINT_EXCEPTION['name'], message=S.BREAKPOINT_EXCEPTION['message']))
+
     # Walk through elements in response
+    has_output = False
     try:
         for child in response:
             # Get stack attribute values
@@ -160,8 +167,14 @@ def generate_stack_output(response):
                 # Append values
                 values += H.unicode_string('[{level}] {filename}.{where}:{lineno}\n' \
                                           .format(level=stack_level, type=stack_type, where=stack_where, lineno=stack_line, filename=stack_file))
+                has_output = True
     except:
         pass
+
+    # When no stack use values from exception
+    if not has_output and S.BREAKPOINT_EXCEPTION:
+        values += H.unicode_string('[{level}] {filename}.{where}:{lineno}\n' \
+                                  .format(level=0, where='{unknown}', lineno=S.BREAKPOINT_EXCEPTION['lineno'], filename=S.BREAKPOINT_EXCEPTION['filename']))
 
     return values
 
@@ -828,6 +841,37 @@ def toggle_breakpoint(view):
                     if enabled is None:
                         return
                     sublime.active_window().run_command('xdebug_breakpoint', {"enabled": enabled, "rows": [line_number], "filename": filename})
+        # Check if selected point uses breakpoint file scope
+        elif point.size() > 3 and sublime.score_selector(view.scope_name(point.a), 'xdebug.output.breakpoint.file'):
+            # Get filename from selected line in view
+            file_line = view.substr(view.line(point))
+            file_pattern = re.compile('^\\s*(=>)\\s*(?P<filename>.*)')
+            file_match = file_pattern.match(file_line)
+            # Show file when it's a valid filename
+            if file_match and file_match.group('filename'):
+                filename = file_match.group('filename')
+                show_file(filename)
+    except:
+        pass
+
+
+def toggle_stack(view):
+    try:
+        # Get selected point in view
+        point = view.sel()[0]
+        # Check if selected point uses stack entry scope
+        if point.size() > 3 and sublime.score_selector(view.scope_name(point.a), 'xdebug.output.stack.entry'):
+            # Get fileuri and line number from selected line in view
+            line = view.substr(view.line(point))
+            pattern = re.compile('^(\[\d+\])\s*(?P<fileuri>.*)(\..*)(\s*:.*?(?P<lineno>\d+))\s*(\((.*?):.*\)|$)')
+            match = pattern.match(line)
+            # Show file when it's a valid fileuri
+            if match and match.group('fileuri'):
+                filename = get_real_path(match.group('fileuri'))
+                lineno = 0
+                if match.group('lineno'):
+                    lineno = match.group('lineno')
+                show_file(filename, lineno)
     except:
         pass
 
