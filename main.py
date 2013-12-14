@@ -12,7 +12,7 @@ except:
     from xdebug import *
 
 # Set Python libraries from system installation
-python_path = config.get_value('python_path')
+python_path = config.get_value(S.KEY_PYTHON_PATH)
 if python_path:
     python_path = os.path.normpath(python_path.replace("\\", "/"))
     python_dynload = os.path.join(python_path, 'lib-dynload')
@@ -165,11 +165,15 @@ class XdebugClearBreakpointsCommand(sublime_plugin.TextCommand):
 
     def is_enabled(self):
         filename = self.view.file_name()
-        return filename and S.BREAKPOINT and filename in S.BREAKPOINT and S.BREAKPOINT[filename]
+        if filename and S.BREAKPOINT and filename in S.BREAKPOINT and S.BREAKPOINT[filename]:
+            return True
+        return False
 
     def is_visible(self):
         filename = self.view.file_name()
-        return filename and S.BREAKPOINT and filename in S.BREAKPOINT and S.BREAKPOINT[filename]
+        if filename and S.BREAKPOINT and filename in S.BREAKPOINT and S.BREAKPOINT[filename]:
+            return True
+        return False
 
 
 class XdebugClearAllBreakpointsCommand(sublime_plugin.WindowCommand):
@@ -260,7 +264,7 @@ class XdebugSessionStartCommand(sublime_plugin.WindowCommand):
         # Set debug layout
         self.window.run_command('xdebug_layout')
         # Launch browser
-        if launch_browser or (config.get_value('launch_browser') and not restart):
+        if launch_browser or (config.get_value(S.KEY_LAUNCH_BROWSER) and not restart):
             util.launch_browser()
 
         # Start thread which will run method that listens for response on configured port
@@ -287,7 +291,7 @@ class XdebugSessionStartCommand(sublime_plugin.WindowCommand):
     def is_visible(self, launch_browser=False):
         if S.SESSION:
             return False
-        if launch_browser and (config.get_value('launch_browser') or not config.get_value('url')):
+        if launch_browser and (config.get_value(S.KEY_LAUNCH_BROWSER) or not config.get_value(S.KEY_URL)):
             return False
         return True
 
@@ -331,11 +335,11 @@ class XdebugSessionStopCommand(sublime_plugin.WindowCommand):
                 self.window.active_view().run_command('xdebug_breakpoint', {'rows': [S.BREAKPOINT_RUN['lineno']], 'filename': S.BREAKPOINT_RUN['filename']})
             S.BREAKPOINT_RUN = None
         # Launch browser
-        if launch_browser or (config.get_value('launch_browser') and not restart):
+        if launch_browser or (config.get_value(S.KEY_LAUNCH_BROWSER) and not restart):
             util.launch_browser()
         # Close or reset debug layout
-        if close_windows or config.get_value('close_on_stop'):
-            if config.get_value('disable_layout'):
+        if close_windows or config.get_value(S.KEY_CLOSE_ON_STOP):
+            if config.get_value(S.KEY_DISABLE_LAYOUT):
                 self.window.run_command('xdebug_layout', {'close_windows': True})
             else:
                 self.window.run_command('xdebug_layout', {'restore': True})
@@ -351,9 +355,9 @@ class XdebugSessionStopCommand(sublime_plugin.WindowCommand):
 
     def is_visible(self, close_windows=False, launch_browser=False):
         if S.SESSION:
-            if close_windows and config.get_value('close_on_stop'):
+            if close_windows and config.get_value(S.KEY_CLOSE_ON_STOP):
                 return False
-            if launch_browser and (config.get_value('launch_browser') or not config.get_value('url')):
+            if launch_browser and (config.get_value(S.KEY_LAUNCH_BROWSER) or not config.get_value(S.KEY_URL)):
                 return False
             return True
         return False
@@ -599,7 +603,7 @@ class XdebugLayoutCommand(sublime_plugin.WindowCommand):
         if S.SESSION and (restore or close_windows or keymap):
             return
         # Set layout, unless user disabled debug layout
-        if not config.get_value('disable_layout'):
+        if not config.get_value(S.KEY_DISABLE_LAYOUT):
             if restore or keymap:
                 V.set_layout('normal')
             else:
@@ -619,7 +623,7 @@ class XdebugLayoutCommand(sublime_plugin.WindowCommand):
         window.run_command('hide_panel', {"panel": 'output.xdebug'})
 
     def is_enabled(self, restore=False, close_windows=False):
-        disable_layout = config.get_value('disable_layout')
+        disable_layout = config.get_value(S.KEY_DISABLE_LAYOUT)
         if close_windows and (not disable_layout or not V.has_debug_view()):
             return False
         if restore and disable_layout:
@@ -629,14 +633,14 @@ class XdebugLayoutCommand(sublime_plugin.WindowCommand):
     def is_visible(self, restore=False, close_windows=False):
         if S.SESSION:
             return False
-        disable_layout = config.get_value('disable_layout')
+        disable_layout = config.get_value(S.KEY_DISABLE_LAYOUT)
         if close_windows and (not disable_layout or not V.has_debug_view()):
             return False
         if restore and disable_layout:
             return False
         if restore:
             try:
-                return sublime.active_window().get_layout() == config.get_value('debug_layout', S.LAYOUT_DEBUG)
+                return sublime.active_window().get_layout() == config.get_value(S.KEY_DEBUG_LAYOUT, S.LAYOUT_DEBUG)
             except:
                 pass
         return True

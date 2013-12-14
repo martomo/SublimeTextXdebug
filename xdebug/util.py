@@ -59,7 +59,7 @@ def get_real_path(uri, server=False):
     if not drive_pattern.match(uri) and not os.path.isabs(uri):
         uri = os.path.normpath('/' + uri)
 
-    path_mapping = get_value('path_mapping')
+    path_mapping = get_value(S.KEY_PATH_MAPPING)
     if isinstance(path_mapping, dict):
         # Go through path mappings
         for server_path, local_path in path_mapping.items():
@@ -182,11 +182,11 @@ def get_region_icon(icon):
 
 
 def launch_browser():
-    url = get_value('url')
+    url = get_value(S.KEY_URL)
     if not url:
         sublime.set_timeout(lambda: sublime.status_message('Xdebug: No URL defined in (project) settings file.'), 100)
         return
-    ide_key = get_value('ide_key', S.DEFAULT_IDE_KEY)
+    ide_key = get_value(S.KEY_IDE_KEY, S.DEFAULT_IDE_KEY)
     operator = '?'
 
     # Check if url already has query string
@@ -199,7 +199,7 @@ def launch_browser():
     # Stop debug session
     else:
         # Check if we should execute script
-        if get_value('browser_no_execute'):
+        if get_value(S.KEY_BROWSER_NO_EXECUTE):
             # Without executing script
             webbrowser.open(url + operator + 'XDEBUG_SESSION_STOP_NO_EXEC=' + ide_key)
         else:

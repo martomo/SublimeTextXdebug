@@ -36,9 +36,13 @@
     // and object's properties to return.
     "max_children": 32,
 
+    // Maximum amount of
+    // variable data to initially retrieve.
+    "max_data": 1024,
+
     // Maximum amount of nested levels to retrieve
     // of array elements and object properties.
-    "max_depth": 3,
+    "max_depth": 1,
 
     // Break at first line on session start, when debugger engine has connected.
     "break_on_start": false,

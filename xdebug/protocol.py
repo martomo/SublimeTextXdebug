@@ -46,7 +46,7 @@ class Protocol(object):
 
     def __init__(self):
         # Set port number to listen for response
-        self.port = get_value('port', S.DEFAULT_PORT)
+        self.port = get_value(S.KEY_PORT, S.DEFAULT_PORT)
         self.clear()
 
     def transaction_id():

@@ -5,6 +5,7 @@ STATUS = 'status';
 FEATURE_GET = 'feature_get';
 FEATURE_SET = 'feature_set';
 FEATURE_NAME_MAXCHILDREN = 'max_children'
+FEATURE_NAME_MAXDATA = 'max_data'
 FEATURE_NAME_MAXDEPTH = 'max_depth'
 
 

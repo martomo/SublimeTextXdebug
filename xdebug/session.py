@@ -177,7 +177,7 @@ class SocketHandler(threading.Thread):
             return
         # Send 'eval' command to debugger engine with code to evaluate
         S.SESSION.send(dbgp.EVAL, expression=expression)
-        if get_value('pretty_output'):
+        if get_value(S.KEY_PRETTY_OUTPUT):
             response = S.SESSION.read()
             properties = get_response_properties(response, expression)
             response = generate_context_output(properties)
@@ -269,7 +269,7 @@ class SocketHandler(threading.Thread):
         context = H.new_dictionary()
         try:
             # Super global variables
-            if get_value('super_globals'):
+            if get_value(S.KEY_SUPER_GLOBALS):
                 S.SESSION.send(dbgp.CONTEXT_GET, c=1)
                 response = S.SESSION.read()
                 context.update(get_response_properties(response))
@@ -338,15 +338,23 @@ class SocketHandler(threading.Thread):
         S.SESSION.send(dbgp.FEATURE_SET, n='show_hidden', v=1)
         response = S.SESSION.read()
 
-        # Set max depth limit
-        max_depth = get_value('max_depth', S.MAX_DEPTH)
-        S.SESSION.send(dbgp.FEATURE_SET, n=dbgp.FEATURE_NAME_MAXDEPTH, v=max_depth)
-        response = S.SESSION.read()
-
         # Set max children limit
-        max_children = get_value('max_children', S.MAX_CHILDREN)
-        S.SESSION.send(dbgp.FEATURE_SET, n=dbgp.FEATURE_NAME_MAXCHILDREN, v=max_children)
-        response = S.SESSION.read()
+        max_children = get_value(S.KEY_MAX_CHILDREN)
+        if max_children is not False and max_children is not True and isinstance(max_children, int):
+            S.SESSION.send(dbgp.FEATURE_SET, n=dbgp.FEATURE_NAME_MAXCHILDREN, v=max_children)
+            response = S.SESSION.read()
+
+        # Set max data limit
+        max_data = get_value(S.KEY_MAX_DATA)
+        if max_data is not False and max_data is not True and isinstance(max_data, int):
+            S.SESSION.send(dbgp.FEATURE_SET, n=dbgp.FEATURE_NAME_MAXDATA, v=max_data)
+            response = S.SESSION.read()
+
+        # Set max depth limit
+        max_depth = get_value(S.KEY_MAX_DEPTH)
+        if max_depth is not False and max_depth is not True and isinstance(max_depth, int):
+            S.SESSION.send(dbgp.FEATURE_SET, n=dbgp.FEATURE_NAME_MAXDEPTH, v=max_depth)
+            response = S.SESSION.read()
 
         # Set breakpoints for files
         for filename, breakpoint_data in S.BREAKPOINT.items():
@@ -357,13 +365,13 @@ class SocketHandler(threading.Thread):
                         debug('breakpoint_set: ' + filename + ':' + lineno)
 
         # Set breakpoints for exceptions
-        break_on_exception = get_value('break_on_exception')
+        break_on_exception = get_value(S.KEY_BREAK_ON_EXCEPTION)
         if isinstance(break_on_exception, list):
             for exception_name in break_on_exception:
                 self.set_exception(exception_name)
 
         # Determine if client should break at first line on connect
-        if get_value('break_on_start'):
+        if get_value(S.KEY_BREAK_ON_START):
             # Get init attribute values
             fileuri = init.get(dbgp.INIT_FILEURI)
             filename = get_real_path(fileuri)

@@ -18,6 +18,7 @@ KEY_IDE_KEY = "ide_key"
 KEY_PORT = "port"
 KEY_SUPER_GLOBALS = "super_globals"
 KEY_MAX_CHILDREN = "max_children"
+KEY_MAX_DATA = "max_data"
 KEY_MAX_DEPTH = "max_depth"
 KEY_BREAK_ON_START = "break_on_start"
 KEY_BREAK_ON_EXCEPTION = "break_on_exception"
@@ -84,12 +85,6 @@ BREAKPOINT_RUN = None
 # Will hold breakpoint line number to show for file which is being loaded
 SHOW_ROW_ONLOAD = {}
 
-# Maximum amount of array children and object's properties to return
-MAX_CHILDREN = 0
-# Maximum amount of nested levels to retrieve of array elements and object properties
-MAX_DEPTH = 1023
-
-
 CONFIG_PROJECT = None
 CONFIG_PACKAGE = None
 CONFIG_KEYS = [
@@ -99,6 +94,7 @@ CONFIG_KEYS = [
 	KEY_PORT,
 	KEY_SUPER_GLOBALS,
 	KEY_MAX_CHILDREN,
+	KEY_MAX_DATA,
 	KEY_MAX_DEPTH,
 	KEY_BREAK_ON_START,
 	KEY_BREAK_ON_EXCEPTION,

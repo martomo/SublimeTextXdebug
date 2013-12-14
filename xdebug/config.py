@@ -37,8 +37,16 @@ def get_value(key, default_value=None):
     """
     Get value from package/project configuration settings.
     """
-    value = get_project_value(key) or get_package_value(key)
-    return value if value is not None else default_value
+    # Get value from project configuration
+    value = get_project_value(key)
+    # Use package configuration when value has not been found
+    if value is None:
+        value = get_package_value(key)
+    # Return package/project value
+    if value is not None:
+        return value
+    # Otherwise use default value
+    return default_value
 
 
 def get_package_value(key, default_value=None):

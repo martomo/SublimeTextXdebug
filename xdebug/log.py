@@ -20,7 +20,7 @@ def clear_output():
 
 
 def debug(message=None):
-    if not get_value('debug') or message is None:
+    if not get_value(S.KEY_DEBUG) or message is None:
         return
     # Write message to output file
     logging.debug(message)

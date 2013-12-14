@@ -236,14 +236,14 @@ def get_debug_index(name=None):
     name -- Name of debug view to get group/index position.
     """
     # Set group and index for each debug view
-    breakpoint_group = get_value('breakpoint_group', -1)
-    breakpoint_index = get_value('breakpoint_index', 0)
-    context_group = get_value('context_group', -1)
-    context_index = get_value('context_index', 0)
-    stack_group = get_value('stack_group', -1)
-    stack_index = get_value('stack_index', 0)
-    watch_group = get_value('watch_group', -1)
-    watch_index = get_value('watch_index', 0)
+    breakpoint_group = get_value(S.KEY_BREAKPOINT_GROUP, -1)
+    breakpoint_index = get_value(S.KEY_BREAKPOINT_INDEX, 0)
+    context_group = get_value(S.KEY_CONTEXT_GROUP, -1)
+    context_index = get_value(S.KEY_CONTEXT_INDEX, 0)
+    stack_group = get_value(S.KEY_STACK_GROUP, -1)
+    stack_index = get_value(S.KEY_STACK_INDEX, 0)
+    watch_group = get_value(S.KEY_WATCH_GROUP, -1)
+    watch_index = get_value(S.KEY_WATCH_INDEX, 0)
 
     # Create list with all debug views and sort by group/index
     debug_list = []
@@ -333,7 +333,7 @@ def get_response_properties(response, default_key=None):
                     continue
 
                 # Filter password values
-                if get_value('hide_password', True) and property_name.lower().find('password') != -1 and property_value is not None:
+                if get_value(S.KEY_HIDE_PASSWORD, True) and property_name.lower().find('password') != -1 and property_value is not None:
                     property_value = '******'
             else:
                 property_key = default_key
@@ -397,7 +397,7 @@ def set_layout(layout):
     previous_active = window.active_view()
 
     # Do not set layout when disabled
-    if get_value('disable_layout'):
+    if get_value(S.KEY_DISABLE_LAYOUT):
         S.RESTORE_LAYOUT = window.get_layout()
         set_window_value('restore_layout', S.RESTORE_LAYOUT)
         S.RESTORE_INDEX = H.new_dictionary()
@@ -406,7 +406,7 @@ def set_layout(layout):
 
     # Show debug layout
     if layout == 'debug':
-        debug_layout = get_value('debug_layout', S.LAYOUT_DEBUG)
+        debug_layout = get_value(S.KEY_DEBUG_LAYOUT, S.LAYOUT_DEBUG)
         if window.get_layout() != debug_layout:
             # Save current layout
             S.RESTORE_LAYOUT = window.get_layout()
