@@ -29,6 +29,7 @@ Here is a complete list of commands you can find Command Pallette under the `Xde
 #### Start/Stop debugging session
 * Start Debugging - <kbd>Ctrl+Shift+F9</kbd> or <kbd>⌘+Shift+F9</kbd>
 * Start Debugging (Launch Browser)
+* Restart Session
 * Stop Debugging - <kbd>Ctrl+Shift+F10</kbd> or <kbd>⌘+Shift+F10</kbd>
 * Stop Debugging (Launch Browser)
 * Stop Debugging (Close Windows)
@@ -39,6 +40,7 @@ Here is a complete list of commands you can find Command Pallette under the `Xde
 * Add/Remove Breakpoint - <kbd>Ctrl+F8</kbd> or <kbd>⌘+F8</kbd>
 * Set Conditional Breakpoint - <kbd>Shift+F8</kbd>
 * Clear Breakpoints
+* Clear All Breakpoints
 
 #### Watch expressions
 * Set Watch Expression
@@ -123,11 +125,17 @@ Show super globals in context view.
 *__max_children__*  
 Maximum amount of array children and object's properties to return.  
 
+*__max_data__*  
+Maximum amount of variable data to initially retrieve.  
+
 *__max_depth__*  
 Maximum amount of nested levels to retrieve of array elements and object properties.  
 
 *__break_on_start__*  
 Break at first line on session start, when debugger engine has connected.  
+
+*__break_on_exception__*  
+Break on exceptions, suspend execution when the exception name matches an entry in this list value.  
 
 *__close_on_stop__*  
 Always close debug windows and restore layout on session stop.  
@@ -257,6 +265,24 @@ Another example would be when you would like to know the value of __$item['image
 
 Another way is to set the breakpoint in your PHP code with the following function [`xdebug_break()`](http://xdebug.org/docs/remote#xdebug_break).
 
+#### How to configure or disable breaking on exceptions?
+By default the execution of a debugging session is suspended on each of the following exception names:
+- __"Fatal error"__ - E_ERROR, E_CORE_ERROR, E_COMPILE_ERROR, E_USER_ERROR
+- __"Catchable fatal error"__ - E_RECOVERABLE_ERROR (since PHP 5.2.0)
+- __"Warning"__ - E_WARNING, E_CORE_WARNING, E_COMPILE_WARNING, E_USER_WARNING
+- __"Parse error"__ - E_PARSE
+- __"Notice"__ - E_NOTICE, E_USER_NOTICE
+- __"Strict standards"__ - E_STRICT
+- __"Deprecated"__ - E_DEPRECATED, E_USER_DEPRECATED (since PHP 5.3.0)
+- __"Xdebug"__
+- __"Unknown error"__
+
+In order to specify which exception names to suspend the execution of a debugging session, configure the `break_on_exception` setting with a list of the specific exception names by choice from the list shown above.  
+
+It is also possible to specify custom exceptions instead of __all__ exceptions (__"Fatal error"__). For example if you would configure __"MissingArgumentException"__ instead of __"Fatal error"__, it would not break on __"InvalidParameterException"__.
+
+To disable breaking on exceptions either configure an empty list `break_on_exception: []` or set as `break_on_exception: false`.
+
 #### How can I customize/disable the debugging layout?
 Re-adjust the layout in Sublime Text to your liking and then in console (<kbd>Ctrl+\`</kbd>) you type `window.get_layout()` and set that value as your `debug_layout`.
 
@@ -277,7 +303,7 @@ First check following _possible_ solutions that could resolve any issues:
 - Breakpoint is on an empty line, Xdebug does not stop on empty lines.
 - Set `port` and [xdebug.remote_port](http://xdebug.org/docs/all_settings#remote_port) to different port *(9001)*, default port 9000 might already be used by an other application.
 - Add an exception for Sublime Text *(plugin_host.exe)* to your firewall, response from Xdebug could be blocked by firewall.
-- Lower the `max_depth`/`max_children` settings to increase response speed or prevent crashing, Xdebug could return to much data to process.
+- Lower the `max_data`/`max_depth`/`max_children` settings to increase response speed or prevent crashing, Xdebug could return to much data to process.
 - Change permissions for Sublime Text and it's packages on your filesystem, Sublime Text or package might not have valid rights.
 
 Do you still experience any issues, then [create an issue](https://github.com/martomo/SublimeTextXdebug/issues/new) including the following data:
