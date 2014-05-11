@@ -44,6 +44,9 @@ def base64_encode(data):
 	# Base64 needs ascii input to encode, which returns Base64 byte string, decode to convert to UTF8 string
 	return base64.b64encode(data.encode('ascii')).decode('utf8')
 
+def unicode_chr(code):
+	return chr(code)
+
 def unicode_string(string):
 	# Python 3.* uses unicode by default
 	return string

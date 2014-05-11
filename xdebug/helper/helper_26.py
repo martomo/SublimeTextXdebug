@@ -48,6 +48,9 @@ def base64_decode(data):
 def base64_encode(data):
 	return base64.b64encode(data)
 
+def unicode_chr(code):
+	return unichr(code)
+
 def unicode_string(string):
 	if isinstance(string, unicode):
 		return string
