@@ -20,11 +20,11 @@ from .config import get_value
 # Log module
 from .log import debug
 
-# HTML parser
+# HTML entities
 try:
-    from html.parser import HTMLParser
+    from html.entities import name2codepoint
 except ImportError:
-    from HTMLParser import HTMLParser
+    from htmlentitydefs import name2codepoint
 
 # XML parser
 try:
@@ -106,6 +106,34 @@ class Protocol(object):
             pass
         self.socket = None
 
+    def unescape(self, string):
+        """
+        Convert HTML entities and character references to ordinary characters.
+        """
+        def convert(matches):
+            text = matches.group(0)
+            # Character reference
+            if text[:2] == "&#":
+                try:
+                    if text[:3] == "&#x":
+                        return H.unicode_chr(int(text[3:-1], 16))
+                    else:
+                        return H.unicode_chr(int(text[2:-1]))
+                except ValueError:
+                    pass
+            # Named entity
+            else:
+                try:
+                    # Following are not needed to be converted for XML
+                    if text[1:-1] == "amp" or text[1:-1] == "gt" or text[1:-1] == "lt":
+                        pass
+                    else:
+                        text = H.unicode_chr(name2codepoint[text[1:-1]])
+                except KeyError:
+                    pass
+            return text
+        return re.sub("&#?\w+;", convert, string)
+
     def read_until_null(self):
         """
         Get response data from debugger engine.
@@ -151,8 +179,7 @@ class Protocol(object):
             return data
 
         # Remove special character quoting
-        parser = HTMLParser()
-        data = parser.unescape(data)
+        data = self.unescape(data)
 
         # Replace invalid XML characters
         data = ILLEGAL_XML_RE.sub('?', data)
