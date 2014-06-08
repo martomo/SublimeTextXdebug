@@ -483,6 +483,36 @@ class XdebugUserExecuteCommand(sublime_plugin.WindowCommand):
     def is_visible(self):
         return session.is_connected()
 
+class XdebugUserModifyCommand(sublime_plugin.WindowCommand):
+    """
+    Open input panel, allowing user to modify variables.
+    Format: $variable = "value" or $variable = "value"
+    """
+    def on_done(self, line):
+        if ' = ' in line:
+            varName, varValue = line.split(' = ', 1)
+        elif '=' in line:
+            varName, varValue = line.split('=', 1)
+        else:
+            pass
+
+        async_session = session.SocketHandler(session.ACTION_MODIFY, varName=varName, varValue=varValue)
+        async_session.start()
+
+    def run(self):
+        self.window.show_input_panel('Modify', '', self.on_done, self.on_change, self.on_cancel)
+
+    def on_change(self, line):
+        pass
+
+    def on_cancel(self):
+        pass
+
+    def is_enabled(self):
+        return session.is_connected()
+
+    def is_visible(self):
+        return session.is_connected()
 
 class XdebugWatchCommand(sublime_plugin.WindowCommand):
     """
