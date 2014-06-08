@@ -395,6 +395,12 @@ class SocketHandler(threading.Thread):
             for exception_name in break_on_exception:
                 self.set_exception(exception_name)
 
+        #Determines if the client should break at execution's end
+        if get_value(S.KEY_BREAK_ON_END):
+            # xdebug_break() doesn't seem to work here so we had to use a hacky way to create a breakpoint
+            expression = 'register_shutdown_function( function () { throw new Exception("XDebug SublimePlugin: Program terminated."); } )'
+            self.evaluate(expression=expression)
+
         # Determine if client should break at first line on connect
         if get_value(S.KEY_BREAK_ON_START):
             # Get init attribute values
@@ -424,7 +430,6 @@ class SocketHandler(threading.Thread):
         else:
             # Tell script to run it's process
             self.run_command('xdebug_execute', {'command': 'run'})
-
 
     def remove_breakpoint(self, breakpoint_id):
         if not breakpoint_id or not is_connected():

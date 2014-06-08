@@ -47,6 +47,9 @@
     // Break at first line on session start, when debugger engine has connected.
     "break_on_start": false,
 
+    // Break once the session has ended, either regularly or via exit() or die(). Uses register_shutdown_function().
+    "break_on_end" : false,
+
     // Break on exceptions, suspend execution
     // when the exception name matches an entry in this list value.
     "break_on_exception": [
