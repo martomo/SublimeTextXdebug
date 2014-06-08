@@ -2,7 +2,6 @@ import sublime
 
 import sys
 import threading
-import base64
 
 # Helper module
 try:
@@ -151,8 +150,6 @@ class SocketHandler(threading.Thread):
                 self.execute(self.get_option('command'))
             elif self.action == ACTION_MODIFY:
                 self.modify(self.get_option('varName'), self.get_option('varValue'))
-            elif self.action == ACTION_COPY:
-                self.execute(self.get_option('copy'))
             # Init
             elif self.action == ACTION_INIT:
                 self.init()
