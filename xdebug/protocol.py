@@ -36,10 +36,12 @@ except ImportError:
         from .elementtree import ElementTree as ET
 try:
     from xml.parsers import expat
+    UNESCAPE_RESPONSE_DATA = True
 except ImportError:
     # Module xml.parsers.expat missing, using SimpleXMLTreeBuilder
     from .elementtree import SimpleXMLTreeBuilder
     ET.XMLTreeBuilder = SimpleXMLTreeBuilder.TreeBuilder
+    UNESCAPE_RESPONSE_DATA = False
 
 
 ILLEGAL_XML_UNICODE_CHARACTERS = [
@@ -179,7 +181,8 @@ class Protocol(object):
             return data
 
         # Remove special character quoting
-        data = self.unescape(data)
+        if UNESCAPE_RESPONSE_DATA:
+            data = self.unescape(data)
 
         # Replace invalid XML characters
         data = ILLEGAL_XML_RE.sub('?', data)

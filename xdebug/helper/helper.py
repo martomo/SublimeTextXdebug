@@ -54,3 +54,6 @@ def unicode_string(string):
 def is_digit(string):
 	# Check if string is digit
 	return isinstance(string, str) and string.isdigit()
+
+def is_number(value):
+	return isinstance(value, int)

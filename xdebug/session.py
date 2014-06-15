@@ -340,19 +340,19 @@ class SocketHandler(threading.Thread):
 
         # Set max children limit
         max_children = get_value(S.KEY_MAX_CHILDREN)
-        if max_children is not False and max_children is not True and isinstance(max_children, int):
+        if max_children is not False and max_children is not True and (H.is_number(max_children) or H.is_digit(max_children)):
             S.SESSION.send(dbgp.FEATURE_SET, n=dbgp.FEATURE_NAME_MAXCHILDREN, v=max_children)
             response = S.SESSION.read()
 
         # Set max data limit
         max_data = get_value(S.KEY_MAX_DATA)
-        if max_data is not False and max_data is not True and isinstance(max_data, int):
+        if max_data is not False and max_data is not True and (H.is_number(max_data) or H.is_digit(max_data)):
             S.SESSION.send(dbgp.FEATURE_SET, n=dbgp.FEATURE_NAME_MAXDATA, v=max_data)
             response = S.SESSION.read()
 
         # Set max depth limit
         max_depth = get_value(S.KEY_MAX_DEPTH)
-        if max_depth is not False and max_depth is not True and isinstance(max_depth, int):
+        if max_depth is not False and max_depth is not True and (H.is_number(max_depth) or H.is_digit(max_depth)):
             S.SESSION.send(dbgp.FEATURE_SET, n=dbgp.FEATURE_NAME_MAXDEPTH, v=max_depth)
             response = S.SESSION.read()
 
