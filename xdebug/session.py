@@ -39,6 +39,8 @@ from .view import DATA_CONTEXT, DATA_STACK, DATA_WATCH, TITLE_WINDOW_WATCH, gene
 
 ACTION_EVALUATE = "action_evaluate"
 ACTION_EXECUTE = "action_execute"
+ACTION_MODIFY = "action_modify"
+ACTION_COPY = "action_copy"
 ACTION_INIT = "action_init"
 ACTION_REMOVE_BREAKPOINT = "action_remove_breakpoint"
 ACTION_SET_BREAKPOINT = "action_set_breakpoint"
@@ -146,6 +148,8 @@ class SocketHandler(threading.Thread):
             # Execute
             elif self.action == ACTION_EXECUTE:
                 self.execute(self.get_option('command'))
+            elif self.action == ACTION_MODIFY:
+                self.modify(self.get_option('varName'), self.get_option('varValue'))
             # Init
             elif self.action == ACTION_INIT:
                 self.init()
@@ -187,6 +191,24 @@ class SocketHandler(threading.Thread):
         # Show response data in output panel
         self.timeout(lambda: show_panel_content(response))
 
+    def modify(self, varName, varValue):
+        if not is_connected():
+            return
+
+        #Prepare args
+        command     = 'property_set'
+        varValue    = H.base64_encode(varValue)
+        args        = '-n ' + varName + ' -- ' + varValue
+
+        #Send command to debugger engine
+        S.SESSION.send(command, args)
+        response = S.SESSION.read()
+
+        #Show response in status bar
+        if response.get(dbgp.ATTRIBUTE_SUCCESS) != None:
+            self.status_message("Variable succesfully modified")
+        else:
+            self.status_message("Failed to modify variable")
 
     def execute(self, command):
         # Do not execute if no command is set
@@ -370,6 +392,12 @@ class SocketHandler(threading.Thread):
             for exception_name in break_on_exception:
                 self.set_exception(exception_name)
 
+        #Determines if the client should break at execution's end
+        if get_value(S.KEY_BREAK_ON_END):
+            # xdebug_break() doesn't seem to work here so we had to use a hacky way to create a breakpoint
+            expression = 'register_shutdown_function( function () { throw new Exception("XDebug SublimePlugin: Program terminated."); } )'
+            self.evaluate(expression=expression)
+
         # Determine if client should break at first line on connect
         if get_value(S.KEY_BREAK_ON_START):
             # Get init attribute values
@@ -399,7 +427,6 @@ class SocketHandler(threading.Thread):
         else:
             # Tell script to run it's process
             self.run_command('xdebug_execute', {'command': 'run'})
-
 
     def remove_breakpoint(self, breakpoint_id):
         if not breakpoint_id or not is_connected():
@@ -441,7 +468,6 @@ class SocketHandler(threading.Thread):
         response = S.SESSION.read()
         # Show response in status bar
         self.status_message("Xdebug status: " + response.get(dbgp.ATTRIBUTE_REASON) + ' - ' + response.get(dbgp.ATTRIBUTE_STATUS))
-
 
     def user_execute(self, command, args=None):
         if not command or not is_connected():

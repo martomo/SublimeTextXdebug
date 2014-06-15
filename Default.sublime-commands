@@ -70,6 +70,10 @@
         "command": "xdebug_user_execute"
     },
     {
+        "caption": "Xdebug: Modify Variable",
+        "command": "xdebug_user_modify"
+    },
+    {
         "caption": "Xdebug: Session - Status",
         "command": "xdebug_status"
     },

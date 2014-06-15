@@ -90,6 +90,10 @@
                         "command": "xdebug_user_execute"
                     },
                     {
+                        "caption": "Modify Variable",
+                        "command": "xdebug_user_modify"
+                    },
+                    {
                         "caption": "Status",
                         "command": "xdebug_status"
                     },
