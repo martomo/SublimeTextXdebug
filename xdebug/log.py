@@ -15,8 +15,8 @@ from .config import get_value
 
 def clear_output():
     # Clear previous output file and configure logging module
-    output_file = os.path.join(sublime.packages_path(), 'User', S.FILE_LOG_OUTPUT)
-    logging.basicConfig(filename=output_file, filemode='w', level=logging.DEBUG, format='[%(asctime)s] %(levelname)s - %(message)s', datefmt='%m/%d/%Y %I:%M:%S%p')
+    output_file = get_value(S.KEY_LOG_FILE) or os.path.join(sublime.packages_path(), 'User', S.FILE_LOG_OUTPUT)
+    logging.basicConfig(filename=output_file, filemode='w+', level=logging.DEBUG, format='[%(asctime)s] %(levelname)s - %(message)s', datefmt='%m/%d/%Y %I:%M:%S%p')
 
 
 def debug(message=None):

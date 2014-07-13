@@ -12,6 +12,7 @@ FILE_WATCH_DATA = 'Xdebug.expressions'
 KEY_SETTINGS = 'settings'
 KEY_XDEBUG = 'xdebug'
 
+KEY_LOG_FILE = "log_file"
 KEY_PATH_MAPPING = "path_mapping"
 KEY_URL = "url"
 KEY_IDE_KEY = "ide_key"
