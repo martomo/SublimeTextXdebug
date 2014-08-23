@@ -335,7 +335,7 @@ class XdebugSessionStopCommand(sublime_plugin.WindowCommand):
                 self.window.active_view().run_command('xdebug_breakpoint', {'rows': [S.BREAKPOINT_RUN['lineno']], 'filename': S.BREAKPOINT_RUN['filename']})
             S.BREAKPOINT_RUN = None
         # Launch browser
-        if launch_browser or (config.get_value(S.KEY_LAUNCH_BROWSER) and not restart):
+        if launch_browser or (config.get_value(S.KEY_LAUNCH_BROWSER) and not config.get_value(S.KEY_DONT_LAUNCH_ON_STOP) and not restart):
             util.launch_browser()
         # Close or reset debug layout
         if close_windows or config.get_value(S.KEY_CLOSE_ON_STOP):

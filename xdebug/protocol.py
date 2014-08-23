@@ -164,7 +164,12 @@ class Protocol(object):
         if int(length) == len(message):
             return message
         else:
-            raise ProtocolException("Length mismatch encountered while reading the Xdebug message")
+            error = "Length mismatch encountered while reading the Xdebug message %s:%s" % (length, message)
+            if get_value(S.KEY_IGNORE_LENGTH_CHECK):
+                print(error)
+                return message
+            else:
+                raise ProtocolException(error)
 
     def read(self, return_string=False):
         """

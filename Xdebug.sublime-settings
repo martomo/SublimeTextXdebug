@@ -83,6 +83,12 @@
     // Note: This will only work if you have the 'url' setting configured.
     "launch_browser": false,
 
+    // Don't launch browser when session stops
+    "dont_launch_on_stop": false,
+
+    // Ignore length size errors
+    "ignore_length_check": false,
+
     // When launching browser on session stop do not execute script.
     // By using parameter XDEBUG_SESSION_STOP_NO_EXEC instead of XDEBUG_SESSION_STOP.
     "browser_no_execute": false,

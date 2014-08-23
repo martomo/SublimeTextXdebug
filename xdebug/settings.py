@@ -29,6 +29,8 @@ KEY_LAUNCH_BROWSER = "launch_browser"
 KEY_BROWSER_NO_EXECUTE = "browser_no_execute"
 KEY_DISABLE_LAYOUT = "disable_layout"
 KEY_DEBUG_LAYOUT = "debug_layout"
+KEY_DONT_LAUNCH_ON_STOP = "dont_launch_on_stop"
+KEY_IGNORE_LENGTH_CHECK = "ignore_length_check"
 
 KEY_BREAKPOINT_GROUP = "breakpoint_group"
 KEY_BREAKPOINT_INDEX = "breakpoint_index"
@@ -118,5 +120,7 @@ CONFIG_KEYS = [
 	KEY_BREAKPOINT_ENABLED,
 	KEY_CURRENT_LINE,
 	KEY_PYTHON_PATH,
-	KEY_DEBUG
+	KEY_DEBUG,
+	KEY_DONT_LAUNCH_ON_STOP,
+	KEY_IGNORE_LENGTH_CHECK
 ]
