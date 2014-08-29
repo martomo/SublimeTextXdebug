@@ -1,0 +1,11 @@
+[
+	{"keys": ["ctrl+f8"], "command": "xdebug_breakpoint"},
+	{"keys": ["shift+f8"], "command": "xdebug_conditional_breakpoint"},
+	{"keys": ["ctrl+shift+f5"], "command": "xdebug_continue", "args": {"command": "run"}},
+	{"keys": ["ctrl+shift+f6"], "command": "xdebug_continue", "args": {"command": "step_over"}},
+	{"keys": ["ctrl+shift+f7"], "command": "xdebug_continue", "args": {"command": "step_into"}},
+	{"keys": ["ctrl+shift+f8"], "command": "xdebug_continue", "args": {"command": "step_out"}},
+	{"keys": ["ctrl+shift+f9"], "command": "xdebug_session_start"},
+	{"keys": ["ctrl+shift+f10"], "command": "xdebug_session_stop"},
+	{"keys": ["ctrl+shift+f11"], "command": "xdebug_layout", "args": {"keymap" : true}}
+]
