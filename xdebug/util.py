@@ -45,7 +45,7 @@ def get_real_path(uri, server=False):
     try:
         # scheme:///path/file => scheme, /path/file
         # scheme:///C:/path/file => scheme, C:/path/file
-        transport, filename = uri.split(':///', 1) 
+        transport, filename = uri.split(':///', 1)
     except:
         filename = uri
 
