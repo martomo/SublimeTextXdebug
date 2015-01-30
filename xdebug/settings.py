@@ -51,8 +51,8 @@ KEY_DEBUG = "debug"
 REGION_KEY_BREAKPOINT = 'xdebug_breakpoint'
 REGION_KEY_CURRENT = 'xdebug_current'
 REGION_KEY_DISABLED = 'xdebug_disabled'
-REGION_SCOPE_BREAKPOINT = 'comment.line.settings'
-REGION_SCOPE_CURRENT = 'string.quoted.settings'
+REGION_SCOPE_BREAKPOINT = 'xdebug.gutter.breakpoint'
+REGION_SCOPE_CURRENT    = 'xdebug.gutter.current'
 
 # Window layout for debugging output
 LAYOUT_DEBUG = {
