@@ -85,7 +85,7 @@ def generate_breakpoint_output():
     return values
 
 
-def generate_context_output(context, indent=0):
+def generate_context_output(context, indent=0, parent=''):
     """
     Generate readable context from dictionary with context data.
 
@@ -100,6 +100,11 @@ def generate_context_output(context, indent=0):
     for variable in context.values():
         has_children = False
         property_text = ''
+        if variable['name']:
+            full_name = variable['name']
+            if parent:
+                local_parent = parent
+                variable['name'] = full_name.replace(local_parent, "")
         # Set indentation
         for i in range(indent): property_text += '\t'
         # Property with value
@@ -131,7 +136,7 @@ def generate_context_output(context, indent=0):
         # Append property children to output
         if has_children:
             # Get children for property (no need to convert, already unicode)
-            values += generate_context_output(variable['children'], indent+1)
+            values += generate_context_output(variable['children'], indent+1, full_name)
             # Use ellipsis to indicate that results have been truncated
             limited = False
             if isinstance(variable['numchildren'], int) or H.is_digit(variable['numchildren']):

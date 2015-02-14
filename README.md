@@ -1,3 +1,7 @@
+This fork does one thing only: it tries to render context variable trees in a (hopefully) easier to read way, somewhat like the Xdebug client in PhpStorm does it. This is what it looks like:
+
+![SublimeTextXdebug](http://i.imgur.com/dapUcQa.png?1)
+
 # SublimeTextXdebug
 Xdebug debugger client integration for Sublime Text.
 
