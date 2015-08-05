@@ -35,7 +35,7 @@ Context/Stack/Property commands
 """
 CONTEXT_NAMES = 'context_names'
 CONTEXT_GET = 'context_get'
-STACK_DEPTH = 'stack-depth'
+STACK_DEPTH = 'stack_depth'
 STACK_GET = 'stack_get'
 PROPERTY_GET = 'property_get'
 PROPERTY_SET = 'property_set'
