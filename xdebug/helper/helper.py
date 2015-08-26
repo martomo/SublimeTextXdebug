@@ -30,19 +30,19 @@ def dictionary_values(dictionary):
 
 def data_read(data):
 	# Convert bytes to string
-	return data.decode('utf8')
+	return data.decode('utf8', 'replace')
 
 def data_write(data):
 	# Convert string to bytes
-	return bytes(data, 'utf8')
+	return bytes(data, 'utf8', 'replace')
 
-def base64_decode(data):
+def base64_decode(data, charset, errorMode = 'strict'):
 	# Base64 returns decoded byte string, decode to convert to UTF8 string
-	return base64.b64decode(data).decode('utf8')
+	return base64.b64decode(data).decode(charset, errorMode)
 
 def base64_encode(data):
 	# Base64 needs ascii input to encode, which returns Base64 byte string, decode to convert to UTF8 string
-	return base64.b64encode(data.encode('ascii')).decode('utf8')
+	return base64.b64encode(data.encode('ascii')).decode('utf8', 'replace')
 
 def unicode_chr(code):
 	return chr(code)
