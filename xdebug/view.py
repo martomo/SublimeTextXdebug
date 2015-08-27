@@ -319,17 +319,25 @@ def get_response_properties(response, default_key=None):
                 if property_encoding is not None and property_encoding == 'base64':
                     view = sublime.active_window().active_view()
                     match = re.search(r'\((.*?)\)', view.encoding())
+                    encoding_name = '';
                     if match:
                         encoding_name = match.group(1)
                         encoding_name = encoding_name.replace(' ', '-').lower()
+                    decoded = False
                     try:
                         property_value = H.base64_decode(child.text, 'utf8')
-                    except (UnicodeDecodeError, LookupError):
-                        if encoding_name == 'Undefined':
-                            raise
-                        else:
+                        decoded = True
+                    except:
+                        pass
+
+                    if (not encoding_name == '') and (not encoding_name == 'Undefined'):
+                        try:
                             property_value = H.base64_decode(child.text, encoding_name)
-                    except (UnicodeDecodeError, LookupError):
+                            decoded = True
+                        except:
+                            pass
+
+                    if not decoded:
                         property_value = H.base64_decode(child.text, 'utf8', 'replace')
 
             if property_name is not None and len(property_name) > 0:
