@@ -184,9 +184,39 @@ def get_region_icon(icon):
         info("Invalid icon name. (" + icon + ")")
         return
 
+def get_server_url():
+    """
+    Get server url
+
+    Keyword arguments:
+    None
+
+    """
+    # Local path of the file being debuged
+    filename = sublime.active_window().active_view().file_name()
+    filename = '#flg-' + filename.replace("\\", "/")
+
+    # Get server url
+    url = get_value(S.KEY_URL)
+    if url is None:
+        url = 'http://localhost'
+    url = url.rstrip('/')
+
+    website_root = get_value(S.KEY_WEBSITE_ROOT)
+    print('Debug1: website_root = %s' % website_root)
+    if website_root:
+        website_root = '#flg-' + os.path.normpath(website_root).replace("\\", "/").rstrip('/')
+        if website_root in filename:
+            url = filename.replace(website_root, url)
+            print('Debug1: filename = %s' % filename)
+            print('Debug1: website_root2 = %s' % website_root)
+            print('Debug1: url = %s' % url)
+
+    return url
+
 
 def launch_browser():
-    url = get_value(S.KEY_URL)
+    url = get_server_url()
     if not url:
         sublime.set_timeout(lambda: sublime.status_message('Xdebug: No URL defined in (project) settings file.'), 100)
         return
