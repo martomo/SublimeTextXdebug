@@ -15,7 +15,30 @@
 
     // Determine which URL to launch in the default web browser
     // when starting/stopping a session.
+    // 1. use a local web server
+    //   'url' is the web server's domain name
+    //   'website_root' is the web server's absolute local root path
+    //   'url' is is binded to 'website_root'
+    //
+    // 2. use a remote web server
+    //   'url' must be set to debugged file's remote full url.
+    //   'website_root' must be set to empty.
+    //
+    // Example:
+    // 1. use a local web server
+    //   If 'loc.dev' is binded to '/var/www/htdocs/', then set as follow.
+    //   "url": "http://loc.dev",
+    //   "website_root" : "/var/www/htdocs/",
+    //
+    // If you are debugging file '/var/www/htdocs/www1/db.php', it will open
+    //   'http://loc.dev/www1/db.php?XDEBUG_SESSION_START=$ide_key' in the Browser
+    //   using 'Xdebug: Start Debugging (Launch Browser)' command
+    //
+    // 2. use a remote web server
+    //   "url": "http://loc.dev/www1/db.php",
+    //   "website_root" : "",
     "url": "",
+    "website_root" : "",
 
     // An IDE key is used to identify with debugger engine
     // when Sublime Text will start or stop a debugging session.

@@ -35,6 +35,9 @@ def get_real_path(uri, server=False):
 
     TODO: Fix mapping for root (/) and drive letters (P:/)
     """
+    # A flag used to fix mapping for root (/) and drive letters (P:/)
+    flag = '/#FLG'
+
     if uri is None:
         return uri
 
@@ -45,12 +48,12 @@ def get_real_path(uri, server=False):
     try:
         # scheme:///path/file => scheme, /path/file
         # scheme:///C:/path/file => scheme, C:/path/file
-        transport, filename = uri.split(':///', 1) 
+        transport, filename = uri.split(':///', 1)
     except:
         filename = uri
 
     # Normalize path for comparison and remove duplicate/trailing slashes
-    uri = os.path.normpath(filename)
+    uri = flag + os.path.normpath(filename)
 
     # Pattern for checking if uri is a windows path
     drive_pattern = re.compile(r'^[a-zA-Z]:[\\/]')
@@ -69,15 +72,17 @@ def get_real_path(uri, server=False):
             if server:
                 # Map local path to server path
                 if local_path in uri:
-                    uri = uri.replace(local_path, server_path)
+                    uri = uri.replace(flag + local_path, server_path)
                     break
             else:
                 # Map server path to local path
                 if server_path in uri:
-                    uri = uri.replace(server_path, local_path)
+                    uri = uri.replace(flag + server_path, local_path)
                     break
     else:
         sublime.set_timeout(lambda: sublime.status_message("Xdebug: No path mapping defined, returning given path."), 100)
+
+    uri = os.path.normpath(uri)
 
     # Replace slashes
     if not drive_pattern.match(uri):
@@ -86,7 +91,6 @@ def get_real_path(uri, server=False):
     # Append scheme
     if server:
         return H.url_encode("file://" + uri)
-
     return uri
 
 
@@ -180,9 +184,39 @@ def get_region_icon(icon):
         info("Invalid icon name. (" + icon + ")")
         return
 
+def get_server_url():
+    """
+    Get server url
+
+    Keyword arguments:
+    None
+
+    """
+    # Local path of the file being debuged
+    filename = sublime.active_window().active_view().file_name()
+    filename = '#flg-' + filename.replace("\\", "/")
+
+    # Get server url
+    url = get_value(S.KEY_URL)
+    if url is None:
+        url = 'http://localhost'
+    url = url.rstrip('/')
+
+    website_root = get_value(S.KEY_WEBSITE_ROOT)
+    print('Debug1: website_root = %s' % website_root)
+    if website_root:
+        website_root = '#flg-' + os.path.normpath(website_root).replace("\\", "/").rstrip('/')
+        if website_root in filename:
+            url = filename.replace(website_root, url)
+            print('Debug1: filename = %s' % filename)
+            print('Debug1: website_root2 = %s' % website_root)
+            print('Debug1: url = %s' % url)
+
+    return url
+
 
 def launch_browser():
-    url = get_value(S.KEY_URL)
+    url = get_server_url()
     if not url:
         sublime.set_timeout(lambda: sublime.status_message('Xdebug: No URL defined in (project) settings file.'), 100)
         return
