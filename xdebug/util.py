@@ -60,11 +60,10 @@ def get_real_path(uri, server=False):
         uri = os.path.normpath('/' + uri)
 
     mapped_paths = []
-    ordered_path_mapping = get_value('ordered_path_mapping')
     path_mapping = get_value(S.KEY_PATH_MAPPING)
-    if isinstance(ordered_path_mapping, list):
-        mapped_paths.extend(ordered_path_mapping)
-    if isinstance(path_mapping, dict):
+    if isinstance(path_mapping, list):
+        mapped_paths.extend(path_mapping)
+    elif isinstance(path_mapping, dict):
         mapped_paths.extend(path_mapping.items())
     # Go through path mappings
     for server_path, local_path in mapped_paths:
