@@ -145,10 +145,10 @@ class SocketHandler(threading.Thread):
                 self.evaluate(self.get_option('expression'))
             # Execute
             elif self.action == ACTION_EXECUTE:
-                self.execute(self.get_option('command'))
+                self.timeout(lambda: self.execute(self.get_option('command')))
             # Init
             elif self.action == ACTION_INIT:
-                self.init()
+                self.timeout(lambda: self.init())
             # Remove breakpoint
             elif self.action == ACTION_REMOVE_BREAKPOINT:
                 self.remove_breakpoint(self.get_option('breakpoint_id'))
