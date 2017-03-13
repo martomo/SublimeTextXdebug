@@ -5,6 +5,21 @@ import os
 import sys
 import threading
 
+import sys, imp
+
+BASE_PATH = os.path.abspath(os.path.dirname(__file__))
+CODE_DIRS = [
+  'plugin_helpers',
+  'xdebug', 
+]
+sys.path += [BASE_PATH] + [os.path.join(BASE_PATH, f) for f in CODE_DIRS]
+
+# =======
+# reload plugin files on change
+if 'plugin_helpers.reloader' in sys.modules:
+  imp.reload(sys.modules['plugin_helpers.reloader'])
+import plugin_helpers.reloader
+
 # Load modules
 try:
     from .xdebug import *
@@ -250,6 +265,7 @@ class XdebugSessionStartCommand(sublime_plugin.WindowCommand):
     """
     def run(self, launch_browser=False, restart=False):
         # Define new session with DBGp protocol
+
         S.SESSION = protocol.Protocol()
         S.SESSION_BUSY = False
         S.BREAKPOINT_EXCEPTION = None
@@ -273,6 +289,7 @@ class XdebugSessionStartCommand(sublime_plugin.WindowCommand):
     def listen(self):
         # Start listening for response from debugger engine
         S.SESSION.listen()
+
         # On connect run method which handles connection
         if S.SESSION and S.SESSION.connected:
             sublime.set_timeout(self.connected, 0)
