@@ -144,7 +144,7 @@ def generate_context_output(context, indent=0):
                 values += H.unicode_string('...\n')
     return values
 
-
+#response should be something like: {"1": {"name": <name of thing>, "namewhat": (global|local|method|field|''), "what": (Lua, C, main), "source": @<filename>, "line": line in file}}
 def generate_stack_output(response):
     values = H.unicode_string('')
 
@@ -152,24 +152,42 @@ def generate_stack_output(response):
     if S.BREAKPOINT_EXCEPTION:
         values += H.unicode_string('[{name}] {message}\n' \
                                   .format(name=S.BREAKPOINT_EXCEPTION['name'], message=S.BREAKPOINT_EXCEPTION['message']))
+    has_output = False
+
+    for level, stackData in response.items():
+        stack_level = level
+        stack_type = 'file'#child.get(dbgp.STACK_TYPE)
+        stack_file = H.url_decode(stackData['source'])
+        stack_line = stackData['line']
+        stack_name = stackData.get('name', '') #child.get(dbgp.STACK_WHERE, '{unknown}')
+        stack_namewhat = stackData['namewhat'] #child.get(dbgp.STACK_WHERE, '{unknown}')
+
+        if stack_namewhat != '':
+            values += H.unicode_string('[{level}] {filename}:{lineno} - {name}({namewhat})\n' \
+                                          .format(level=stack_level, type=stack_type, name=stack_name, namewhat = stack_namewhat, lineno=stack_line, filename=stack_file))
+        else:
+            values += H.unicode_string('[{level}] {filename}:{lineno}\n' \
+                                          .format(level=stack_level, type=stack_type, lineno=stack_line, filename=stack_file))
+
+        has_output = True
 
     # Walk through elements in response
-    has_output = False
-    try:
-        for child in response:
-            # Get stack attribute values
-            if child.tag == dbgp.ELEMENT_STACK or child.tag == dbgp.ELEMENT_PATH_STACK:
-                stack_level = child.get(dbgp.STACK_LEVEL, 0)
-                stack_type = child.get(dbgp.STACK_TYPE)
-                stack_file = H.url_decode(child.get(dbgp.STACK_FILENAME))
-                stack_line = child.get(dbgp.STACK_LINENO, 0)
-                stack_where = child.get(dbgp.STACK_WHERE, '{unknown}')
-                # Append values
-                values += H.unicode_string('[{level}] {filename}.{where}:{lineno}\n' \
-                                          .format(level=stack_level, type=stack_type, where=stack_where, lineno=stack_line, filename=stack_file))
-                has_output = True
-    except:
-        pass
+    
+    #try:
+    #    for child in response:
+    #        # Get stack attribute values
+    #        if child.tag == dbgp.ELEMENT_STACK or child.tag == dbgp.ELEMENT_PATH_STACK:
+    #            stack_level = child.get(dbgp.STACK_LEVEL, 0)
+    #            stack_type = child.get(dbgp.STACK_TYPE)
+    #            stack_file = H.url_decode(child.get(dbgp.STACK_FILENAME))
+    #            stack_line = child.get(dbgp.STACK_LINENO, 0)
+    #            stack_where = child.get(dbgp.STACK_WHERE, '{unknown}')
+    #            # Append values
+    #            values += H.unicode_string('[{level}] {filename}.{where}:{lineno}\n' \
+    #                                      .format(level=stack_level, type=stack_type, where=stack_where, lineno=stack_line, filename=stack_file))
+    #            has_output = True
+    #except:
+    #    pass
 
     # When no stack use values from exception
     if not has_output and S.BREAKPOINT_EXCEPTION:
@@ -863,7 +881,7 @@ def toggle_stack(view):
         if point.size() > 3 and sublime.score_selector(view.scope_name(point.a), 'xdebug.output.stack.entry'):
             # Get fileuri and line number from selected line in view
             line = view.substr(view.line(point))
-            pattern = re.compile('^(\[\d+\])\s*(?P<fileuri>.*)(\..*)(\s*:.*?(?P<lineno>\d+))\s*(\((.*?):.*\)|$)')
+            pattern = re.compile('^(\[\d+\])\s*(?P<fileuri>.*\..*)(\s*:.*?(?P<lineno>\d+))\s*(\((.*?):.*\)|$)')
             match = pattern.match(line)
             # Show file when it's a valid fileuri
             if match and match.group('fileuri'):
