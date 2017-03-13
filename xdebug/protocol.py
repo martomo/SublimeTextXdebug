@@ -61,11 +61,61 @@ ILLEGAL_XML_RANGES = ["%s-%s" % (H.unicode_chr(low), H.unicode_chr(high))
 
 ILLEGAL_XML_RE = re.compile(H.unicode_string('[%s]') % H.unicode_string('').join(ILLEGAL_XML_RANGES))
 
+infStr = "function() return math.huge end"
+negInfStr = "function() return -math.huge end"
+nanStr = "function() return 0/0 end"
 
+def serialize( value ):
+    t = type( value )
+    if t == int or t == float:
+        if value == float('inf'):
+            res = infStr
+        elif value == -float('inf'):
+            res = negInfStr
+        elif value == float('nan'):
+            res = nanStr
+        else:
+            res = str( value )
+                    
+        return res
+    elif t == bool:
+        return str(value).lower()
+    elif t == str:
+        return '"'+value+'"'
+    #elif t == list:
+    #    res = "{ "
+    #    for i in range(len(value)):
+    #        v = value[i]
+    #        res = res+"["+serialize( i + 1 )+"] = "+serialize( v )+", "
+    #    res = res+" }"
+    #    return res
+    elif t == dict:
+        res = "{ "
+        for k, v in value.iteritems():
+            res = res+"["+serialize( k )+"] = "+serialize( v )+", "
+        res = res+" }"
+        return res
+    else:
+        error( "Can't serialize a value of type "+str(t) )
+
+def convert_lua_table_str_to_python_dict_str(s):
+    return re.sub(r"\[(.+?)\]\s*=", r"\g<1>:", s) # NOTE: does not support keys with newlines, also expects all keys to be wrapped in []
+
+def deserialize( s ):
+    s = s.replace(infStr, "float('inf')")
+    s = s.replace(negInfStr, "-float('inf')")
+    s = s.replace(nanStr, "float('nan')")
+               
+    s = s.replace('true', 'True')
+    s = s.replace('false', 'False')
+
+    s = convert_lua_table_str_to_python_dict_str(s)
+
+    return eval(s)
 
 class Protocol(object):
     """
-    Class for connecting with debugger engine which uses DBGp protocol.
+    Class for connecting with debugger engine  ####which uses DBGp protocol.#### no longer true
     """
 
     # Maximum amount of data to be received at once by socket
@@ -136,7 +186,33 @@ class Protocol(object):
             return text
         return re.sub("&#?\w+;", convert, string)
 
-    def read_until_null(self):
+    
+
+
+        #def deserialize_old( s ):
+        #    local f = loadstring( "return "+s )
+        #    if f:
+        #        local res = f()
+        #        return fixUp( res )
+        #    else
+        #        error( "Unable to parse serialized value: "..tostring(str) )
+        #    end
+        #end
+
+    def parse_grld_message(self, message):
+        if len(message) == 0:
+            return ''
+
+        if message.count("\n") < 2:
+            raise ProtocolException("Tried to parse malformed GRLD data")
+
+        channel, messageSize, remaining = message.split("\n", 2)
+        data = remaining[:int(messageSize)]
+        remaining = remaining[int(messageSize):]
+
+        return data, remaining
+
+    def read_socket_into_buffer(self):
         """
         Get response data from debugger engine.
         """
@@ -144,10 +220,13 @@ class Protocol(object):
         if self.connected:
             # Get result data from debugger engine
             try:
-                while not '\x00' in self.buffer:
-                    self.buffer += H.data_read(self.socket.recv(self.read_size))
-                data, self.buffer = self.buffer.split('\x00', 1)
-                return data
+                rawSockData = ''
+                while True:
+                    rawSockData = self.socket.recv(self.read_size)
+                    self.buffer += H.data_read(rawSockData)
+
+                    if self.buffer.count("\n") > 1:
+                        break
             except:
                 e = sys.exc_info()[1]
                 raise ProtocolConnectionException(e)
@@ -159,14 +238,17 @@ class Protocol(object):
         Get response data from debugger engine and verify length of response.
         """
         # Verify length of response data
-        length = self.read_until_null()
-        message = self.read_until_null()
-        if int(length) == len(message):
-            return message
-        else:
-            raise ProtocolException("Length mismatch encountered while reading the Xdebug message")
+        # length = self.read_socket_into_buffer()
+        if len(self.buffer) <= 0:
+            self.read_socket_into_buffer()
 
-    def read(self, return_string=False):
+        message, self.buffer = self.parse_grld_message(self.buffer)
+        # if int(length) == len(message):
+        return message
+        # else:
+        #     raise ProtocolException("Length mismatch encountered while reading the Xdebug message")
+
+    def read(self, return_string=True):
         """
         Get response from debugger engine as XML document object.
         """
@@ -176,22 +258,31 @@ class Protocol(object):
         # Show debug output
         debug('[Response data] %s' % data)
 
+        return deserialize(data)
+
         # Return data string
-        if return_string:
-            return data
+        #if return_string:
+        #    return data
 
         # Remove special character quoting
-        if UNESCAPE_RESPONSE_DATA:
-            data = self.unescape(data)
+        # if UNESCAPE_RESPONSE_DATA:
+        #     data = self.unescape(data)
 
-        # Replace invalid XML characters
-        data = ILLEGAL_XML_RE.sub('?', data)
+        # # Replace invalid XML characters
+        # #data = ILLEGAL_XML_RE.sub('?', data)
 
-        # Create XML document object
-        document = ET.fromstring(data)
-        return document
+        # # Create XML document object
+        # document = ET.fromstring(data)
+        # return document
 
-    def send(self, command, *args, **kwargs):
+    def send(self, data, channel='default'):
+        s_data = serialize(data)
+        formatted_data = channel + '\n' + str(len(s_data)) + '\n' + s_data
+
+        self.socket.send(H.data_write(formatted_data))
+
+
+    def send_old(self, command, *args, **kwargs):
         """
         Send command to the debugger engine according to DBGp protocol.
         """
@@ -276,6 +367,8 @@ class Protocol(object):
             return self.socket
         else:
             raise ProtocolConnectionException('Could not create socket server.')
+
+
 
 
 class ProtocolException(Exception):
