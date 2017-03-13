@@ -3,6 +3,8 @@ import sublime
 import sys
 import threading
 
+import hashlib
+
 # Helper module
 try:
     from .helper import H
@@ -98,6 +100,7 @@ class SocketHandler(threading.Thread):
         threading.Thread.__init__(self)
         self.action = action
         self.options = options
+        self.active_thread = 'current' # todo - add support for lua threads/coroutines
 
     def get_option(self, option, default_value=None):
         if option in self.options.keys():
@@ -296,11 +299,15 @@ class SocketHandler(threading.Thread):
         if is_connected():
             try:
                 # Get stack information
-                S.SESSION.send(dbgp.STACK_GET)
+                #S.SESSION.send(dbgp.STACK_GET)
+                S.SESSION.send("callstack")
+                S.SESSION.send(self.active_thread)
                 response = S.SESSION.read()
             except ProtocolConnectionException:
                 e = sys.exc_info()[1]
                 self.timeout(lambda: connection_error("%s" % e))
+
+        #response should be something like: {"1": {"name": <name of thing>, "namewhat": (global|local|method|field|''), "what": (Lua, C, main), "source": @<filename>, "line": line in file}}
         return generate_stack_output(response)
 
 
@@ -332,31 +339,42 @@ class SocketHandler(threading.Thread):
             return
 
         # Connection initialization
-        init = S.SESSION.read()
+        client_name = S.SESSION.read()
 
-        # More detailed internal information on properties
-        S.SESSION.send(dbgp.FEATURE_SET, n='show_hidden', v=1)
-        response = S.SESSION.read()
+        synchronize_message = S.SESSION.read()
 
-        # Set max children limit
-        max_children = get_value(S.KEY_MAX_CHILDREN)
-        if max_children is not False and max_children is not True and (H.is_number(max_children) or H.is_digit(max_children)):
-            S.SESSION.send(dbgp.FEATURE_SET, n=dbgp.FEATURE_NAME_MAXCHILDREN, v=max_children)
-            response = S.SESSION.read()
+        if synchronize_message != "synchronize":
+            raise SessionException("Did not get synchronize signal!")
 
-        # Set max data limit
-        max_data = get_value(S.KEY_MAX_DATA)
-        if max_data is not False and max_data is not True and (H.is_number(max_data) or H.is_digit(max_data)):
-            S.SESSION.send(dbgp.FEATURE_SET, n=dbgp.FEATURE_NAME_MAXDATA, v=max_data)
-            response = S.SESSION.read()
+        # synchronize expects us to return the # of active breakpoints (this is actually not implemented, we MUST return 0 here)
+        S.SESSION.send(0)
 
-        # Set max depth limit
-        max_depth = get_value(S.KEY_MAX_DEPTH)
-        if max_depth is not False and max_depth is not True and (H.is_number(max_depth) or H.is_digit(max_depth)):
-            S.SESSION.send(dbgp.FEATURE_SET, n=dbgp.FEATURE_NAME_MAXDEPTH, v=max_depth)
-            response = S.SESSION.read()
+        # next we need to send the "breakOnConnection" value, this is configurable, but we'll just always return false for now
+        S.SESSION.send(str(False).lower())
 
-        # Set breakpoints for files
+        # # More detailed internal information on properties
+        # S.SESSION.send(dbgp.FEATURE_SET, n='show_hidden', v=1)
+        # response = S.SESSION.read()
+
+        # # Set max children limit
+        # max_children = get_value(S.KEY_MAX_CHILDREN)
+        # if max_children is not False and max_children is not True and (H.is_number(max_children) or H.is_digit(max_children)):
+        #     S.SESSION.send(dbgp.FEATURE_SET, n=dbgp.FEATURE_NAME_MAXCHILDREN, v=max_children)
+        #     response = S.SESSION.read()
+
+        # # Set max data limit
+        # max_data = get_value(S.KEY_MAX_DATA)
+        # if max_data is not False and max_data is not True and (H.is_number(max_data) or H.is_digit(max_data)):
+        #     S.SESSION.send(dbgp.FEATURE_SET, n=dbgp.FEATURE_NAME_MAXDATA, v=max_data)
+        #     response = S.SESSION.read()
+
+        # # Set max depth limit
+        # max_depth = get_value(S.KEY_MAX_DEPTH)
+        # if max_depth is not False and max_depth is not True and (H.is_number(max_depth) or H.is_digit(max_depth)):
+        #     S.SESSION.send(dbgp.FEATURE_SET, n=dbgp.FEATURE_NAME_MAXDEPTH, v=max_depth)
+        #     response = S.SESSION.read()
+
+        # # Set breakpoints for files
         for filename, breakpoint_data in S.BREAKPOINT.items():
             if breakpoint_data:
                 for lineno, bp in breakpoint_data.items():
@@ -364,62 +382,88 @@ class SocketHandler(threading.Thread):
                         self.set_breakpoint(filename, lineno, bp['expression'])
                         debug('breakpoint_set: ' + filename + ':' + lineno)
 
-        # Set breakpoints for exceptions
-        break_on_exception = get_value(S.KEY_BREAK_ON_EXCEPTION)
-        if isinstance(break_on_exception, list):
-            for exception_name in break_on_exception:
-                self.set_exception(exception_name)
+        # # Set breakpoints for exceptions
+        # break_on_exception = get_value(S.KEY_BREAK_ON_EXCEPTION)
+        # if isinstance(break_on_exception, list):
+        #     for exception_name in break_on_exception:
+        #         self.set_exception(exception_name)
 
-        # Determine if client should break at first line on connect
-        if get_value(S.KEY_BREAK_ON_START):
+        # # Determine if client should break at first line on connect
+        #if get_value(S.KEY_BREAK_ON_START):
             # Get init attribute values
-            fileuri = init.get(dbgp.INIT_FILEURI)
-            filename = get_real_path(fileuri)
-            # Show debug/status output
-            self.status_message('Xdebug: Break on start')
-            info('Break on start: ' + filename )
-            # Store line number of breakpoint for displaying region marker
-            S.BREAKPOINT_ROW = { 'filename': filename, 'lineno': 1 }
-            # Focus/Open file window view
-            self.timeout(lambda: show_file(filename, 1))
+        #fileuri = filename
+        # break execution
+        S.SESSION.send("break", "running")
 
-            # Context variables
-            context = self.get_context_values()
-            self.timeout(lambda: show_content(DATA_CONTEXT, context))
+        break_cmd =  S.SESSION.read()
+        filename = S.SESSION.read().replace('@', '') # will be in format "@./<relative_path_from_below_exe>"
+        line = S.SESSION.read()
 
-            # Stack history
-            stack = self.get_stack_values()
-            if not stack:
-                stack = H.unicode_string('[{level}] {filename}.{where}:{lineno}\n' \
-                                          .format(level=0, where='{main}', lineno=1, filename=fileuri))
-            self.timeout(lambda: show_content(DATA_STACK, stack))
+        #filename = try_get_local_path_from_mounted_paths(filename)
 
-            # Watch expressions
-            self.watch_expression()
-        else:
-            # Tell script to run it's process
-            self.run_command('xdebug_execute', {'command': 'run'})
+        filename = get_real_path(filename)
+
+        # Show debug/status output
+        self.status_message('Xdebug: Break on start')
+        info('Break on start: ' + filename )
+        # Store line number of breakpoint for displaying region marker
+        S.BREAKPOINT_ROW = { 'filename': filename, 'lineno': line }
+        # Focus/Open file window view
+        self.timeout(lambda: show_file(filename, 1))
+
+        # Context variables
+        #context = self.get_context_values()
+        #self.timeout(lambda: show_content(DATA_CONTEXT, context))
+
+        # Stack history
+        stack = self.get_stack_values()
+        if not stack:
+            stack = H.unicode_string('[{level}] {filename}.{where}:{lineno}\n' \
+                                        .format(level=0, where='{main}', lineno=1, filename=fileuri))
+        self.timeout(lambda: show_content(DATA_STACK, stack))
+
+        # Watch expressions
+        #self.watch_expression()
+        #else:
+        #    # Tell script to run it's process
+        #    self.run_command('xdebug_execute', {'command': 'run'})
 
 
     def remove_breakpoint(self, breakpoint_id):
         if not breakpoint_id or not is_connected():
             return
 
-        S.SESSION.send(dbgp.BREAKPOINT_REMOVE, d=breakpoint_id)
-        response = S.SESSION.read()
+        filename = None
+        lineno = None
+        
+        for fname, lineDict in S.BREAKPOINT.items():
+            for line, breakpointData in lineDict.items():
+                if breakpointData['id'] == breakpoint_id:
+                    filename = fname
+                    lineno = line
+                    break
+
+            if filename and lineno: 
+                break
+
+        self.setbreakpoint(filename, lineno, False)
+        #S.SESSION.send(dbgp.BREAKPOINT_REMOVE, d=breakpoint_id)
+        #response = S.SESSION.read()
 
 
-    def set_breakpoint(self, filename, lineno, expression=None):
+    def set_breakpoint(self, filename, lineno, active=True):
         if not filename or not lineno or not is_connected():
             return
 
         # Get path of file on server
         fileuri = get_real_path(filename, True)
         # Set breakpoint
-        S.SESSION.send(dbgp.BREAKPOINT_SET, t='line', f=fileuri, n=lineno, expression=expression)
-        response = S.SESSION.read()
+        #S.SESSION.send(dbgp.BREAKPOINT_SET, t='line', f=fileuri, n=lineno, expression=expression)
+        S.SESSION.send("setbreakpoint", "running")
+        S.SESSION.send({"source": filename, "line": lineno, "value": active}, "running")
+        #response = S.SESSION.read()
         # Update breakpoint id
-        breakpoint_id = response.get(dbgp.ATTRIBUTE_BREAKPOINT_ID)
+        breakpoint_id = hashlib.md5(filename + str(lineno)).hexdigest() #response.get(dbgp.ATTRIBUTE_BREAKPOINT_ID)
         if breakpoint_id:
             S.BREAKPOINT[filename][lineno]['id'] = breakpoint_id
 
@@ -468,3 +512,6 @@ class SocketHandler(threading.Thread):
             return
 
         show_content(DATA_WATCH)
+
+class SessionException(Exception):
+    pass
