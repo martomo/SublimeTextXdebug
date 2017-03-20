@@ -41,6 +41,9 @@
     <Compile Include="xdebug\elementtree\TidyTools.py" />
     <Compile Include="xdebug\elementtree\XMLTreeBuilder.py" />
     <Compile Include="xdebug\elementtree\__init__.py" />
+    <Compile Include="xdebug\grld.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="xdebug\helper\helper.py" />
     <Compile Include="xdebug\helper\helper_26.py" />
     <Compile Include="xdebug\helper\helper_27.py" />
@@ -56,10 +59,20 @@
     <Compile Include="xdebug\__init__.py" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include=".gitignore" />
+    <Content Include="Context.sublime-menu" />
+    <Content Include="Default %28OSX%29.sublime-keymap" />
+    <Content Include="Default.sublime-commands" />
+    <Content Include="Default.sublime-keymap" />
     <Content Include="icons\breakpoint_current.png" />
     <Content Include="icons\breakpoint_disabled.png" />
     <Content Include="icons\breakpoint_enabled.png" />
     <Content Include="icons\current_line.png" />
+    <Content Include="LICENSE" />
+    <Content Include="Main.sublime-menu" />
+    <Content Include="README.md" />
+    <Content Include="Xdebug.sublime-settings" />
+    <Content Include="Xdebug.tmLanguage" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="icons" />
