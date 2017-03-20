@@ -366,16 +366,23 @@ class SocketHandler(threading.Thread):
 
         context = H.new_dictionary()
         try:
-            # Super global variables
-            if get_value(S.KEY_SUPER_GLOBALS):
-                S.SESSION.send(dbgp.CONTEXT_GET, c=1)
-                response = S.SESSION.read()
-                context.update(get_response_properties(response))
+            # local variables
+            #if get_value(S.KEY_SUPER_GLOBALS):
+            with S.PROTOCOL as protocol:
+                protocol.send("locals")
+                protocol.send(thread)
+                protocol.send(stack_level)                
+                response = protocol.read()
+                properties = self.transform_grld_context_response(response, "local")
+                context.update(properties)
 
-            # Local variables
-            S.SESSION.send(dbgp.CONTEXT_GET)
-            response = S.SESSION.read()
-            context.update(get_response_properties(response))
+                # upvalues
+                protocol.send("upvalues")
+                protocol.send(thread)
+                protocol.send(stack_level)
+                response = protocol.read()
+                properties = self.transform_grld_context_response(response, "upvalue")
+                context.update(properties)
         except ProtocolConnectionException:
             e = sys.exc_info()[1]
             self.timeout(lambda: connection_error("%s" % e))
