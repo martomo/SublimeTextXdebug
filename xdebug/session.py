@@ -64,6 +64,8 @@ def is_connected(show_status=False):
         sublime.status_message('Xdebug: No Xdebug session running.')
     return False
 
+def is_execution_broken():
+    return S.BREAKPOINT_ROW or S.BREAKPOINT_EXCEPTION
 
 def connection_error(message):
     """

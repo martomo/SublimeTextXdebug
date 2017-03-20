@@ -84,6 +84,26 @@ class EventListener(sublime_plugin.EventListener):
         else:
             pass
 
+    def on_query_context(self, view, key, operator, operand, match_all):
+        if not session.is_connected():
+            return None
+
+        if key == 'evaluate_line':
+            if view.name() != V.TITLE_WINDOW_EVALUATE:
+                return None
+
+            sel = view.sel()
+            if len(sel) > 1: return False #can't evaluate with multiple things selected
+            region = sel[0]
+
+            if region.a != view.size():
+                return False
+
+            return True
+
+        elif key == 'only_while_execution_broken':
+            return session.is_execution_broken()
+
 
 class XdebugBreakpointCommand(sublime_plugin.TextCommand):
     """
