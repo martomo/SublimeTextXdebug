@@ -81,9 +81,11 @@ def get_real_path(uri, server=False):
     else:
         sublime.set_timeout(lambda: sublime.status_message("Xdebug: No path mapping defined, returning given path."), 100)
 
-    # Replace slashes
-    if not windows_pattern.match(uri):
+    # special transformations for server paths (GRLD expects this)
+    if server:
         uri = uri.replace("\\", "/")
+        uri = os.path.join("./", uri)
+        uri = "@{}".format(uri)
 
     # Append scheme
     #if server:
@@ -196,7 +198,7 @@ def launch_browser():
         operator = '&'
 
     # Start debug session
-    if S.SESSION and (S.SESSION.listening or not S.SESSION.connected):
+    if S.PROTOCOL and (S.PROTOCOL.listening or not S.PROTOCOL.connected):
         webbrowser.open(url + operator + 'XDEBUG_SESSION_START=' + ide_key)
     # Stop debug session
     else:
