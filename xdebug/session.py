@@ -259,7 +259,22 @@ class SocketHandler(threading.Thread):
 
         # Render breakpoint markers
         self.timeout(lambda: render_regions())
+    def get_value(self, grld_id):
+        with S.PROTOCOL as protocol:
+            protocol.send('getValue')
+            protocol.send(grld_id)
+            response = protocol.read()
 
+        return response
+
+    def is_table(self, variable):
+        if type(variable) != dict: return False
+        if 'value' not in variable: return False
+        value = variable['value']
+        if type(value) != dict: return False
+        if 'type' not in value: return False
+
+        return value['type'] == 'table'
 
     def transform_grld_table(self, table_variable, parent_table_refs):
         name = table_variable['name']
