@@ -497,6 +497,23 @@ class XdebugEvaluateLineCommand(sublime_plugin.TextCommand):
     def is_visible(self):
         return session.is_connected()
 
+class XdebugSetCurrentStackLevelCommand(sublime_plugin.WindowCommand):
+    """
+    Set the current stack level that's being inspected. Important for variable evaluation.
+    """
+
+    def run(self, stack_level):
+        async_session = session.SocketHandler(session.ACTION_SET_CURRENT_STACK_LEVEL, stack_level=stack_level)
+        async_session.start()
+
+class XdebugSetSelectedThread(sublime_plugin.WindowCommand):
+    """
+    Select a thread we want to inspect.
+    """
+
+    def run(self, selected_thread):
+        async_session = session.SocketHandler(session.ACTION_SET_SELECTED_THREAD, selected_thread=selected_thread)
+        async_session.start()
 
 class XdebugUserExecuteCommand(sublime_plugin.WindowCommand):
     """

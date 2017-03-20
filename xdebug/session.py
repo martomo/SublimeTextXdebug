@@ -47,6 +47,8 @@ ACTION_SET_BREAKPOINT = "action_set_breakpoint"
 ACTION_STATUS = "action_status"
 ACTION_USER_EXECUTE = "action_user_execute"
 ACTION_WATCH = "action_watch"
+ACTION_SET_CURRENT_STACK_LEVEL = "action_set_current_stack_level"
+ACTION_SET_SELECTED_THREAD = "action_set_selected_thread"
 
 
 def is_connected(show_status=False):
@@ -182,6 +184,12 @@ class SocketHandler(threading.Thread):
             # Watch expression
             elif self.action == ACTION_WATCH:
                 self.watch_expression()
+            elif self.action == ACTION_SET_CURRENT_STACK_LEVEL:
+                self.set_current_stack_level(self.get_option('stack_level'))
+                pass
+            elif self.action == ACTION_SET_SELECTED_THREAD :
+                self.set_current_stack_level(self.get_option('selected_thread'))
+                pass
         # Show dialog on connection error
         except ProtocolConnectionException:
             e = sys.exc_info()[1]
