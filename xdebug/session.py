@@ -56,9 +56,9 @@ def is_connected(show_status=False):
     Keyword arguments:
     show_status -- Show message why client is not connected in status bar.
     """
-    if S.SESSION and S.SESSION.connected:
+    if S.PROTOCOL and S.PROTOCOL.connected:
         return True
-    elif S.SESSION and show_status:
+    elif S.PROTOCOL and show_status:
         sublime.status_message('Xdebug: Waiting for response from debugger engine.')
     elif show_status:
         sublime.status_message('Xdebug: No Xdebug session running.')
@@ -77,11 +77,12 @@ def connection_error(message):
     debug(message)
     # Reset connection
     try:
-        S.SESSION.clear()
+        with S.PROTOCOL as protocol:
+            protocol.clear()
     except:
         pass
     finally:
-        S.SESSION = None
+        S.PROTOCOL = None
         S.SESSION_BUSY = False
         S.BREAKPOINT_EXCEPTION = None
         S.BREAKPOINT_ROW = None
@@ -181,16 +182,7 @@ class SocketHandler(threading.Thread):
         if not expression or not is_connected():
             return
         # Send 'eval' command to debugger engine with code to evaluate
-        S.SESSION.send(dbgp.EVAL, expression=expression)
-        if get_value(S.KEY_PRETTY_OUTPUT):
-            response = S.SESSION.read()
-            properties = get_response_properties(response, expression)
-            response = generate_context_output(properties)
-        else:
-            response = S.SESSION.read(return_string=True)
 
-        # Show response data in output panel
-        self.timeout(lambda: show_panel_content(response))
 
 
     def execute(self, command):
@@ -442,25 +434,21 @@ class SocketHandler(threading.Thread):
         if not filename or not lineno or not is_connected():
             return
 
-        # Get path of file on server
-        fileuri = get_real_path(filename, True)
-        # Set breakpoint
-        #S.SESSION.send(dbgp.BREAKPOINT_SET, t='line', f=fileuri, n=lineno, expression=expression)
-        S.SESSION.send("setbreakpoint", "running")
-        S.SESSION.send({"source": filename, "line": lineno, "value": active}, "running")
-        #response = S.SESSION.read()
-        # Update breakpoint id
-        breakpoint_id = hashlib.md5(filename + str(lineno)).hexdigest() #response.get(dbgp.ATTRIBUTE_BREAKPOINT_ID)
-        if breakpoint_id:
-            S.BREAKPOINT[filename][lineno]['id'] = breakpoint_id
+        with S.PROTOCOL as protocol:
+            # Get path of file on server
+            fileuri = get_real_path(filename, True)
+            # Set breakpoint
+            protocol.send("setbreakpoint", "running")
+            protocol.send({"source": fileuri, "line": int(lineno), "value": active}, "running")
 
 
     def set_exception(self, exception):
         if not is_connected():
             return
 
-        S.SESSION.send(dbgp.BREAKPOINT_SET, t='exception', x='"%s"' % exception)
-        response = S.SESSION.read()
+        with S.PROTOCOL as protocol:
+            protocol.send(dbgp.BREAKPOINT_SET, t='exception', x='"%s"' % exception)
+            response = protocol.read()
 
 
     def status(self):
@@ -478,9 +466,10 @@ class SocketHandler(threading.Thread):
         if not command or not is_connected():
             return
 
-        # Send command to debugger engine
-        S.SESSION.send(command, args)
-        response = S.SESSION.read(return_string=True)
+        with S.PROTOCOL as protocol:
+            # Send command to debugger engine
+            protocol.send(command, args)
+            response = protocol.read(return_string=True)
 
         # Show response data in output panel
         self.timeout(lambda: show_panel_content(response))

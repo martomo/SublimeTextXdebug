@@ -44,6 +44,7 @@ KEY_COROUTINES_INDEX = "coroutines_index"
 KEY_EVALUATE_GROUP = "evaluate_group"
 KEY_EVALUATE_INDEX = "evaluate_index"
 
+
 KEY_BREAKPOINT_CURRENT = 'breakpoint_current'
 KEY_BREAKPOINT_DISABLED = 'breakpoint_disabled'
 KEY_BREAKPOINT_ENABLED = 'breakpoint_enabled'
@@ -77,7 +78,7 @@ RESTORE_INDEX = None
 
 SESSION_BUSY = False
 
-SESSION = None
+PROTOCOL = None
 BREAKPOINT = {}
 CONTEXT_DATA = {}
 WATCH = []

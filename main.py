@@ -260,7 +260,7 @@ class XdebugSessionStartCommand(sublime_plugin.WindowCommand):
     def run(self, launch_browser=False, restart=False):
         # Define new session with DBGp protocol
 
-        S.SESSION = protocol.Protocol()
+        S.PROTOCOL = protocol.Protocol()
         S.SESSION_BUSY = False
         S.BREAKPOINT_EXCEPTION = None
         S.BREAKPOINT_ROW = None
@@ -282,10 +282,11 @@ class XdebugSessionStartCommand(sublime_plugin.WindowCommand):
 
     def listen(self):
         # Start listening for response from debugger engine
-        S.SESSION.listen()
+        with S.PROTOCOL as protocol:
+            S.PROTOCOL.listen()
 
         # On connect run method which handles connection
-        if S.SESSION and S.SESSION.connected:
+        if S.PROTOCOL and S.PROTOCOL.connected:
             sublime.set_timeout(self.connected, 0)
 
     def connected(self):
@@ -295,12 +296,12 @@ class XdebugSessionStartCommand(sublime_plugin.WindowCommand):
         async_session.start()
 
     def is_enabled(self):
-        if S.SESSION:
+        if S.PROTOCOL:
             return False
         return True
 
     def is_visible(self, launch_browser=False):
-        if S.SESSION:
+        if S.PROTOCOL:
             return False
         if launch_browser and (config.get_value(S.KEY_LAUNCH_BROWSER) or not config.get_value(S.KEY_URL)):
             return False
@@ -314,12 +315,12 @@ class XdebugSessionRestartCommand(sublime_plugin.WindowCommand):
         sublime.set_timeout(lambda: sublime.status_message('Xdebug: Restarted debugging session. Reload page to continue debugging.'), 100)
 
     def is_enabled(self):
-        if S.SESSION:
+        if S.PROTOCOL:
             return True
         return False
 
     def is_visible(self):
-        if S.SESSION:
+        if S.PROTOCOL:
             return True
         return False
 
@@ -330,11 +331,13 @@ class XdebugSessionStopCommand(sublime_plugin.WindowCommand):
     """
     def run(self, close_windows=False, launch_browser=False, restart=False):
         try:
-            S.SESSION.clear()
+            S.PROTOCOL.stop_listening_for_incoming_connections()
+            with S.PROTOCOL as protocol:
+                protocol.clear()
         except:
             pass
         finally:
-            S.SESSION = None
+            S.PROTOCOL = None
             S.SESSION_BUSY = False
             S.BREAKPOINT_EXCEPTION = None
             S.BREAKPOINT_ROW = None
@@ -360,12 +363,12 @@ class XdebugSessionStopCommand(sublime_plugin.WindowCommand):
         V.render_regions()
 
     def is_enabled(self):
-        if S.SESSION:
+        if S.PROTOCOL:
             return True
         return False
 
     def is_visible(self, close_windows=False, launch_browser=False):
-        if S.SESSION:
+        if S.PROTOCOL:
             if close_windows and config.get_value(S.KEY_CLOSE_ON_STOP):
                 return False
             if launch_browser and (config.get_value(S.KEY_LAUNCH_BROWSER) or not config.get_value(S.KEY_URL)):
@@ -622,7 +625,7 @@ class XdebugLayoutCommand(sublime_plugin.WindowCommand):
         # Get active window
         window = sublime.active_window()
         # Do not restore layout or close windows while debugging
-        if S.SESSION and (restore or close_windows or keymap):
+        if S.PROTOCOL and (restore or close_windows or keymap):
             return
         # Set layout, unless user disabled debug layout
         if not config.get_value(S.KEY_DISABLE_LAYOUT):
@@ -661,7 +664,7 @@ class XdebugLayoutCommand(sublime_plugin.WindowCommand):
         return True
 
     def is_visible(self, restore=False, close_windows=False):
-        if S.SESSION:
+        if S.PROTOCOL:
             return False
         disable_layout = config.get_value(S.KEY_DISABLE_LAYOUT)
         if close_windows and (not disable_layout or not V.has_debug_view()):
@@ -693,3 +696,4 @@ class XdebugSettingsCommand(sublime_plugin.WindowCommand):
             package = package[:-len(package_extension)]
         # Open settings file
         self.window.run_command('open_file', {'file': '${packages}/' + package + '/' + S.FILE_PACKAGE_SETTINGS });
+
