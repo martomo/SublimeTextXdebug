@@ -380,11 +380,25 @@ class SocketHandler(threading.Thread):
         #response should be something like: {"1": {"name": <name of thing>, "namewhat": (global|local|method|field|''), "what": (Lua, C, main), "source": @<filename>, "line": line in file}}
         return response
 
+    def evaluate_expression(self, expression, thread, stack_level):
+        try:
+            with S.PROTOCOL as protocol:
+                protocol.send('evaluate')
+                protocol.send('=' + expression) #TODO: should we always add '='?
+                protocol.send(thread)
+                protocol.send(stack_level)
+
+                response = protocol.read()
+        except ProtocolConnectionException:
+            pass
+
+        return response
 
     def get_watch_values(self, thread, stack_level):
         """
         Evaluate all watch expressions in current context.
         """
+
         for index, item in enumerate(S.WATCH):
             # Reset value for watch expression
             S.WATCH[index]['value'] = None
@@ -454,9 +468,11 @@ class SocketHandler(threading.Thread):
         if not is_connected():
             return
 
-        # Send 'status' command to debugger engine
-        S.SESSION.send(dbgp.STATUS)
-        response = S.SESSION.read()
+        with S.PROTOCOL as protocol:
+            # Send 'status' command to debugger engine
+            protocol.send(dbgp.STATUS)
+            response = protocol.read()
+
         # Show response in status bar
         self.status_message("Xdebug status: " + response.get(dbgp.ATTRIBUTE_REASON) + ' - ' + response.get(dbgp.ATTRIBUTE_STATUS))
 
