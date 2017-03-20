@@ -89,17 +89,17 @@
     {
         "caption": "Xdebug: Breakpoint - Step Over",
         "command": "xdebug_continue",
-        "args"   : {"command" : "step_over"}
+        "args"   : {"command" : "stepover"}
     },
     {
-        "caption": "Xdebug: Breakpoint - Step Into",
+        "caption": "Xdebug: Breakpoint - Step In",
         "command": "xdebug_continue",
-        "args"   : {"command" : "step_into"}
+        "args"   : {"command" : "stepin"}
     },
     {
         "caption": "Xdebug: Breakpoint - Step Out",
         "command": "xdebug_continue",
-        "args"   : {"command" : "step_out"}
+        "args"   : {"command" : "stepout"}
     },
     {
         "caption": "Xdebug: Breakpoint - Stop",

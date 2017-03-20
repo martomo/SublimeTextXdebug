@@ -397,12 +397,12 @@ class XdebugContinueCommand(sublime_plugin.WindowCommand):
     command -- Continuation command to execute.
     """
     commands = H.new_dictionary()
-    commands[dbgp.RUN] = 'Run'
-    commands[dbgp.STEP_OVER] = 'Step Over'
-    commands[dbgp.STEP_INTO] = 'Step Into'
-    commands[dbgp.STEP_OUT] = 'Step Out'
-    commands[dbgp.STOP] = 'Stop'
-    commands[dbgp.DETACH] = 'Detach'
+    commands[grld.RUN] = 'Run'
+    commands[grld.STEP_OVER] = 'Step Over'
+    commands[grld.STEP_IN] = 'Step In'
+    commands[grld.STEP_OUT] = 'Step Out'
+    #commands[grld.STOP] = 'Stop'
+    #commands[dbgp.DETACH] = 'Detach'
 
     command_index = H.dictionary_keys(commands)
     command_options = H.dictionary_values(commands)
