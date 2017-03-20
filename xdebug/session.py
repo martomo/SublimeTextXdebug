@@ -101,7 +101,9 @@ class SocketHandler(threading.Thread):
         threading.Thread.__init__(self)
         self.action = action
         self.options = options
-        self.active_thread = 'current' # todo - add support for lua threads/coroutines
+        self.current_thread = 'current' # thread currently running in Lua (since the last time execution stopped)
+        self.selected_thread = 'current' # selected thread from UI
+        self.current_stack_level = 1
 
     def get_option(self, option, default_value=None):
         if option in self.options.keys():
@@ -391,17 +393,17 @@ class SocketHandler(threading.Thread):
         response = None
         if is_connected():
             try:
-                # Get stack information
-                #S.SESSION.send(dbgp.STACK_GET)
-                S.SESSION.send("callstack")
-                S.SESSION.send(self.active_thread)
-                response = S.SESSION.read()
+                with S.PROTOCOL as protocol:
+                    # Get stack information
+                    protocol.send("callstack")
+                    protocol.send(self.current_thread)
+                    response = protocol.read()
             except ProtocolConnectionException:
                 e = sys.exc_info()[1]
                 self.timeout(lambda: connection_error("%s" % e))
 
         #response should be something like: {"1": {"name": <name of thing>, "namewhat": (global|local|method|field|''), "what": (Lua, C, main), "source": @<filename>, "line": line in file}}
-        return generate_stack_output(response)
+        return response
 
 
     def get_watch_values(self, thread, stack_level):
