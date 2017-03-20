@@ -5,6 +5,21 @@ import os
 import sys
 import threading
 
+import sys, imp
+
+BASE_PATH = os.path.abspath(os.path.dirname(__file__))
+CODE_DIRS = [
+  'plugin_helpers',
+  'xdebug', 
+]
+sys.path += [BASE_PATH] + [os.path.join(BASE_PATH, f) for f in CODE_DIRS]
+
+# =======
+# reload plugin files on change
+if 'plugin_helpers.reloader' in sys.modules:
+  imp.reload(sys.modules['plugin_helpers.reloader'])
+import plugin_helpers.reloader
+
 # Load modules
 try:
     from .xdebug import *
@@ -29,7 +44,6 @@ except:
 
 # Initialize package
 sublime.set_timeout(lambda: load.xdebug(), 1000)
-
 
 # Define event listener for view(s)
 class EventListener(sublime_plugin.EventListener):
@@ -69,6 +83,26 @@ class EventListener(sublime_plugin.EventListener):
         else:
             pass
 
+    def on_query_context(self, view, key, operator, operand, match_all):
+        if not session.is_connected():
+            return None
+
+        if key == 'evaluate_line':
+            if view.name() != V.TITLE_WINDOW_EVALUATE:
+                return None
+
+            sel = view.sel()
+            if len(sel) > 1: return False #can't evaluate with multiple things selected
+            region = sel[0]
+
+            if region.a != view.size():
+                return False
+
+            return True
+
+        elif key == 'only_while_execution_broken':
+            return session.is_execution_broken()
+
 
 class XdebugBreakpointCommand(sublime_plugin.TextCommand):
     """
@@ -98,8 +132,8 @@ class XdebugBreakpointCommand(sublime_plugin.TextCommand):
             breakpoint_exists = row in S.BREAKPOINT[filename]
             # Disable/Remove breakpoint
             if breakpoint_exists:
-                if S.BREAKPOINT[filename][row]['id'] is not None and session.is_connected(show_status=True):
-                    async_session = session.SocketHandler(session.ACTION_REMOVE_BREAKPOINT, breakpoint_id=S.BREAKPOINT[filename][row]['id'])
+                if S.BREAKPOINT[filename][row] is not None and session.is_connected(show_status=True):
+                    async_session = session.SocketHandler(session.ACTION_REMOVE_BREAKPOINT, filename=filename, lineno=row)
                     async_session.start()
                 if enabled is False:
                     S.BREAKPOINT[filename][row]['enabled'] = False
@@ -108,7 +142,7 @@ class XdebugBreakpointCommand(sublime_plugin.TextCommand):
             # Add/Enable breakpoint
             if not breakpoint_exists or enabled is True:
                 if row not in S.BREAKPOINT[filename]:
-                    S.BREAKPOINT[filename][row] = { 'id': None, 'enabled': True, 'expression': expression }
+                    S.BREAKPOINT[filename][row] = { 'enabled': True, 'expression': expression }
                 else:
                     S.BREAKPOINT[filename][row]['enabled'] = True
                     if condition is not None:
@@ -159,9 +193,6 @@ class XdebugClearBreakpointsCommand(sublime_plugin.TextCommand):
         if filename and filename in S.BREAKPOINT:
             rows = H.dictionary_keys(S.BREAKPOINT[filename])
             self.view.run_command('xdebug_breakpoint', {'rows': rows, 'filename': filename})
-            # Continue debug session when breakpoints are cleared on current script being debugged
-            if S.BREAKPOINT_ROW and self.view.file_name() == S.BREAKPOINT_ROW['filename']:
-                self.view.window().run_command('xdebug_execute', {'command': 'run'})
 
     def is_enabled(self):
         filename = self.view.file_name()
@@ -190,8 +221,6 @@ class XdebugClearAllBreakpointsCommand(sublime_plugin.WindowCommand):
             if breakpoint_data:
                 rows = H.dictionary_keys(breakpoint_data)
                 view.run_command('xdebug_breakpoint', {'rows': rows, 'filename': filename})
-        # Continue debug session when breakpoints are cleared on current script being debugged
-        self.window.run_command('xdebug_execute', {'command': 'run'})
 
     def is_enabled(self):
         if S.BREAKPOINT:
@@ -243,14 +272,14 @@ class XdebugRunToLineCommand(sublime_plugin.WindowCommand):
     def is_visible(self):
         return S.BREAKPOINT_ROW is not None and session.is_connected()
 
-
 class XdebugSessionStartCommand(sublime_plugin.WindowCommand):
     """
     Start Xdebug session, listen for request response from debugger engine.
     """
     def run(self, launch_browser=False, restart=False):
         # Define new session with DBGp protocol
-        S.SESSION = protocol.Protocol()
+
+        S.PROTOCOL = protocol.Protocol()
         S.SESSION_BUSY = False
         S.BREAKPOINT_EXCEPTION = None
         S.BREAKPOINT_ROW = None
@@ -272,9 +301,11 @@ class XdebugSessionStartCommand(sublime_plugin.WindowCommand):
 
     def listen(self):
         # Start listening for response from debugger engine
-        S.SESSION.listen()
+        with S.PROTOCOL as protocol:
+            S.PROTOCOL.listen()
+
         # On connect run method which handles connection
-        if S.SESSION and S.SESSION.connected:
+        if S.PROTOCOL and S.PROTOCOL.connected:
             sublime.set_timeout(self.connected, 0)
 
     def connected(self):
@@ -284,12 +315,12 @@ class XdebugSessionStartCommand(sublime_plugin.WindowCommand):
         async_session.start()
 
     def is_enabled(self):
-        if S.SESSION:
+        if S.PROTOCOL:
             return False
         return True
 
     def is_visible(self, launch_browser=False):
-        if S.SESSION:
+        if S.PROTOCOL:
             return False
         if launch_browser and (config.get_value(S.KEY_LAUNCH_BROWSER) or not config.get_value(S.KEY_URL)):
             return False
@@ -303,12 +334,12 @@ class XdebugSessionRestartCommand(sublime_plugin.WindowCommand):
         sublime.set_timeout(lambda: sublime.status_message('Xdebug: Restarted debugging session. Reload page to continue debugging.'), 100)
 
     def is_enabled(self):
-        if S.SESSION:
+        if S.PROTOCOL:
             return True
         return False
 
     def is_visible(self):
-        if S.SESSION:
+        if S.PROTOCOL:
             return True
         return False
 
@@ -319,11 +350,13 @@ class XdebugSessionStopCommand(sublime_plugin.WindowCommand):
     """
     def run(self, close_windows=False, launch_browser=False, restart=False):
         try:
-            S.SESSION.clear()
+            S.PROTOCOL.stop_listening_for_incoming_connections()
+            with S.PROTOCOL as protocol:
+                protocol.clear()
         except:
             pass
         finally:
-            S.SESSION = None
+            S.PROTOCOL = None
             S.SESSION_BUSY = False
             S.BREAKPOINT_EXCEPTION = None
             S.BREAKPOINT_ROW = None
@@ -349,12 +382,12 @@ class XdebugSessionStopCommand(sublime_plugin.WindowCommand):
         V.render_regions()
 
     def is_enabled(self):
-        if S.SESSION:
+        if S.PROTOCOL:
             return True
         return False
 
     def is_visible(self, close_windows=False, launch_browser=False):
-        if S.SESSION:
+        if S.PROTOCOL:
             if close_windows and config.get_value(S.KEY_CLOSE_ON_STOP):
                 return False
             if launch_browser and (config.get_value(S.KEY_LAUNCH_BROWSER) or not config.get_value(S.KEY_URL)):
@@ -386,12 +419,10 @@ class XdebugContinueCommand(sublime_plugin.WindowCommand):
     command -- Continuation command to execute.
     """
     commands = H.new_dictionary()
-    commands[dbgp.RUN] = 'Run'
-    commands[dbgp.STEP_OVER] = 'Step Over'
-    commands[dbgp.STEP_INTO] = 'Step Into'
-    commands[dbgp.STEP_OUT] = 'Step Out'
-    commands[dbgp.STOP] = 'Stop'
-    commands[dbgp.DETACH] = 'Detach'
+    commands[grld.RUN] = 'Run'
+    commands[grld.STEP_OVER] = 'Step Over'
+    commands[grld.STEP_IN] = 'Step In'
+    commands[grld.STEP_OUT] = 'Step Out'
 
     command_index = H.dictionary_keys(commands)
     command_options = H.dictionary_values(commands)
@@ -431,20 +462,31 @@ class XdebugStatusCommand(sublime_plugin.WindowCommand):
     def is_visible(self):
         return session.is_connected()
 
+class XdebugUpdateEvaluateLineResponseCommand(sublime_plugin.TextCommand):
+    def run(self, edit, response):
+        end_of_view_point = self.view.size()
 
-class XdebugEvaluateCommand(sublime_plugin.WindowCommand):
-    def run(self):
-        self.window.show_input_panel('Evaluate', '', self.on_done, self.on_change, self.on_cancel)
+        last_char = self.view.substr(sublime.Region(end_of_view_point - 1, end_of_view_point))
+        if last_char != '\n':
+            format_string  = "\n==> {}\n"
+        else:
+            format_string  = "==> {}\n"
+        
+        self.view.insert(edit, self.view.size(), format_string.format(response))
 
-    def on_done(self, expression):
-        async_session = session.SocketHandler(session.ACTION_EVALUATE, expression=expression)
+class XdebugEvaluateLineCommand(sublime_plugin.TextCommand):
+    def run(self, edit):
+        #self.window.show_input_panel('Evaluate', '', self.on_done, self.on_change, self.on_cancel)
+        sel = self.view.sel()
+        if len(sel) > 1:
+            self.view.show_popup('cannot evaluate: selection is invalid')
+
+        region = sel[0]
+        line_region = self.view.line(region)
+        line_contents = self.view.substr(line_region)
+
+        async_session = session.SocketHandler(session.ACTION_EVALUATE, expression=line_contents, view=self.view)
         async_session.start()
-
-    def on_change(self, expression):
-        pass
-
-    def on_cancel(self):
-        pass
 
     def is_enabled(self):
         return session.is_connected()
@@ -452,6 +494,23 @@ class XdebugEvaluateCommand(sublime_plugin.WindowCommand):
     def is_visible(self):
         return session.is_connected()
 
+class XdebugSetCurrentStackLevelCommand(sublime_plugin.WindowCommand):
+    """
+    Set the current stack level that's being inspected. Important for variable evaluation.
+    """
+
+    def run(self, stack_level):
+        async_session = session.SocketHandler(session.ACTION_SET_CURRENT_STACK_LEVEL, stack_level=stack_level)
+        async_session.start()
+
+class XdebugSetSelectedThread(sublime_plugin.WindowCommand):
+    """
+    Select a thread we want to inspect.
+    """
+
+    def run(self, selected_thread):
+        async_session = session.SocketHandler(session.ACTION_SET_SELECTED_THREAD, selected_thread=selected_thread)
+        async_session.start()
 
 class XdebugUserExecuteCommand(sublime_plugin.WindowCommand):
     """
@@ -600,7 +659,7 @@ class XdebugLayoutCommand(sublime_plugin.WindowCommand):
         # Get active window
         window = sublime.active_window()
         # Do not restore layout or close windows while debugging
-        if S.SESSION and (restore or close_windows or keymap):
+        if S.PROTOCOL and (restore or close_windows or keymap):
             return
         # Set layout, unless user disabled debug layout
         if not config.get_value(S.KEY_DISABLE_LAYOUT):
@@ -617,6 +676,15 @@ class XdebugLayoutCommand(sublime_plugin.WindowCommand):
         V.show_content(V.DATA_CONTEXT)
         V.show_content(V.DATA_STACK)
         V.show_content(V.DATA_WATCH)
+        V.show_content(V.DATA_COROUTINES)
+
+        # don't override content of evaluate window automatically
+        evaluate_content = ''
+        for v in window.views():
+            if v.name() == V.TITLE_WINDOW_EVALUATE:
+                evaluate_content = v.substr(sublime.Region(0, v.size()))
+        V.show_content(V.DATA_EVALUATE, evaluate_content)
+
         panel = window.get_output_panel('xdebug')
         panel.run_command("xdebug_view_update")
         # Close output panel
@@ -631,7 +699,7 @@ class XdebugLayoutCommand(sublime_plugin.WindowCommand):
         return True
 
     def is_visible(self, restore=False, close_windows=False):
-        if S.SESSION:
+        if S.PROTOCOL:
             return False
         disable_layout = config.get_value(S.KEY_DISABLE_LAYOUT)
         if close_windows and (not disable_layout or not V.has_debug_view()):
@@ -663,3 +731,5 @@ class XdebugSettingsCommand(sublime_plugin.WindowCommand):
             package = package[:-len(package_extension)]
         # Open settings file
         self.window.run_command('open_file', {'file': '${packages}/' + package + '/' + S.FILE_PACKAGE_SETTINGS });
+
+

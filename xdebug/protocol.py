@@ -1,4 +1,6 @@
 import re
+import select
+import threading
 import socket
 import sys
 
@@ -61,20 +63,107 @@ ILLEGAL_XML_RANGES = ["%s-%s" % (H.unicode_chr(low), H.unicode_chr(high))
 
 ILLEGAL_XML_RE = re.compile(H.unicode_string('[%s]') % H.unicode_string('').join(ILLEGAL_XML_RANGES))
 
+infStr = "function() return math.huge end"
+negInfStr = "function() return -math.huge end"
+nanStr = "function() return 0/0 end"
 
+def serialize( value ):
+    t = type( value )
+    if t == int or t == float:
+        if value == float('inf'):
+            res = infStr
+        elif value == -float('inf'):
+            res = negInfStr
+        elif value == float('nan'):
+            res = nanStr
+        else:
+            res = str( value )
+                    
+        return res
+    elif t == bool:
+        return str(value).lower()
+    elif t == str:
+        return '"'+value.replace('"', '\\"')+'"'
+    elif t == type(None):
+        return "nil"
+    elif t == dict:
+        res = "{ "
+        for k, v in value.items():
+            res = res+"["+serialize( k )+"] = "+serialize( v )+", "
+        res = res+" }"
+        return res
+    else:
+        error( "Can't serialize a value of type "+str(t) )
+
+def convert_lua_table_str_to_python_dict_str(s):
+    subbed_s = re.sub(r"\[(.+?)\]\s*=\s*([\w\W]*?[,{])", r"\g<1>: \g<2>", s) # NOTE: does not support keys with newlines, also expects all keys to be wrapped in [] 
+    return re.sub(r":\s*\"([\w\W]*?)\"([,{])", r': """\g<1>"""\g<2>', subbed_s) # replace '= "X"' with '= """X"""'
+
+
+def deserialize( s ):
+    ds = s.replace(infStr, "float('inf')")
+    ds = ds.replace(negInfStr, "-float('inf')")
+    ds = ds.replace(nanStr, "float('nan')")
+               
+    ds = ds.replace('true', 'True')
+    ds = ds.replace('false', 'False')
+
+    ds = ds.replace('nil', 'None')
+    ds = ds.replace('\\\n\9', '\\\n')
+
+    try:
+        ds = convert_lua_table_str_to_python_dict_str(ds)
+        result = eval(ds)
+        return result
+    except BaseException:
+        e = sys.exc_info()[1]
+        raise ProtocolException("Error deserializing message \n{}\n{}".format(s, e))
+
+def assert_locked(func):
+    def wrapper(self, *args, **kwargs):
+        assert self.is_locked(), "Cannot access Protocol methods outside of a with statement! This is to ensure thread safety."
+        return func(self, *args, **kwargs)
+
+    return wrapper
 
 class Protocol(object):
     """
-    Class for connecting with debugger engine which uses DBGp protocol.
+    Class for connecting with debugger engine  ####which uses DBGp protocol.#### no longer true
     """
 
     # Maximum amount of data to be received at once by socket
     read_size = 1024
 
-    def __init__(self):
+    def __init__(self, on_break_cmd_cb=None, on_synchronize_cmd_cb=None):
         # Set port number to listen for response
         self.port = get_value(S.KEY_PORT, S.DEFAULT_PORT)
-        self.clear()
+
+        self.messages = [] # pulled from the lua client (a response to a message we sent)
+
+        self.command_cbs = {}
+
+        self.lock = threading.RLock()
+        self.locked = 0
+        self.listening_canceled_event = threading.Event()
+
+        with self as s:
+            s.clear()
+
+    def __enter__(self):
+        self.lock.acquire()
+        self.locked += 1
+        return self
+
+    def __exit__(self, err_type, error_obj, traceback):
+        self.lock.release()
+        self.locked = max(self.locked - 1, 0)
+
+    def is_locked(self):
+        return self.locked > 0
+
+    def register_command_cb(self, cmd_name, cb):
+        cbs = self.command_cbs.setdefault(cmd_name, [])
+        cbs.append(cb)
 
     def transaction_id():
         """
@@ -94,6 +183,7 @@ class Protocol(object):
     # Transaction ID property
     transaction_id = property(**transaction_id())
 
+    @assert_locked
     def clear(self):
         """
         Clear variables, reset transaction_id, close socket connection.
@@ -107,6 +197,14 @@ class Protocol(object):
         except:
             pass
         self.socket = None
+
+        #self.lock = threading.RLock()
+        #self.locked = 0
+
+        self.listening_canceled_event.clear()
+
+    def stop_listening_for_incoming_connections(self):
+        self.listening_canceled_event.set()
 
     def unescape(self, string):
         """
@@ -136,7 +234,63 @@ class Protocol(object):
             return text
         return re.sub("&#?\w+;", convert, string)
 
-    def read_until_null(self):
+    @assert_locked
+    def is_command(self, message):
+        if not message: 
+            return False
+
+        deserialized_message = deserialize(message)
+
+        return deserialized_message in ('break', 'synchronize')
+
+    @assert_locked
+    def handle_command(self, message):
+        command_name = deserialize(message)
+
+        if command_name == 'break':
+            filename = deserialize(self.read_next_message())
+            line = deserialize(self.read_next_message())
+
+            cbargs = (filename, line)
+
+        elif command_name == 'synchronize':
+            cbargs = tuple()
+
+        cbs = self.command_cbs.get(command_name)
+        if cbs and len(cbs) > 0:
+            for cb in cbs:
+                cb(*cbargs)
+
+
+    @assert_locked
+    def update(self):
+        # read in messages (these might be commands which will be handled immediately)
+        message = self.read_next_message(async=True)
+
+        # if it's not a command, we need to keep it around for the next read request
+        if message:
+            self.messages.append(message)
+
+    @assert_locked
+    def parse_grld_message(self, message):
+        """
+        returns parsed_message, remaining_buffer_data
+        """
+        if len(message) == 0:
+            return '', ''
+
+        if message.count("\n") < 2:
+            raise ProtocolException("Tried to parse malformed GRLD data")
+
+        channel, messageSize, remaining = message.split("\n", 2)
+        data = remaining[:int(messageSize)]
+        remaining = remaining[int(messageSize):]
+
+        return data, remaining
+
+
+    @assert_locked
+    def read_socket_into_buffer(self, async=False):
         """
         Get response data from debugger engine.
         """
@@ -144,91 +298,75 @@ class Protocol(object):
         if self.connected:
             # Get result data from debugger engine
             try:
-                while not '\x00' in self.buffer:
-                    self.buffer += H.data_read(self.socket.recv(self.read_size))
-                data, self.buffer = self.buffer.split('\x00', 1)
-                return data
+                if async:
+                    r, _, _ = select.select([self.socket], [], [], 0)
+                    if not r:
+                        return
+
+                rawSockData = ''
+                while True:
+                    rawSockData = self.socket.recv(self.read_size)
+                    self.buffer += H.data_read(rawSockData)
+
+                    r, _, _ = select.select([self.socket], [], [], 0)
+                    if not r:
+                        break
+
             except:
                 e = sys.exc_info()[1]
                 raise ProtocolConnectionException(e)
         else:
             raise ProtocolConnectionException("Xdebug is not connected")
 
-    def read_data(self):
+
+    @assert_locked
+    def read_next_message(self, async=False):
         """
-        Get response data from debugger engine and verify length of response.
+        Update buffer from socket if buffer is empty.
+        
+        Parse out buffer data and return the next message.
         """
         # Verify length of response data
-        length = self.read_until_null()
-        message = self.read_until_null()
-        if int(length) == len(message):
+        # length = self.read_socket_into_buffer()
+
+        if len(self.buffer) <= 0:
+            self.read_socket_into_buffer(async)
+
+        if len(self.buffer) <= 0:
+            return None
+
+        while True:
+            message, self.buffer = self.parse_grld_message(self.buffer)
+
+            if self.is_command(message):
+                # kind of gross to do this here (heavy coupling, poor concern encapsulation), but it needs to happen immediately because the GRLD client might expect a response
+                self.handle_command(message) 
+            else:
+                break
+        
+        return message
+
+    @assert_locked
+    def read(self, return_string=False):
+        if len(self.messages):
+            message = self.messages.pop(0)
+        else:
+            message = self.read_next_message()
+
+        if return_string:
             return message
         else:
-            raise ProtocolException("Length mismatch encountered while reading the Xdebug message")
+            return deserialize(message)
 
-    def read(self, return_string=False):
-        """
-        Get response from debugger engine as XML document object.
-        """
-        # Get result data from debugger engine and verify length of response
-        data = self.read_data()
+    @assert_locked
+    def send(self, data, channel='default'):
+        self.update()
+        s_data = serialize(data)
+        formatted_data = channel + '\n' + str(len(s_data)) + '\n' + s_data
 
-        # Show debug output
-        debug('[Response data] %s' % data)
+        self.socket.send(H.data_write(formatted_data))
 
-        # Return data string
-        if return_string:
-            return data
-
-        # Remove special character quoting
-        if UNESCAPE_RESPONSE_DATA:
-            data = self.unescape(data)
-
-        # Replace invalid XML characters
-        data = ILLEGAL_XML_RE.sub('?', data)
-
-        # Create XML document object
-        document = ET.fromstring(data)
-        return document
-
-    def send(self, command, *args, **kwargs):
-        """
-        Send command to the debugger engine according to DBGp protocol.
-        """
-        # Expression is used for conditional and watch type breakpoints
-        expression = None
-
-        # Seperate 'expression' from kwargs
-        if 'expression' in kwargs:
-            expression = kwargs['expression']
-            del kwargs['expression']
-
-        # Generate unique Transaction ID
-        transaction_id = self.transaction_id
-
-        # Append command/arguments to build list
-        build_command = [command, '-i %i' % transaction_id]
-        if args:
-            build_command.extend(args)
-        if kwargs:
-            build_command.extend(['-%s %s' % pair for pair in kwargs.items()])
-
-        # Remove leading/trailing spaces and build command string
-        build_command = [part.strip() for part in build_command if part.strip()]
-        command = ' '.join(build_command)
-        if expression:
-            command += ' -- ' + H.base64_encode(expression)
-
-        # Show debug output
-        debug('[Send command] %s' % command)
-
-        # Send command to debugger engine
-        try:
-            self.socket.send(H.data_write(command + '\x00'))
-        except:
-            e = sys.exc_info()[1]
-            raise ProtocolConnectionException(e)
-
+    @assert_locked
     def listen(self):
         """
         Create socket server which listens for connection on configured port.
@@ -250,7 +388,7 @@ class Protocol(object):
                 raise ProtocolConnectionException(e)
 
             # Accept incoming connection on configured port
-            while self.listening:
+            while not self.listening_canceled_event.is_set() and self.listening:
                 try:
                     self.socket, address = server.accept()
                     self.listening = False
@@ -276,6 +414,9 @@ class Protocol(object):
             return self.socket
         else:
             raise ProtocolConnectionException('Could not create socket server.')
+
+
+
 
 
 class ProtocolException(Exception):

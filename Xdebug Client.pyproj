@@ -1,0 +1,86 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{bde071e4-3ba2-418a-9660-64fd37dd570e}</ProjectGuid>
+    <ProjectHome />
+    <StartupFile>main.py</StartupFile>
+    <SearchPath />
+    <WorkingDirectory>.</WorkingDirectory>
+    <OutputPath>.</OutputPath>
+    <ProjectTypeGuids>{888888a0-9f3d-457c-b088-3a5042f75d52}</ProjectTypeGuids>
+    <LaunchProvider>Standard Python launcher</LaunchProvider>
+    <InterpreterId />
+    <InterpreterVersion />
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'" />
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'" />
+  <PropertyGroup>
+    <VisualStudioVersion Condition=" '$(VisualStudioVersion)' == '' ">10.0</VisualStudioVersion>
+    <PtvsTargetsFile>$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets</PtvsTargetsFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="main.py" />
+    <Compile Include="plugin_helpers\reloader.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="plugin_helpers\__init__.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="xdebug\config.py" />
+    <Compile Include="xdebug\dbgp.py" />
+    <Compile Include="xdebug\elementtree\ElementInclude.py" />
+    <Compile Include="xdebug\elementtree\ElementPath.py" />
+    <Compile Include="xdebug\elementtree\ElementTree.py" />
+    <Compile Include="xdebug\elementtree\HTMLTreeBuilder.py" />
+    <Compile Include="xdebug\elementtree\SgmlopXMLTreeBuilder.py" />
+    <Compile Include="xdebug\elementtree\SimpleXMLTreeBuilder.py" />
+    <Compile Include="xdebug\elementtree\SimpleXMLWriter.py" />
+    <Compile Include="xdebug\elementtree\TidyHTMLTreeBuilder.py" />
+    <Compile Include="xdebug\elementtree\TidyTools.py" />
+    <Compile Include="xdebug\elementtree\XMLTreeBuilder.py" />
+    <Compile Include="xdebug\elementtree\__init__.py" />
+    <Compile Include="xdebug\grld.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="xdebug\helper\helper.py" />
+    <Compile Include="xdebug\helper\helper_26.py" />
+    <Compile Include="xdebug\helper\helper_27.py" />
+    <Compile Include="xdebug\helper\ordereddict.py" />
+    <Compile Include="xdebug\helper\__init__.py" />
+    <Compile Include="xdebug\load.py" />
+    <Compile Include="xdebug\log.py" />
+    <Compile Include="xdebug\protocol.py" />
+    <Compile Include="xdebug\session.py" />
+    <Compile Include="xdebug\settings.py" />
+    <Compile Include="xdebug\util.py" />
+    <Compile Include="xdebug\view.py" />
+    <Compile Include="xdebug\__init__.py" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include=".gitignore" />
+    <Content Include="Context.sublime-menu" />
+    <Content Include="Default %28OSX%29.sublime-keymap" />
+    <Content Include="Default.sublime-commands" />
+    <Content Include="Default.sublime-keymap" />
+    <Content Include="icons\breakpoint_current.png" />
+    <Content Include="icons\breakpoint_disabled.png" />
+    <Content Include="icons\breakpoint_enabled.png" />
+    <Content Include="icons\current_line.png" />
+    <Content Include="LICENSE" />
+    <Content Include="Main.sublime-menu" />
+    <Content Include="README.md" />
+    <Content Include="Xdebug.sublime-settings" />
+    <Content Include="Xdebug.tmLanguage" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="icons" />
+    <Folder Include="plugin_helpers\" />
+    <Folder Include="xdebug" />
+    <Folder Include="xdebug\elementtree" />
+    <Folder Include="xdebug\helper" />
+  </ItemGroup>
+  <Import Project="$(PtvsTargetsFile)" Condition="Exists($(PtvsTargetsFile))" />
+  <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" Condition="!Exists($(PtvsTargetsFile))" />
+</Project>

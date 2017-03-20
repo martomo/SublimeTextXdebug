@@ -1,4 +1,4 @@
-DEFAULT_PORT = 9000
+DEFAULT_PORT = 4242 #9000
 DEFAULT_IDE_KEY = 'sublime.xdebug'
 
 PACKAGE_PATH = None
@@ -29,6 +29,7 @@ KEY_LAUNCH_BROWSER = "launch_browser"
 KEY_BROWSER_NO_EXECUTE = "browser_no_execute"
 KEY_DISABLE_LAYOUT = "disable_layout"
 KEY_DEBUG_LAYOUT = "debug_layout"
+KEY_DISABLE_SUBLIME_LINTER_GUTTER = "disable_sublime_linter_gutter"
 
 KEY_BREAKPOINT_GROUP = "breakpoint_group"
 KEY_BREAKPOINT_INDEX = "breakpoint_index"
@@ -38,6 +39,11 @@ KEY_STACK_GROUP = "stack_group"
 KEY_STACK_INDEX = "stack_index"
 KEY_WATCH_GROUP = "watch_group"
 KEY_WATCH_INDEX = "watch_index"
+KEY_COROUTINES_GROUP = "coroutines_group"
+KEY_COROUTINES_INDEX = "coroutines_index"
+KEY_EVALUATE_GROUP = "evaluate_group"
+KEY_EVALUATE_INDEX = "evaluate_index"
+
 
 KEY_BREAKPOINT_CURRENT = 'breakpoint_current'
 KEY_BREAKPOINT_DISABLED = 'breakpoint_disabled'
@@ -72,7 +78,7 @@ RESTORE_INDEX = None
 
 SESSION_BUSY = False
 
-SESSION = None
+PROTOCOL = None
 BREAKPOINT = {}
 CONTEXT_DATA = {}
 WATCH = []

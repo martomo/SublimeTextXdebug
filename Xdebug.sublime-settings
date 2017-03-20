@@ -27,7 +27,7 @@
 
     // Which port number Sublime Text should listen
     // to connect with debugger engine.
-    "port": 9000,
+    "port": 4242,
 
     // Show super globals in context view.
     "super_globals": true,
@@ -71,7 +71,7 @@
     ],
 
     // Always close debug windows and restore layout on session stop.
-    "close_on_stop": false,
+    "close_on_stop": true,
 
     // Do not show possible password values in context output.
     "hide_password": false,
@@ -92,20 +92,24 @@
 
     // Window layout that is being used when debugging.
     "debug_layout" : {
-        "cols": [0.0, 0.5, 1.0],
+        "cols": [0.0, 0.15, 0.6, 1.0],
         "rows": [0.0, 0.7, 1.0],
-        "cells": [[0, 0, 2, 1], [0, 1, 1, 2], [1, 1, 2, 2]]
+        "cells": [[0, 0, 3, 1], [0, 1, 1, 2], [1, 1, 2, 2], [2, 1, 3, 2]]
     },
 
     // Group and index positions for debug views.
-    "breakpoint_group": 2,
+    "breakpoint_group": 3,
     "breakpoint_index": 1,
-    "context_group": 1,
+    "context_group": 2,
     "context_index": 0,
-    "stack_group": 2,
+    "stack_group": 3,
     "stack_index": 0,
-    "watch_group": 1,
+    "watch_group": 2,
     "watch_index": 1,
+	"coroutines_group": 1,
+    "coroutines_index": 0,
+	"evaluate_group": 2,
+    "evaluate_index": 2,
 
     // Custom gutter icons for indicating current line or enabled/disabled breakpoints.
     //
@@ -132,4 +136,8 @@
     // between debugger engine and Sublime Text.
     // Log can be found at Packages/User/Xdebug.log
     "debug": false
+
+	// Disables sublime linter gutter icons.
+	// This is necessary to ensure gutter icons (current line + breakpoints) are visible
+	"disable_sublime_linter_gutter": true
 }

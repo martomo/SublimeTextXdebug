@@ -61,9 +61,13 @@
         "command": "xdebug_watch",
         "args"   : {"clear" : true}
     },
-    {
-        "caption": "Xdebug: Session - Evaluate",
-        "command": "xdebug_evaluate"
+	{
+        "caption": "Xdebug: Session - Evaluate Line",
+        "command": "xdebug_evaluate_line"
+    },
+	{
+        "caption": "Xdebug: Session - Update Evaluate Line Response",
+        "command": "xdebug_update_evaluate_line_response"
     },
     {
         "caption": "Xdebug: Session - Execute",
@@ -85,17 +89,17 @@
     {
         "caption": "Xdebug: Breakpoint - Step Over",
         "command": "xdebug_continue",
-        "args"   : {"command" : "step_over"}
+        "args"   : {"command" : "stepover"}
     },
     {
-        "caption": "Xdebug: Breakpoint - Step Into",
+        "caption": "Xdebug: Breakpoint - Step In",
         "command": "xdebug_continue",
-        "args"   : {"command" : "step_into"}
+        "args"   : {"command" : "stepin"}
     },
     {
         "caption": "Xdebug: Breakpoint - Step Out",
         "command": "xdebug_continue",
-        "args"   : {"command" : "step_out"}
+        "args"   : {"command" : "stepout"}
     },
     {
         "caption": "Xdebug: Breakpoint - Stop",

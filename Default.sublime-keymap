@@ -1,11 +1,13 @@
 [
 	{"keys": ["ctrl+f8"], "command": "xdebug_breakpoint"},
 	{"keys": ["shift+f8"], "command": "xdebug_conditional_breakpoint"},
-	{"keys": ["ctrl+shift+f5"], "command": "xdebug_continue", "args": {"command": "run"}},
-	{"keys": ["ctrl+shift+f6"], "command": "xdebug_continue", "args": {"command": "step_over"}},
-	{"keys": ["ctrl+shift+f7"], "command": "xdebug_continue", "args": {"command": "step_into"}},
-	{"keys": ["ctrl+shift+f8"], "command": "xdebug_continue", "args": {"command": "step_out"}},
-	{"keys": ["ctrl+shift+f9"], "command": "xdebug_session_start"},
-	{"keys": ["ctrl+shift+f10"], "command": "xdebug_session_stop"},
-	{"keys": ["ctrl+shift+f11"], "command": "xdebug_layout", "args": {"keymap" : true}}
+	{"keys": ["f5"], "command": "xdebug_continue", "args": {"command": "run"}, "context": [{"key": "only_while_execution_broken"}]},
+	{"keys": ["f10"], "command": "xdebug_continue", "args": {"command": "stepover"}, "context": [{"key": "only_while_execution_broken"}]},
+	{"keys": ["f11"], "command": "xdebug_continue", "args": {"command": "stepin"}, "context": [{"key": "only_while_execution_broken"}]},
+	{"keys": ["shift+f11"], "command": "xdebug_continue", "args": {"command": "stepout"}, "context": [{"key": "only_while_execution_broken"}]},
+	{"keys": ["ctrl+f5"], "command": "xdebug_session_start"},
+	{"keys": ["shift+f5"], "command": "xdebug_session_stop"},
+	{"keys": ["ctrl+shift+f5"], "command": "xdebug_layout", "args": {"keymap" : true}},
+
+	{"keys": ["enter"], "command": "xdebug_evaluate_line", "context": [{"key": "evaluate_line"}]}
 ]
