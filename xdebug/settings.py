@@ -38,6 +38,10 @@ KEY_STACK_GROUP = "stack_group"
 KEY_STACK_INDEX = "stack_index"
 KEY_WATCH_GROUP = "watch_group"
 KEY_WATCH_INDEX = "watch_index"
+KEY_COROUTINES_GROUP = "coroutines_group"
+KEY_COROUTINES_INDEX = "coroutines_index"
+KEY_EVALUATE_GROUP = "evaluate_group"
+KEY_EVALUATE_INDEX = "evaluate_index"
 
 KEY_BREAKPOINT_CURRENT = 'breakpoint_current'
 KEY_BREAKPOINT_DISABLED = 'breakpoint_disabled'
