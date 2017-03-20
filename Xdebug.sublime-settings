@@ -71,7 +71,7 @@
     ],
 
     // Always close debug windows and restore layout on session stop.
-    "close_on_stop": false,
+    "close_on_stop": true,
 
     // Do not show possible password values in context output.
     "hide_password": false,
