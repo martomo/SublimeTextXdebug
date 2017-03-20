@@ -29,6 +29,7 @@ KEY_LAUNCH_BROWSER = "launch_browser"
 KEY_BROWSER_NO_EXECUTE = "browser_no_execute"
 KEY_DISABLE_LAYOUT = "disable_layout"
 KEY_DEBUG_LAYOUT = "debug_layout"
+KEY_DISABLE_SUBLIME_LINTER_GUTTER = "disable_sublime_linter_gutter"
 
 KEY_BREAKPOINT_GROUP = "breakpoint_group"
 KEY_BREAKPOINT_INDEX = "breakpoint_index"

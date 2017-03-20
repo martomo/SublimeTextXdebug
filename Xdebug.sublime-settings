@@ -136,4 +136,7 @@
     // between debugger engine and Sublime Text.
     // Log can be found at Packages/User/Xdebug.log
     "debug": false
+	// Disables sublime linter gutter icons.
+	// This is necessary to ensure gutter icons (current line + breakpoints) are visible
+	"disable_sublime_linter_gutter": true
 }
