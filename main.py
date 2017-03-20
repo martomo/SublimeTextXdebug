@@ -113,8 +113,8 @@ class XdebugBreakpointCommand(sublime_plugin.TextCommand):
             breakpoint_exists = row in S.BREAKPOINT[filename]
             # Disable/Remove breakpoint
             if breakpoint_exists:
-                if S.BREAKPOINT[filename][row]['id'] is not None and session.is_connected(show_status=True):
-                    async_session = session.SocketHandler(session.ACTION_REMOVE_BREAKPOINT, breakpoint_id=S.BREAKPOINT[filename][row]['id'])
+                if S.BREAKPOINT[filename][row] is not None and session.is_connected(show_status=True):
+                    async_session = session.SocketHandler(session.ACTION_REMOVE_BREAKPOINT, filename=filename, lineno=row)
                     async_session.start()
                 if enabled is False:
                     S.BREAKPOINT[filename][row]['enabled'] = False
@@ -123,7 +123,7 @@ class XdebugBreakpointCommand(sublime_plugin.TextCommand):
             # Add/Enable breakpoint
             if not breakpoint_exists or enabled is True:
                 if row not in S.BREAKPOINT[filename]:
-                    S.BREAKPOINT[filename][row] = { 'id': None, 'enabled': True, 'expression': expression }
+                    S.BREAKPOINT[filename][row] = { 'enabled': True, 'expression': expression }
                 else:
                     S.BREAKPOINT[filename][row]['enabled'] = True
                     if condition is not None:
@@ -174,9 +174,6 @@ class XdebugClearBreakpointsCommand(sublime_plugin.TextCommand):
         if filename and filename in S.BREAKPOINT:
             rows = H.dictionary_keys(S.BREAKPOINT[filename])
             self.view.run_command('xdebug_breakpoint', {'rows': rows, 'filename': filename})
-            # Continue debug session when breakpoints are cleared on current script being debugged
-            if S.BREAKPOINT_ROW and self.view.file_name() == S.BREAKPOINT_ROW['filename']:
-                self.view.window().run_command('xdebug_execute', {'command': 'run'})
 
     def is_enabled(self):
         filename = self.view.file_name()
@@ -205,8 +202,6 @@ class XdebugClearAllBreakpointsCommand(sublime_plugin.WindowCommand):
             if breakpoint_data:
                 rows = H.dictionary_keys(breakpoint_data)
                 view.run_command('xdebug_breakpoint', {'rows': rows, 'filename': filename})
-        # Continue debug session when breakpoints are cleared on current script being debugged
-        self.window.run_command('xdebug_execute', {'command': 'run'})
 
     def is_enabled(self):
         if S.BREAKPOINT:
@@ -257,7 +252,6 @@ class XdebugRunToLineCommand(sublime_plugin.WindowCommand):
 
     def is_visible(self):
         return S.BREAKPOINT_ROW is not None and session.is_connected()
-
 
 class XdebugSessionStartCommand(sublime_plugin.WindowCommand):
     """

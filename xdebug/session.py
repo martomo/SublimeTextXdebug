@@ -154,10 +154,12 @@ class SocketHandler(threading.Thread):
                 self.init()
             # Remove breakpoint
             elif self.action == ACTION_REMOVE_BREAKPOINT:
-                self.remove_breakpoint(self.get_option('breakpoint_id'))
+                self.remove_breakpoint(self.get_option('filename'), self.get_option('lineno'))
             # Set breakpoint
             elif self.action == ACTION_SET_BREAKPOINT:
-                self.set_breakpoint(self.get_option('filename'), self.get_option('lineno'), self.get_option('expression'))
+                # TODO: support conditional bps
+                active = True # self.get_option('expression')
+                self.set_breakpoint(self.get_option('filename'), self.get_option('lineno'), active)
             # Status
             elif self.action == ACTION_STATUS:
                 self.status()
@@ -429,26 +431,11 @@ class SocketHandler(threading.Thread):
         #    self.run_command('xdebug_execute', {'command': 'run'})
 
 
-    def remove_breakpoint(self, breakpoint_id):
-        if not breakpoint_id or not is_connected():
+    def remove_breakpoint(self, filename, lineno):
+        if not is_connected():
             return
 
-        filename = None
-        lineno = None
-        
-        for fname, lineDict in S.BREAKPOINT.items():
-            for line, breakpointData in lineDict.items():
-                if breakpointData['id'] == breakpoint_id:
-                    filename = fname
-                    lineno = line
-                    break
-
-            if filename and lineno: 
-                break
-
-        self.setbreakpoint(filename, lineno, False)
-        #S.SESSION.send(dbgp.BREAKPOINT_REMOVE, d=breakpoint_id)
-        #response = S.SESSION.read()
+        self.set_breakpoint(filename, lineno, False)
 
 
     def set_breakpoint(self, filename, lineno, active=True):
