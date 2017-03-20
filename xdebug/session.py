@@ -95,6 +95,14 @@ def connection_error(message):
     # Render breakpoint markers
     render_regions()
 
+def update_socket_loop():
+    if not S.PROTOCOL:
+        return
+
+    with S.PROTOCOL as protocol:
+        protocol.update()
+            
+    sublime.set_timeout_async(update_socket_loop, 100)
 
 class SocketHandler(threading.Thread):
     def __init__(self, action, **options):
@@ -197,70 +205,20 @@ class SocketHandler(threading.Thread):
         if not command or not is_connected():
             return
 
-        # Send command to debugger engine
-        S.SESSION.send(command)
-        response = S.SESSION.read()
-
         # Reset previous breakpoint values
         S.BREAKPOINT_EXCEPTION = None
         S.BREAKPOINT_ROW = None
         S.CONTEXT_DATA.clear()
         self.watch_expression()
-        # Set debug layout
+        
+
+        # Send command to debugger engine
+        with S.PROTOCOL as protocol:
+            protocol.send(command)
+
         self.run_command('xdebug_layout')
-
-        # Handle breakpoint hit
-        for child in response:
-            if child.tag == dbgp.ELEMENT_BREAKPOINT or child.tag == dbgp.ELEMENT_PATH_BREAKPOINT:
-                # Get breakpoint attribute values
-                fileuri = child.get(dbgp.BREAKPOINT_FILENAME)
-                lineno = child.get(dbgp.BREAKPOINT_LINENO)
-                exception = child.get(dbgp.BREAKPOINT_EXCEPTION)
-                filename = get_real_path(fileuri)
-                if (exception):
-                    info(exception + ': ' + child.text)
-                    # Remember Exception name and first line of message
-                    S.BREAKPOINT_EXCEPTION = { 'name': exception, 'message': child.text.split('\n')[0], 'filename': fileuri, 'lineno': lineno }
-
-                # Check if temporary breakpoint is set and hit
-                if S.BREAKPOINT_RUN is not None and S.BREAKPOINT_RUN['filename'] == filename and S.BREAKPOINT_RUN['lineno'] == lineno:
-                    # Remove temporary breakpoint
-                    if S.BREAKPOINT_RUN['filename'] in S.BREAKPOINT and S.BREAKPOINT_RUN['lineno'] in S.BREAKPOINT[S.BREAKPOINT_RUN['filename']]:
-                        self.run_view_command('xdebug_breakpoint', {'rows': [S.BREAKPOINT_RUN['lineno']], 'filename': S.BREAKPOINT_RUN['filename']})
-                    S.BREAKPOINT_RUN = None
-                # Skip if temporary breakpoint was not hit
-                if S.BREAKPOINT_RUN is not None and (S.BREAKPOINT_RUN['filename'] != filename or S.BREAKPOINT_RUN['lineno'] != lineno):
-                    self.run_command('xdebug_execute', {'command': 'run'})
-                    return
-                # Show debug/status output
-                self.status_message('Xdebug: Breakpoint')
-                info('Break: ' + filename + ':' + lineno)
-                # Store line number of breakpoint for displaying region marker
-                S.BREAKPOINT_ROW = { 'filename': filename, 'lineno': lineno }
-                # Focus/Open file window view
-                self.timeout(lambda: show_file(filename, lineno))
-
-        # On breakpoint get context variables and stack history
-        if response.get(dbgp.ATTRIBUTE_STATUS) == dbgp.STATUS_BREAK:
-            # Context variables
-            context = self.get_context_values()
-            self.timeout(lambda: show_content(DATA_CONTEXT, context))
-
-            # Stack history
-            stack = self.get_stack_values()
-            self.timeout(lambda: show_content(DATA_STACK, stack))
-
-            # Watch expressions
-            self.watch_expression()
-
-        # Reload session when session stopped, by reaching end of file or interruption
-        if response.get(dbgp.ATTRIBUTE_STATUS) == dbgp.STATUS_STOPPING or response.get(dbgp.ATTRIBUTE_STATUS) == dbgp.STATUS_STOPPED:
-            self.run_command('xdebug_session_stop', {'restart': True})
-            self.run_command('xdebug_session_start', {'restart': True})
-            self.status_message('Xdebug: Finished executing file on server. Reload page to continue debugging.')
-
-        # Render breakpoint markers
         self.timeout(lambda: render_regions())
+       
     def get_value(self, grld_id):
         with S.PROTOCOL as protocol:
             protocol.send('getValue')
@@ -424,112 +382,35 @@ class SocketHandler(threading.Thread):
             # Evaluate watch expression when connected to debugger engine
             if is_connected():
                 if item['enabled']:
-                    watch_value = None
-                    try:
-                        S.SESSION.send(dbgp.EVAL, expression=item['expression'])
-                        response = S.SESSION.read()
+                    watch_value = self.evaluate_expression(item['expression'], thread, stack_level)
 
-                        watch_value = get_response_properties(response, item['expression'])
-                    except ProtocolConnectionException:
-                        pass
-
-                    S.WATCH[index]['value'] = watch_value
+                    S.WATCH[index]['value'] = self.transform_grld_eval_response(watch_value)
 
 
     def init(self):
         if not is_connected():
             return
 
-        # Connection initialization
-        client_name = S.SESSION.read()
+        with S.PROTOCOL as protocol:
+            protocol.register_command_cb('break', (lambda filename, line: self.handle_break_command(filename, line)))
+            protocol.register_command_cb('synchronize', (lambda: self.handle_synchronize_command()))
+            # Connection initialization
+            client_name = protocol.read()
+                
+            # # Set breakpoints for files
+            for filename, breakpoint_data in S.BREAKPOINT.items():
+                if breakpoint_data:
+                    for lineno, bp in breakpoint_data.items():
+                        if bp['enabled']:
+                            # TODO: support conditional bps
+                            active = True #bp['expression']
+                            self.set_breakpoint(filename, lineno, active)
+                            debug('breakpoint_set: ' + filename + ':' + lineno)
 
-        synchronize_message = S.SESSION.read()
+            if get_value(S.KEY_BREAK_ON_START):
+                protocol.send("break", "running")
 
-        if synchronize_message != "synchronize":
-            raise SessionException("Did not get synchronize signal!")
-
-        # synchronize expects us to return the # of active breakpoints (this is actually not implemented, we MUST return 0 here)
-        S.SESSION.send(0)
-
-        # next we need to send the "breakOnConnection" value, this is configurable, but we'll just always return false for now
-        S.SESSION.send(str(False).lower())
-
-        # # More detailed internal information on properties
-        # S.SESSION.send(dbgp.FEATURE_SET, n='show_hidden', v=1)
-        # response = S.SESSION.read()
-
-        # # Set max children limit
-        # max_children = get_value(S.KEY_MAX_CHILDREN)
-        # if max_children is not False and max_children is not True and (H.is_number(max_children) or H.is_digit(max_children)):
-        #     S.SESSION.send(dbgp.FEATURE_SET, n=dbgp.FEATURE_NAME_MAXCHILDREN, v=max_children)
-        #     response = S.SESSION.read()
-
-        # # Set max data limit
-        # max_data = get_value(S.KEY_MAX_DATA)
-        # if max_data is not False and max_data is not True and (H.is_number(max_data) or H.is_digit(max_data)):
-        #     S.SESSION.send(dbgp.FEATURE_SET, n=dbgp.FEATURE_NAME_MAXDATA, v=max_data)
-        #     response = S.SESSION.read()
-
-        # # Set max depth limit
-        # max_depth = get_value(S.KEY_MAX_DEPTH)
-        # if max_depth is not False and max_depth is not True and (H.is_number(max_depth) or H.is_digit(max_depth)):
-        #     S.SESSION.send(dbgp.FEATURE_SET, n=dbgp.FEATURE_NAME_MAXDEPTH, v=max_depth)
-        #     response = S.SESSION.read()
-
-        # # Set breakpoints for files
-        for filename, breakpoint_data in S.BREAKPOINT.items():
-            if breakpoint_data:
-                for lineno, bp in breakpoint_data.items():
-                    if bp['enabled']:
-                        self.set_breakpoint(filename, lineno, bp['expression'])
-                        debug('breakpoint_set: ' + filename + ':' + lineno)
-
-        # # Set breakpoints for exceptions
-        # break_on_exception = get_value(S.KEY_BREAK_ON_EXCEPTION)
-        # if isinstance(break_on_exception, list):
-        #     for exception_name in break_on_exception:
-        #         self.set_exception(exception_name)
-
-        # # Determine if client should break at first line on connect
-        #if get_value(S.KEY_BREAK_ON_START):
-            # Get init attribute values
-        #fileuri = filename
-        # break execution
-        S.SESSION.send("break", "running")
-
-        break_cmd =  S.SESSION.read()
-        filename = S.SESSION.read().replace('@', '') # will be in format "@./<relative_path_from_below_exe>"
-        line = S.SESSION.read()
-
-        #filename = try_get_local_path_from_mounted_paths(filename)
-
-        filename = get_real_path(filename)
-
-        # Show debug/status output
-        self.status_message('Xdebug: Break on start')
-        info('Break on start: ' + filename )
-        # Store line number of breakpoint for displaying region marker
-        S.BREAKPOINT_ROW = { 'filename': filename, 'lineno': line }
-        # Focus/Open file window view
-        self.timeout(lambda: show_file(filename, 1))
-
-        # Context variables
-        #context = self.get_context_values()
-        #self.timeout(lambda: show_content(DATA_CONTEXT, context))
-
-        # Stack history
-        stack = self.get_stack_values()
-        if not stack:
-            stack = H.unicode_string('[{level}] {filename}.{where}:{lineno}\n' \
-                                        .format(level=0, where='{main}', lineno=1, filename=fileuri))
-        self.timeout(lambda: show_content(DATA_STACK, stack))
-
-        # Watch expressions
-        #self.watch_expression()
-        #else:
-        #    # Tell script to run it's process
-        #    self.run_command('xdebug_execute', {'command': 'run'})
-
+        update_socket_loop()
 
     def remove_breakpoint(self, filename, lineno):
         if not is_connected():
@@ -583,9 +464,15 @@ class SocketHandler(threading.Thread):
         self.timeout(lambda: show_panel_content(response))
 
 
-    def watch_expression(self):
+    def watch_expression(self, thread=None, stack_level=None):
+        if not thread:
+            thread = self.current_thread
+
+        if not stack_level:
+            stack_level = self.current_stack_level
+
         # Evaluate watch expressions
-        self.get_watch_values()
+        self.get_watch_values(thread, stack_level)
         # Show watch expression
         self.timeout(lambda: self._watch_expression(self.get_option('check_watch_view', False)))
 
@@ -596,6 +483,95 @@ class SocketHandler(threading.Thread):
             return
 
         show_content(DATA_WATCH)
+
+    def set_current_stack_level(self, stack_level):
+        self.current_stack_level = stack_level
+
+    def set_selected_thread(self, selected_thread):
+        self.selected_thread = selected_thread
+
+    def get_all_coroutines(self):
+        with S.PROTOCOL as protocol:
+            protocol.send('coroutines')
+            response = protocol.read()
+
+        count = len(response.keys())
+        response[count + 1] = {'id': 'main'} # always include a 'main' coroutine. This is how GRLD references the main Lua thread.
+
+        return response
+
+
+    def update_current_thread(self, coroutines_dict):
+        with S.PROTOCOL as protocol:
+            protocol.send('currentthread')
+            current_thread = protocol.read()
+
+        # GRLD only passes back co-routines that are NOT 'main'. So, if current_thread is not in the list, then 'main' is the current thread.    
+        if current_thread not in coroutines_dict.values():
+            current_thread = 'main'
+
+        self.current_thread = current_thread
+
+    def update_contextual_data(self, thread, stack_level):
+        # Context variables
+        context = self.get_context_values(thread, stack_level)
+        self.timeout(lambda: show_content(DATA_CONTEXT, context))
+
+        # Watch expressions
+        self.watch_expression(thread, stack_level)
+
+        # Render breakpoint markers
+        self.timeout(lambda: render_regions())
+
+    def handle_break_command(self, filename, line):
+        S.SESSION_BUSY = True
+        filename = get_real_path(filename)
+
+        # Show debug/status output
+        self.status_message('Xdebug: Break')
+        info('Break: ' + filename )
+        # Store line number of breakpoint for displaying region marker
+        S.BREAKPOINT_ROW = { 'filename': filename, 'lineno': str(line) }
+
+        # Focus/Open file window view
+        self.timeout(lambda: show_file(filename, line))
+
+        coroutines_dict = self.get_all_coroutines()
+
+        self.update_current_thread(coroutines_dict)
+
+        coroutines_str = generate_coroutines_output(coroutines_dict, self.current_thread)
+        self.timeout(lambda: show_content(DATA_COROUTINES, coroutines_str))
+
+        # Stack history
+        stack = self.get_stack_values()
+        if stack:
+            stack_levels = [int(level) for level in stack.keys()]
+            min_stack_level =  min(stack_levels)
+            self.current_stack_level = min_stack_level
+            stack_str = generate_stack_output(stack)
+        else:
+            stack_str = H.unicode_string('[{level}] {filename}.{where}:{lineno}\n' \
+                                        .format(level=0, where='{main}', lineno=1, filename=fileuri))
+
+        self.timeout(lambda: show_content(DATA_STACK, stack_str))
+
+        self.update_contextual_data(self.current_thread, self.current_stack_level)
+
+        S.SESSION_BUSY = False
+
+    def handle_synchronize_command(self):
+        S.SESSION_BUSY = True
+
+        with S.PROTOCOL as protocol:
+            # synchronize expects us to return the # of active breakpoints (this is actually not implemented, we MUST return 0 here)
+            protocol.send(0)
+
+            # next we need to send the "breakOnConnection" value, this is configurable, but we'll just always return false for now
+            protocol.send(False)
+
+        S.SESSION_BUSY = False
+            
 
 class SessionException(Exception):
     pass
