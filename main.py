@@ -45,7 +45,6 @@ except:
 # Initialize package
 sublime.set_timeout(lambda: load.xdebug(), 1000)
 
-
 # Define event listener for view(s)
 class EventListener(sublime_plugin.EventListener):
     def on_load(self, view):
@@ -424,8 +423,6 @@ class XdebugContinueCommand(sublime_plugin.WindowCommand):
     commands[grld.STEP_OVER] = 'Step Over'
     commands[grld.STEP_IN] = 'Step In'
     commands[grld.STEP_OUT] = 'Step Out'
-    #commands[grld.STOP] = 'Stop'
-    #commands[dbgp.DETACH] = 'Detach'
 
     command_index = H.dictionary_keys(commands)
     command_options = H.dictionary_values(commands)
@@ -687,6 +684,7 @@ class XdebugLayoutCommand(sublime_plugin.WindowCommand):
             if v.name() == V.TITLE_WINDOW_EVALUATE:
                 evaluate_content = v.substr(sublime.Region(0, v.size()))
         V.show_content(V.DATA_EVALUATE, evaluate_content)
+
         panel = window.get_output_panel('xdebug')
         panel.run_command("xdebug_view_update")
         # Close output panel
@@ -733,4 +731,5 @@ class XdebugSettingsCommand(sublime_plugin.WindowCommand):
             package = package[:-len(package_extension)]
         # Open settings file
         self.window.run_command('open_file', {'file': '${packages}/' + package + '/' + S.FILE_PACKAGE_SETTINGS });
+
 
