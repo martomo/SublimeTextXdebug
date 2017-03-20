@@ -448,20 +448,31 @@ class XdebugStatusCommand(sublime_plugin.WindowCommand):
     def is_visible(self):
         return session.is_connected()
 
+class XdebugUpdateEvaluateLineResponseCommand(sublime_plugin.TextCommand):
+    def run(self, edit, response):
+        end_of_view_point = self.view.size()
 
-class XdebugEvaluateCommand(sublime_plugin.WindowCommand):
-    def run(self):
-        self.window.show_input_panel('Evaluate', '', self.on_done, self.on_change, self.on_cancel)
+        last_char = self.view.substr(sublime.Region(end_of_view_point - 1, end_of_view_point))
+        if last_char != '\n':
+            format_string  = "\n==> {}\n"
+        else:
+            format_string  = "==> {}\n"
+        
+        self.view.insert(edit, self.view.size(), format_string.format(response))
 
-    def on_done(self, expression):
-        async_session = session.SocketHandler(session.ACTION_EVALUATE, expression=expression)
+class XdebugEvaluateLineCommand(sublime_plugin.TextCommand):
+    def run(self, edit):
+        #self.window.show_input_panel('Evaluate', '', self.on_done, self.on_change, self.on_cancel)
+        sel = self.view.sel()
+        if len(sel) > 1:
+            self.view.show_popup('cannot evaluate: selection is invalid')
+
+        region = sel[0]
+        line_region = self.view.line(region)
+        line_contents = self.view.substr(line_region)
+
+        async_session = session.SocketHandler(session.ACTION_EVALUATE, expression=line_contents, view=self.view)
         async_session.start()
-
-    def on_change(self, expression):
-        pass
-
-    def on_cancel(self):
-        pass
 
     def is_enabled(self):
         return session.is_connected()
@@ -634,6 +645,14 @@ class XdebugLayoutCommand(sublime_plugin.WindowCommand):
         V.show_content(V.DATA_CONTEXT)
         V.show_content(V.DATA_STACK)
         V.show_content(V.DATA_WATCH)
+        V.show_content(V.DATA_COROUTINES)
+
+        # don't override content of evaluate window automatically
+        evaluate_content = ''
+        for v in window.views():
+            if v.name() == V.TITLE_WINDOW_EVALUATE:
+                evaluate_content = v.substr(sublime.Region(0, v.size()))
+        V.show_content(V.DATA_EVALUATE, evaluate_content)
         panel = window.get_output_panel('xdebug')
         panel.run_command("xdebug_view_update")
         # Close output panel
