@@ -44,10 +44,10 @@ def get_real_path(uri, server=False):
     try:
         # scheme:///path/file => scheme, /path/file
         # scheme:///C:/path/file => scheme, C:/path/file
-        transport, filename = uri.split(':///', 1) 
+        transport, filename = uri.split(':///', 1)
     except:
         filename = uri
-   
+
     #filename = try_get_local_path_from_mounted_paths(uri)
     filename = filename.replace('@', '') # remove lua @ which represents "a file" as opposed to something run inline/from a REPL
 
@@ -63,6 +63,9 @@ def get_real_path(uri, server=False):
 
     path_mapping = get_value(S.KEY_PATH_MAPPING)
     if isinstance(path_mapping, dict):
+
+        found_path_mapping = False
+        
         # Go through path mappings
         for server_path, local_path in path_mapping.items():
             server_path = os.path.normpath(server_path)
@@ -72,14 +75,21 @@ def get_real_path(uri, server=False):
                 # Map local path to server path
                 if local_path in uri:
                     uri = uri.replace(local_path, server_path)
+                    found_path_mapping = True
                     break
             else:
                 # Map server path to local path
                 if server_path in uri:
                     uri = uri.replace(server_path, local_path)
+                    found_path_mapping = True
                     break
+
+        # "=[C]" is a special case url for lua C code
+        if not found_path_mapping and uri != '=[C]':
+            server_or_local = 'server' if server else 'local'
+            sublime.set_timeout(lambda: sublime.error_message("GRLD: No {} path mapping defined for path {}. It's likely that your breakpoints for this file won't be hit! You can set up path mappings in the SublimeTextGRLD package settings.".format(server_or_local, uri)), 0)
     else:
-        sublime.set_timeout(lambda: sublime.status_message("Xdebug: No path mapping defined, returning given path."), 100)
+        sublime.set_timeout(lambda: sublime.status_message("GRLD: No path mapping defined, returning given path."), 100)
 
     # special transformations for server paths (GRLD expects this)
     if server:
@@ -118,10 +128,10 @@ def get_region_icon(icon):
         if current_package.endswith(package_extension):
             current_package = current_package[:-len(package_extension)]
         if sublime.version() == '' or int(sublime.version()) > 3000:
-            # ST3: Packages/Xdebug Client/icons/breakpoint_enabled.png
+            # ST3: Packages/GRLD Client/icons/breakpoint_enabled.png
             icon_path = "Packages/" + current_package + '/icons/{0}.png'
         else:
-            # ST2: ../Xdebug Client/icons/breakpoint_enabled
+            # ST2: ../GRLD Client/icons/breakpoint_enabled
             icon_path = "../" + current_package + '/icons/{0}'
         # Append icon path to package icons
         package_breakpoint_current = icon_path.format(package_breakpoint_current)
@@ -183,32 +193,6 @@ def get_region_icon(icon):
     else:
         info("Invalid icon name. (" + icon + ")")
         return
-
-
-def launch_browser():
-    url = get_value(S.KEY_URL)
-    if not url:
-        sublime.set_timeout(lambda: sublime.status_message('Xdebug: No URL defined in (project) settings file.'), 100)
-        return
-    ide_key = get_value(S.KEY_IDE_KEY, S.DEFAULT_IDE_KEY)
-    operator = '?'
-
-    # Check if url already has query string
-    if url.count("?"):
-        operator = '&'
-
-    # Start debug session
-    if S.PROTOCOL and (S.PROTOCOL.listening or not S.PROTOCOL.connected):
-        webbrowser.open(url + operator + 'XDEBUG_SESSION_START=' + ide_key)
-    # Stop debug session
-    else:
-        # Check if we should execute script
-        if get_value(S.KEY_BROWSER_NO_EXECUTE):
-            # Without executing script
-            webbrowser.open(url + operator + 'XDEBUG_SESSION_STOP_NO_EXEC=' + ide_key)
-        else:
-            # Run script normally
-            webbrowser.open(url + operator + 'XDEBUG_SESSION_STOP=' + ide_key)
 
 
 def load_breakpoint_data():

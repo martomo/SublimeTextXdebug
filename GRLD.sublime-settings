@@ -4,18 +4,13 @@
     // with the server path as key and local path as value.
     //
     // Make sure to use absolute path when defining server path,
-    // because Xdebug debugger engine does not return symbolic links.
+    // because GRLD debugger engine does not return symbolic links.
     //
     // Example:
     // "/absolute/path/to/file/on/server" : "/path/to/file/on/computer",
     // "/var/www/htdocs/example/" : "C:/git/websites/example/"
     "path_mapping": {
-
     },
-
-    // Determine which URL to launch in the default web browser
-    // when starting/stopping a session.
-    "url": "",
 
     // An IDE key is used to identify with debugger engine
     // when Sublime Text will start or stop a debugging session.
@@ -23,7 +18,7 @@
     // This package does not filter sessions by IDE key,
     // it will accept any IDE key, also ones that do not match this configured IDE key.
     // It is merely used when launching the default web browser with the configured URL.
-    "ide_key": "sublime.xdebug",
+    "ide_key": "sublime.grld",
 
     // Which port number Sublime Text should listen
     // to connect with debugger engine.
@@ -32,60 +27,42 @@
     // Show super globals in context view.
     "super_globals": true,
 
-    // Maximum amount of array children
-    // and object's properties to return.
-    "max_children": 32,
-
     // Maximum amount of
     // variable data to initially retrieve.
     "max_data": 1024,
 
     // Maximum amount of nested levels to retrieve
     // of array elements and object properties.
-    "max_depth": 1,
+    "max_depth": 1, // NOTE: currently not supported
 
     // Break at first line on session start, when debugger engine has connected.
     "break_on_start": false,
 
     // Break on exceptions, suspend execution
     // when the exception name matches an entry in this list value.
-    "break_on_exception": [
-        // E_ERROR, E_CORE_ERROR, E_COMPILE_ERROR, E_USER_ERROR
-        "Fatal error",
-        // E_RECOVERABLE_ERROR (since PHP 5.2.0)
-        "Catchable fatal error",
-        // E_WARNING, E_CORE_WARNING, E_COMPILE_WARNING, E_USER_WARNING
-        "Warning",
-        // E_PARSE
-        "Parse error",
-        // E_NOTICE, E_USER_NOTICE
-        "Notice",
-        // E_STRICT
-        "Strict standards",
-        // E_DEPRECATED, E_USER_DEPRECATED (since PHP 5.3.0)
-        "Deprecated",
-        // 0
-        "Xdebug",
-        // default
-        "Unknown error"
-    ],
+    // "break_on_exception": [
+    //     // E_ERROR, E_CORE_ERROR, E_COMPILE_ERROR, E_USER_ERROR
+    //     "Fatal error",
+    //     // E_RECOVERABLE_ERROR (since PHP 5.2.0)
+    //     "Catchable fatal error",
+    //     // E_WARNING, E_CORE_WARNING, E_COMPILE_WARNING, E_USER_WARNING
+    //     "Warning",
+    //     // E_PARSE
+    //     "Parse error",
+    //     // E_NOTICE, E_USER_NOTICE
+    //     "Notice",
+    //     // E_STRICT
+    //     "Strict standards",
+    //     // E_DEPRECATED, E_USER_DEPRECATED (since PHP 5.3.0)
+    //     "Deprecated",
+    //     // 0
+    //     "GRLD",
+    //     // default
+    //     "Unknown error"
+    // ],
 
     // Always close debug windows and restore layout on session stop.
     "close_on_stop": true,
-
-    // Do not show possible password values in context output.
-    "hide_password": false,
-
-    // Show in output parsed response instead of raw XML.
-    "pretty_output": false,
-
-    // Always launch browser on session start/stop.
-    // Note: This will only work if you have the 'url' setting configured.
-    "launch_browser": false,
-
-    // When launching browser on session stop do not execute script.
-    // By using parameter XDEBUG_SESSION_STOP_NO_EXEC instead of XDEBUG_SESSION_STOP.
-    "browser_no_execute": false,
 
     // Do not use the debugging window layout.
     "disable_layout": false,
@@ -134,8 +111,8 @@
 
     // Show detailed log information about communication
     // between debugger engine and Sublime Text.
-    // Log can be found at Packages/User/Xdebug.log
-    "debug": false
+    // Log can be found at Packages/User/GRLD.log
+    "debug": false,
 
 	// Disables sublime linter gutter icons.
 	// This is necessary to ensure gutter icons (current line + breakpoints) are visible

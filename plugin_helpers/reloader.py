@@ -8,7 +8,7 @@ print('Reloading modules')
 
 CODE_DIRS = [
   'plugin_helpers',
-  'xdebug',
+  'grld',
 ]
 PYTHON_FILE_EXT = '.py'
 

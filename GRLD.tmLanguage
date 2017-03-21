@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>name</key>
-	<string>Xdebug</string>
+	<string>GRLD</string>
 	<key>patterns</key>
 	<array>
 		<dict>
@@ -33,7 +33,7 @@
 			<key>match</key>
 			<string>^\s*(\$.*?)\s+(=)\s+(\S*)(\[.*\])</string>
 			<key>name</key>
-			<string>xdebug.output.context.object</string>
+			<string>grld.output.context.object</string>
 		</dict>
 		<dict>
 			<key>captures</key>
@@ -62,7 +62,7 @@
 			<key>match</key>
 			<string>^\s*(\$.*?)\s+(=)\s+(\(.*?\))\s(.*)</string>
 			<key>name</key>
-			<string>xdebug.output.context.property</string>
+			<string>grld.output.context.property</string>
 		</dict>
 		<dict>
 			<key>captures</key>
@@ -86,7 +86,7 @@
 			<key>match</key>
 			<string>^\s*(\$.*?)\s+(=)\s+(&lt;.*&gt;)</string>
 			<key>name</key>
-			<string>xdebug.output.context.unknown</string>
+			<string>grld.output.context.unknown</string>
 		</dict>
 		<dict>
 			<key>captures</key>
@@ -100,7 +100,7 @@
 			<key>match</key>
 			<string>^\s*(\.{3,})</string>
 			<key>name</key>
-			<string>xdebug.output.context.trimmed</string>
+			<string>grld.output.context.trimmed</string>
 		</dict>
 		<dict>
 			<key>captures</key>
@@ -139,7 +139,7 @@
 			<key>match</key>
 			<string>^(\[\d+\])\s*(.*)(\..*)(\s*:.*?\d+)\s*(\((.*?):.*\)|$)</string>
 			<key>name</key>
-			<string>xdebug.output.stack.entry</string>
+			<string>grld.output.stack.entry</string>
 		</dict>
 		<dict>
 			<key>captures</key>
@@ -158,7 +158,7 @@
 			<key>match</key>
 			<string>^(\[.*?\])\s*(.*)</string>
 			<key>name</key>
-			<string>xdebug.output.stack.exception</string>
+			<string>grld.output.stack.exception</string>
 		</dict>
 		<dict>
 			<key>captures</key>
@@ -177,7 +177,7 @@
 			<key>match</key>
 			<string>^\s*(=&gt;)\s*(.*)</string>
 			<key>name</key>
-			<string>xdebug.output.breakpoint.file</string>
+			<string>grld.output.breakpoint.file</string>
 		</dict>
 		<dict>
 			<key>captures</key>
@@ -211,7 +211,7 @@
 			<key>match</key>
 			<string>^\s*(?:(\|\+\|)|(\|-\|))\s*(\d+)\s*(?:(--)(.*)|.*)</string>
 			<key>name</key>
-			<string>xdebug.output.breakpoint.line</string>
+			<string>grld.output.breakpoint.line</string>
 		</dict>
 		<dict>
 			<key>captures</key>
@@ -265,11 +265,11 @@
 			<key>match</key>
 			<string>^(?:(\|\+\|)|(\|-\|)|)\s+(\S*)\s+(?:(=)\s+(?:(\(.*?\))\s(.*)|(\S*)(\[.*\])|(&lt;.*&gt;))|.*)</string>
 			<key>name</key>
-			<string>xdebug.output.watch.entry</string>
+			<string>grld.output.watch.entry</string>
 		</dict>
 	</array>
 	<key>scopeName</key>
-	<string>xdebug.output</string>
+	<string>grld.output</string>
 	<key>uuid</key>
 	<string>924fce90-cf0a-4ef6-bf29-b98899924cad</string>
 </dict>

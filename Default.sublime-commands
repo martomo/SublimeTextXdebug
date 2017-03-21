@@ -1,133 +1,123 @@
 [
     {
-        "caption": "Xdebug: Start Debugging",
-        "command": "xdebug_session_start"
+        "caption": "GRLD: Start Debugging",
+        "command": "grld_session_start"
     },
     {
-        "caption": "Xdebug: Start Debugging (Launch Browser)",
-        "command": "xdebug_session_start",
-        "args"   : {"launch_browser" : true}
+        "caption": "GRLD: Restart Session",
+        "command": "grld_session_restart"
     },
     {
-        "caption": "Xdebug: Restart Session",
-        "command": "xdebug_session_restart"
+        "caption": "GRLD: Stop Debugging",
+        "command": "grld_session_stop"
     },
     {
-        "caption": "Xdebug: Stop Debugging",
-        "command": "xdebug_session_stop"
-    },
-    {
-        "caption": "Xdebug: Stop Debugging (Launch Browser)",
-        "command": "xdebug_session_stop",
-        "args"   : {"launch_browser" : true}
-    },
-    {
-        "caption": "Xdebug: Stop Debugging (Close Windows)",
-        "command": "xdebug_session_stop",
+        "caption": "GRLD: Stop Debugging (Close Windows)",
+        "command": "grld_session_stop",
         "args"   : {"close_windows" : true}
     },
     {
-        "caption": "Xdebug: Add/Remove Breakpoint",
-        "command": "xdebug_breakpoint"
+        "caption": "GRLD: Add/Remove Breakpoint",
+        "command": "grld_breakpoint"
     },
     {
-        "caption": "Xdebug: Set Conditional Breakpoint",
-        "command": "xdebug_conditional_breakpoint"
+        "caption": "GRLD: Set Conditional Breakpoint",
+        "command": "grld_conditional_breakpoint"
     },
     {
-        "caption": "Xdebug: Clear Breakpoints",
-        "command": "xdebug_clear_breakpoints"
+        "caption": "GRLD: Clear Breakpoints",
+        "command": "grld_clear_breakpoints"
     },
     {
-        "caption": "Xdebug: Clear All Breakpoints",
-        "command": "xdebug_clear_all_breakpoints"
+        "caption": "GRLD: Clear All Breakpoints",
+        "command": "grld_clear_all_breakpoints"
     },
     {
-        "caption": "Xdebug: Set Watch Expression",
-        "command": "xdebug_watch"
+        "caption": "GRLD: Set Watch Expression",
+        "command": "grld_watch"
     },
     {
-        "caption": "Xdebug: Edit Watch Expression",
-        "command": "xdebug_watch",
+        "caption": "GRLD: Edit Watch Expression",
+        "command": "grld_watch",
         "args"   : {"edit" : true}
     },
     {
-        "caption": "Xdebug: Remove Watch Expression",
-        "command": "xdebug_watch",
+        "caption": "GRLD: Remove Watch Expression",
+        "command": "grld_watch",
         "args"   : {"remove" : true}
     },
     {
-        "caption": "Xdebug: Clear Watch Expressions",
-        "command": "xdebug_watch",
+        "caption": "GRLD: Clear Watch Expressions",
+        "command": "grld_watch",
         "args"   : {"clear" : true}
     },
 	{
-        "caption": "Xdebug: Session - Evaluate Line",
-        "command": "xdebug_evaluate_line"
+        "caption": "GRLD: Session - Evaluate Line",
+        "command": "grld_evaluate_line"
     },
 	{
-        "caption": "Xdebug: Session - Update Evaluate Line Response",
-        "command": "xdebug_update_evaluate_line_response"
+        "caption": "GRLD: Session - Update Evaluate Line Response",
+        "command": "grld_update_evaluate_line_response"
     },
     {
-        "caption": "Xdebug: Session - Execute",
-        "command": "xdebug_user_execute"
+        "caption": "GRLD: Session - Execute",
+        "command": "grld_user_execute"
     },
     {
-        "caption": "Xdebug: Session - Status",
-        "command": "xdebug_status"
+        "caption": "GRLD: Session - Status",
+        "command": "grld_status"
     },
     {
-        "caption": "Xdebug: Breakpoint - Run",
-        "command": "xdebug_continue",
+        "caption": "GRLD: Breakpoint - Run",
+        "command": "grld_continue",
         "args"   : {"command" : "run"}
     },
     {
-        "caption": "Xdebug: Breakpoint - Run To Line",
-        "command": "xdebug_run_to_line"
+        "caption": "GRLD: Breakpoint - Run To Line",
+        "command": "grld_run_to_line"
     },
     {
-        "caption": "Xdebug: Breakpoint - Step Over",
-        "command": "xdebug_continue",
+        "caption": "GRLD: Breakpoint - Step Over",
+        "command": "grld_continue",
         "args"   : {"command" : "stepover"}
     },
     {
-        "caption": "Xdebug: Breakpoint - Step In",
-        "command": "xdebug_continue",
+        "caption": "GRLD: Breakpoint - Step In",
+        "command": "grld_continue",
         "args"   : {"command" : "stepin"}
     },
     {
-        "caption": "Xdebug: Breakpoint - Step Out",
-        "command": "xdebug_continue",
+        "caption": "GRLD: Breakpoint - Step Out",
+        "command": "grld_continue",
         "args"   : {"command" : "stepout"}
     },
     {
-        "caption": "Xdebug: Breakpoint - Stop",
-        "command": "xdebug_continue",
+        "caption": "GRLD: Breakpoint - Stop",
+        "command": "grld_continue",
         "args"   : {"command" : "stop"}
     },
     {
-        "caption": "Xdebug: Breakpoint - Detach",
-        "command": "xdebug_continue",
+        "caption": "GRLD: Breakpoint - Detach",
+        "command": "grld_continue",
         "args"   : {"command" : "detach"}
     },
     {
-        "caption": "Xdebug: Close Windows",
-        "command": "xdebug_layout",
+        "caption": "GRLD: Close Windows",
+        "command": "grld_layout",
         "args"   : {"close_windows" : true}
     },
     {
-        "caption": "Xdebug: Restore Layout",
-        "command": "xdebug_layout",
+        "caption": "GRLD: Restore Layout",
+        "command": "grld_layout",
         "args"   : {"restore" : true}
     },
     {
-        "caption": "Preferences: Xdebug Settings – Default",
-        "command": "xdebug_settings"
+        "caption": "Preferences: GRLD Settings – Default",
+        "command": "grld_settings"
     },
     {
-        "caption": "Preferences: Xdebug Settings – User",
+        "caption": "Preferences: GRLD Settings – User",
         "command": "open_file",
-        "args"   : {"file" : "${packages}/User/Xdebug.sublime-settings"}
+        "args"   : {"file" : "${packages}/User/GRLD.sublime-settings"}
     }
 ]

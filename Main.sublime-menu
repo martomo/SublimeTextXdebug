@@ -7,34 +7,24 @@
                 "id": "end"
             },
             {
-                "caption": "Xdebug",
+                "caption": "GRLD",
                 "children":
                 [
                     {
                         "caption": "Start Debugging",
-                        "command": "xdebug_session_start"
-                    },
-                    {
-                        "caption": "Start Debugging (Launch Browser)",
-                        "command": "xdebug_session_start",
-                        "args"   : {"launch_browser" : true}
+                        "command": "grld_session_start"
                     },
                     {
                         "caption": "Restart Session",
-                        "command": "xdebug_session_restart"
+                        "command": "grld_session_restart"
                     },
                     {
                         "caption": "Stop Debugging",
-                        "command": "xdebug_session_stop"
-                    },
-                    {
-                        "caption": "Stop Debugging (Launch Browser)",
-                        "command": "xdebug_session_stop",
-                        "args"   : {"launch_browser" : true}
+                        "command": "grld_session_stop"
                     },
                     {
                         "caption": "Stop Debugging (Close Windows)",
-                        "command": "xdebug_session_stop",
+                        "command": "grld_session_stop",
                         "args"   : {"close_windows" : true}
                     },
                     {
@@ -42,40 +32,40 @@
                     },
                     {
                         "caption": "Add/Remove Breakpoint",
-                        "command": "xdebug_breakpoint"
+                        "command": "grld_breakpoint"
                     },
                     {
                         "caption": "Set Conditional Breakpoint",
-                        "command": "xdebug_conditional_breakpoint"
+                        "command": "grld_conditional_breakpoint"
                     },
                     {
                         "caption": "Clear Breakpoints",
-                        "command": "xdebug_clear_breakpoints"
+                        "command": "grld_clear_breakpoints"
                     },
                     {
                         "caption": "Clear All Breakpoints",
-                        "command": "xdebug_clear_all_breakpoints"
+                        "command": "grld_clear_all_breakpoints"
                     },
                     {
                         "caption": "-"
                     },
                     {
                         "caption": "Set Watch Expression",
-                        "command": "xdebug_watch"
+                        "command": "grld_watch"
                     },
                     {
                         "caption": "Edit Watch Expression",
-                        "command": "xdebug_watch",
+                        "command": "grld_watch",
                         "args"   : {"edit" : true}
                     },
                     {
                         "caption": "Remove Watch Expression",
-                        "command": "xdebug_watch",
+                        "command": "grld_watch",
                         "args"   : {"remove" : true}
                     },
                     {
                         "caption": "Clear Watch Expressions",
-                        "command": "xdebug_watch",
+                        "command": "grld_watch",
                         "args"   : {"clear" : true}
                     },
                     {
@@ -83,51 +73,51 @@
                     },
                     {
                         "caption": "Evaluate",
-                        "command": "xdebug_evaluate"
+                        "command": "grld_evaluate"
                     },
                     {
                         "caption": "Execute",
-                        "command": "xdebug_user_execute"
+                        "command": "grld_user_execute"
                     },
                     {
                         "caption": "Status",
-                        "command": "xdebug_status"
+                        "command": "grld_status"
                     },
                     {
                         "caption": "-"
                     },
                     {
                         "caption": "Run",
-                        "command": "xdebug_continue",
+                        "command": "grld_continue",
                         "args"   : {"command" : "run"}
                     },
                     {
                         "caption": "Run To Line",
-                        "command": "xdebug_run_to_line"
+                        "command": "grld_run_to_line"
                     },
                     {
                         "caption": "Step Over",
-                        "command": "xdebug_continue",
+                        "command": "grld_continue",
                         "args"   : {"command" : "step_over"}
                     },
                     {
                         "caption": "Step Into",
-                        "command": "xdebug_continue",
+                        "command": "grld_continue",
                         "args"   : {"command" : "step_into"}
                     },
                     {
                         "caption": "Step Out",
-                        "command": "xdebug_continue",
+                        "command": "grld_continue",
                         "args"   : {"command" : "step_out"}
                     },
                     {
                         "caption": "Stop",
-                        "command": "xdebug_continue",
+                        "command": "grld_continue",
                         "args"   : {"command" : "stop"}
                     },
                     {
                         "caption": "Detach",
-                        "command": "xdebug_continue",
+                        "command": "grld_continue",
                         "args"   : {"command" : "detach"}
                     },
                     {
@@ -135,22 +125,22 @@
                     },
                     {
                         "caption": "Close Windows",
-                        "command": "xdebug_layout",
+                        "command": "grld_layout",
                         "args"   : {"close_windows" : true}
                     },
                     {
                         "caption": "Restore Layout",
-                        "command": "xdebug_layout",
+                        "command": "grld_layout",
                         "args"   : {"restore" : true}
                     },
                     {
                         "caption": "Settings - Default",
-                        "command": "xdebug_settings"
+                        "command": "grld_settings"
                     },
                     {
                         "caption": "Settings - User",
                         "command": "open_file",
-                        "args"   : {"file" : "${packages}/User/Xdebug.sublime-settings"}
+                        "args"   : {"file" : "${packages}/User/GRLD.sublime-settings"}
                     }
                 ]
             }
@@ -169,17 +159,17 @@
                 "children":
                 [
                     {
-                        "caption": "Xdebug",
+                        "caption": "GRLD",
                         "children":
                         [
                             {
                                 "caption": "Settings – Default",
-                                "command": "xdebug_settings"
+                                "command": "grld_settings"
                             },
                             {
                                 "caption": "Settings – User",
                                 "command": "open_file",
-                                "args": {"file": "${packages}/User/Xdebug.sublime-settings"}
+                                "args": {"file": "${packages}/User/GRLD.sublime-settings"}
                             }
                         ]
                     }

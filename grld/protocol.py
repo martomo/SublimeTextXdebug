@@ -28,23 +28,6 @@ try:
 except ImportError:
     from htmlentitydefs import name2codepoint
 
-# XML parser
-try:
-    from xml.etree import cElementTree as ET
-except ImportError:
-    try:
-        from xml.etree import ElementTree as ET
-    except ImportError:
-        from .elementtree import ElementTree as ET
-try:
-    from xml.parsers import expat
-    UNESCAPE_RESPONSE_DATA = True
-except ImportError:
-    # Module xml.parsers.expat missing, using SimpleXMLTreeBuilder
-    from .elementtree import SimpleXMLTreeBuilder
-    ET.XMLTreeBuilder = SimpleXMLTreeBuilder.TreeBuilder
-    UNESCAPE_RESPONSE_DATA = False
-
 
 ILLEGAL_XML_UNICODE_CHARACTERS = [
     (0x00, 0x08), (0x0B, 0x0C), (0x0E, 0x1F), (0x7F, 0x84),
@@ -78,7 +61,7 @@ def serialize( value ):
             res = nanStr
         else:
             res = str( value )
-                    
+
         return res
     elif t == bool:
         return str(value).lower()
@@ -96,7 +79,7 @@ def serialize( value ):
         error( "Can't serialize a value of type "+str(t) )
 
 def convert_lua_table_str_to_python_dict_str(s):
-    subbed_s = re.sub(r"\[(.+?)\]\s*=\s*([\w\W]*?[,{])", r"\g<1>: \g<2>", s) # NOTE: does not support keys with newlines, also expects all keys to be wrapped in [] 
+    subbed_s = re.sub(r"\[(.+?)\]\s*=\s*([\w\W]*?[,{])", r"\g<1>: \g<2>", s) # NOTE: does not support keys with newlines, also expects all keys to be wrapped in []
     return re.sub(r":\s*\"([\w\W]*?)\"([,{])", r': """\g<1>"""\g<2>', subbed_s) # replace '= "X"' with '= """X"""'
 
 
@@ -104,7 +87,7 @@ def deserialize( s ):
     ds = s.replace(infStr, "float('inf')")
     ds = ds.replace(negInfStr, "-float('inf')")
     ds = ds.replace(nanStr, "float('nan')")
-               
+
     ds = ds.replace('true', 'True')
     ds = ds.replace('false', 'False')
 
@@ -236,7 +219,7 @@ class Protocol(object):
 
     @assert_locked
     def is_command(self, message):
-        if not message: 
+        if not message:
             return False
 
         deserialized_message = deserialize(message)
@@ -316,14 +299,14 @@ class Protocol(object):
                 e = sys.exc_info()[1]
                 raise ProtocolConnectionException(e)
         else:
-            raise ProtocolConnectionException("Xdebug is not connected")
+            raise ProtocolConnectionException("GRLD is not connected")
 
 
     @assert_locked
     def read_next_message(self, async=False):
         """
         Update buffer from socket if buffer is empty.
-        
+
         Parse out buffer data and return the next message.
         """
         # Verify length of response data
@@ -340,10 +323,10 @@ class Protocol(object):
 
             if self.is_command(message):
                 # kind of gross to do this here (heavy coupling, poor concern encapsulation), but it needs to happen immediately because the GRLD client might expect a response
-                self.handle_command(message) 
+                self.handle_command(message)
             else:
                 break
-        
+
         return message
 
     @assert_locked

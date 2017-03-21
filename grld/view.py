@@ -53,7 +53,7 @@ def close_debug_windows():
         if is_debug_view(view):
             window.focus_view(view)
             window.run_command('close')
-    window.run_command('hide_panel', {"panel": 'output.xdebug'})
+    window.run_command('hide_panel', {"panel": 'output.grld'})
 
 
 def generate_breakpoint_output():
@@ -117,7 +117,7 @@ def generate_context_output(context, indent=0, values_only=False, multiline=True
         property_text = ''
         # Set indentation
         for i in range(indent): property_text += '\t'
-        
+
         # Property with children
         if 'children' in variable and isinstance(variable['children'], dict) and variable['numchildren'] is not None:
             has_children = True
@@ -198,7 +198,7 @@ def generate_stack_output(response):
         has_output = True
 
     # Walk through elements in response
-    
+
     #try:
     #    for child in response:
     #        # Get stack attribute values
@@ -346,77 +346,6 @@ def get_debug_index(name=None):
 
     # List with all debug views
     return sorted_list
-
-def get_response_properties(response, default_key=None):
-    """
-    Return a dictionary with available properties from response.
-
-    Keyword arguments:
-    response -- Response from debugger engine.
-    default_key -- Index key to use when property has no name.
-    """
-    properties = H.new_dictionary()
-    # Walk through elements in response
-    for child in response:
-        # Read property elements
-        if child.tag == dbgp.ELEMENT_PROPERTY or child.tag == dbgp.ELEMENT_PATH_PROPERTY:
-            # Get property attribute values
-            property_name_short = child.get(dbgp.PROPERTY_NAME)
-            property_name = child.get(dbgp.PROPERTY_FULLNAME, property_name_short)
-            property_type = child.get(dbgp.PROPERTY_TYPE)
-            property_children = child.get(dbgp.PROPERTY_CHILDREN)
-            property_numchildren = child.get(dbgp.PROPERTY_NUMCHILDREN)
-            property_classname = child.get(dbgp.PROPERTY_CLASSNAME)
-            property_encoding = child.get(dbgp.PROPERTY_ENCODING)
-            property_value = None
-
-            # Set property value
-            if child.text:
-                property_value = child.text
-                # Try to decode property value when encoded with base64
-                if property_encoding is not None and property_encoding == 'base64':
-                    try:
-                        property_value = H.base64_decode(child.text)
-                    except:
-                        pass
-
-            if property_name is not None and len(property_name) > 0:
-                property_key = property_name
-                # Ignore following properties
-                if property_name == "::":
-                    continue
-
-                # Avoid nasty static functions/variables from turning in an infinitive loop
-                if property_name.count("::") > 1:
-                    continue
-
-                # Filter password values
-                if get_value(S.KEY_HIDE_PASSWORD, True) and property_name.lower().find('password') != -1 and property_value is not None:
-                    property_value = '******'
-            else:
-                property_key = default_key
-
-            # Store property
-            if property_key:
-                properties[property_key] = { 'name': property_name, 'type': property_type, 'value': property_value, 'numchildren': property_numchildren, 'children' : None }
-
-                # Get values for children
-                if property_children:
-                    properties[property_key]['children'] = get_response_properties(child, default_key)
-
-                # Set classname, if available, as type for object
-                if property_classname and property_type == 'object':
-                    properties[property_key]['type'] = property_classname
-        # Handle error elements
-        elif child.tag == dbgp.ELEMENT_ERROR or child.tag == dbgp.ELEMENT_PATH_ERROR:
-            message = 'error'
-            for step_child in child:
-                if step_child.tag == dbgp.ELEMENT_MESSAGE or step_child.tag == dbgp.ELEMENT_PATH_MESSAGE and step_child.text:
-                    message = step_child.text
-                    break
-            if default_key:
-                properties[default_key] = { 'name': None, 'type': message, 'value': None, 'numchildren': None, 'children': None }
-    return properties
 
 
 def has_debug_view(name=None):
@@ -602,10 +531,10 @@ def show_content(data, content=None):
 
     # Configure view settings
     view.settings().set('word_wrap', False)
-    view.settings().set('syntax', 'Packages/' + package + '/Xdebug.tmLanguage')
+    view.settings().set('syntax', 'Packages/' + package + '/GRLD.tmLanguage')
 
     # Set content for view and fold all indendation blocks
-    view.run_command('xdebug_view_update', {'data': content, 'readonly': read_only})
+    view.run_command('grld_view_update', {'data': content, 'readonly': read_only})
     if data == DATA_CONTEXT or data == DATA_WATCH:
         view.run_command('fold_all')
 
@@ -645,10 +574,10 @@ def show_context_output(view):
                         data = generate_context_output(variables)
                         # Show context variables and children in output panel
                         window = sublime.active_window()
-                        panel = window.get_output_panel('xdebug')
-                        panel.run_command("xdebug_view_update", {'data' : data} )
+                        panel = window.get_output_panel('grld')
+                        panel.run_command("grld_view_update", {'data' : data} )
                         panel.run_command('set_setting', {"setting": 'word_wrap', "value": True})
-                        window.run_command('show_panel', {"panel": 'output.xdebug'})
+                        window.run_command('show_panel', {"panel": 'output.grld'})
         except:
             pass
 
@@ -685,10 +614,10 @@ def show_panel_content(content):
     # Show response data in output panel
     try:
         window = sublime.active_window()
-        panel = window.get_output_panel('xdebug')
-        panel.run_command('xdebug_view_update', {'data': content})
+        panel = window.get_output_panel('grld')
+        panel.run_command('grld_view_update', {'data': content})
         panel.run_command('set_setting', {"setting": 'word_wrap', "value": True})
-        window.run_command('show_panel', {'panel': 'output.xdebug'})
+        window.run_command('show_panel', {'panel': 'output.grld'})
     except:
         print(content)
 
@@ -873,7 +802,7 @@ def toggle_breakpoint(view):
         # Get selected point in view
         point = view.sel()[0]
         # Check if selected point uses breakpoint line scope
-        if point.size() == 3 and sublime.score_selector(view.scope_name(point.a), 'xdebug.output.breakpoint.line'):
+        if point.size() == 3 and sublime.score_selector(view.scope_name(point.a), 'grld.output.breakpoint.line'):
             # Find line number of breakpoint
             line = view.substr(view.line(point))
             pattern = re.compile('^\\s*(?:(\\|\\+\\|)|(\\|-\\|))\\s*(?P<line_number>\\d+)\\s*(?:(--)(.*)|.*)')
@@ -881,7 +810,7 @@ def toggle_breakpoint(view):
             # Check if it has found line number
             if match and match.group('line_number'):
                 # Get all breakpoint filenames
-                breakpoint_file = view.find_by_selector('xdebug.output.breakpoint.file')
+                breakpoint_file = view.find_by_selector('grld.output.breakpoint.file')
                 # Locate line with filename related to selected breakpoint
                 file_line = None
                 for entry in breakpoint_file:
@@ -909,9 +838,9 @@ def toggle_breakpoint(view):
                     # Toggle breakpoint only if it has valid value
                     if enabled is None:
                         return
-                    sublime.active_window().run_command('xdebug_breakpoint', {"enabled": enabled, "rows": [line_number], "filename": filename})
+                    sublime.active_window().run_command('grld_breakpoint', {"enabled": enabled, "rows": [line_number], "filename": filename})
         # Check if selected point uses breakpoint file scope
-        elif point.size() > 3 and sublime.score_selector(view.scope_name(point.a), 'xdebug.output.breakpoint.file'):
+        elif point.size() > 3 and sublime.score_selector(view.scope_name(point.a), 'grld.output.breakpoint.file'):
             # Get filename from selected line in view
             file_line = view.substr(view.line(point))
             file_pattern = re.compile('^\\s*(=>)\\s*(?P<filename>.*)')
@@ -929,7 +858,7 @@ def toggle_stack(view):
         # Get selected point in view
         point = view.sel()[0]
         # Check if selected point uses stack entry scope
-        if point.size() > 3 and sublime.score_selector(view.scope_name(point.a), 'xdebug.output.stack.entry'):
+        if point.size() > 3 and sublime.score_selector(view.scope_name(point.a), 'grld.output.stack.entry'):
             # Get fileuri and line number from selected line in view
             line = view.substr(view.line(point))
             pattern = re.compile('^(\[\d+\])\s*(?P<fileuri>.*\..*)(\s*:.*?(?P<lineno>\d+))\s*(\((.*?):.*\)|$)')
@@ -953,14 +882,14 @@ def toggle_watch(view):
         # Get selected point in view
         point = view.sel()[0]
         # Check if selected point uses watch entry scope
-        if point.size() == 3 and sublime.score_selector(view.scope_name(point.a), 'xdebug.output.watch.entry'):
+        if point.size() == 3 and sublime.score_selector(view.scope_name(point.a), 'grld.output.watch.entry'):
             # Determine if watch entry is enabled or disabled
             line = view.substr(view.line(point))
             pattern = re.compile('^(?:(?P<enabled>\\|\\+\\|)|(?P<disabled>\\|-\\|))\\.*')
             match = pattern.match(line)
             if match and (match.group('enabled') or match.group('disabled')):
                 # Get all entries and determine index by line/point match
-                watch = view.find_by_selector('xdebug.output.watch.entry')
+                watch = view.find_by_selector('grld.output.watch.entry')
                 watch_index = 0
                 for entry in watch:
                     # Stop searching if we have passed selected breakpoint
@@ -978,6 +907,6 @@ def toggle_watch(view):
                 if sublime.score_selector(view.scope_name(point.a), 'keyword') and not S.WATCH[watch_index]['enabled']:
                     S.WATCH[watch_index]['enabled'] = True
                 # Update watch view and save watch data to file
-                sublime.active_window().run_command('xdebug_watch', {"update": True})
+                sublime.active_window().run_command('grld_watch', {"update": True})
     except:
         pass

@@ -1,13 +1,13 @@
 [
-	{"keys": ["ctrl+f8"], "command": "xdebug_breakpoint"},
-	{"keys": ["shift+f8"], "command": "xdebug_conditional_breakpoint"},
-	{"keys": ["f5"], "command": "xdebug_continue", "args": {"command": "run"}, "context": [{"key": "only_while_execution_broken"}]},
-	{"keys": ["f10"], "command": "xdebug_continue", "args": {"command": "stepover"}, "context": [{"key": "only_while_execution_broken"}]},
-	{"keys": ["f11"], "command": "xdebug_continue", "args": {"command": "stepin"}, "context": [{"key": "only_while_execution_broken"}]},
-	{"keys": ["shift+f11"], "command": "xdebug_continue", "args": {"command": "stepout"}, "context": [{"key": "only_while_execution_broken"}]},
-	{"keys": ["ctrl+f5"], "command": "xdebug_session_start"},
-	{"keys": ["shift+f5"], "command": "xdebug_session_stop"},
-	{"keys": ["ctrl+shift+f5"], "command": "xdebug_layout", "args": {"keymap" : true}},
+	{"keys": ["ctrl+f8"], "command": "grld_breakpoint"},
+	{"keys": ["shift+f8"], "command": "grld_conditional_breakpoint"},
+	{"keys": ["f5"], "command": "grld_continue", "args": {"command": "run"}, "context": [{"key": "only_while_execution_broken"}]},
+	{"keys": ["f10"], "command": "grld_continue", "args": {"command": "stepover"}, "context": [{"key": "only_while_execution_broken"}]},
+	{"keys": ["f11"], "command": "grld_continue", "args": {"command": "stepin"}, "context": [{"key": "only_while_execution_broken"}]},
+	{"keys": ["shift+f11"], "command": "grld_continue", "args": {"command": "stepout"}, "context": [{"key": "only_while_execution_broken"}]},
+	{"keys": ["ctrl+f5"], "command": "grld_session_start"},
+	{"keys": ["shift+f5"], "command": "grld_session_stop"},
+	{"keys": ["ctrl+shift+f5"], "command": "grld_layout", "args": {"keymap" : true}},
 
-	{"keys": ["enter"], "command": "xdebug_evaluate_line", "context": [{"key": "evaluate_line"}]}
+	{"keys": ["enter"], "command": "grld_evaluate_line", "context": [{"key": "evaluate_line"}]}
 ]

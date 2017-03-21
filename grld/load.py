@@ -15,7 +15,7 @@ from .log import clear_output, debug, info
 from .config import get_value, get_window_value, set_window_value, load_package_values, load_project_values
 
 
-def xdebug():
+def grld():
     # Clear log file
     clear_output()
     if not S.PACKAGE_FOLDER:
@@ -51,7 +51,7 @@ def xdebug():
     if has_debug_view(TITLE_WINDOW_WATCH):
         show_content(DATA_WATCH)
 
-    sublime.active_window().run_command('xdebug_layout', {'restore': True})
+    sublime.active_window().run_command('grld_layout', {'restore': True})
 
     # Check for conflicting packages
     if S.PACKAGE_FOLDER:
@@ -78,7 +78,7 @@ def xdebug():
         for package in packages:
             if package.endswith(package_extension):
                 package = package[:-len(package_extension)]
-            if (package.lower().count("xdebug") or package.lower().count("moai")) and package != current_package:
+            if (package.lower().count("grld") or package.lower().count("moai")) and package != current_package:
                 conflict.append(package)
         # Show message if conficting packages have been found
         if conflict:

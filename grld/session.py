@@ -36,7 +36,7 @@ from .protocol import ProtocolConnectionException
 from .util import get_real_path
 
 # View module
-from .view import DATA_CONTEXT, DATA_STACK, DATA_WATCH, DATA_COROUTINES, DATA_EVALUATE, TITLE_WINDOW_WATCH, generate_context_output, generate_stack_output, generate_coroutines_output, get_response_properties, has_debug_view, render_regions, show_content, show_file, show_panel_content
+from .view import DATA_CONTEXT, DATA_STACK, DATA_WATCH, DATA_COROUTINES, DATA_EVALUATE, TITLE_WINDOW_WATCH, generate_context_output, generate_stack_output, generate_coroutines_output, has_debug_view, render_regions, show_content, show_file, show_panel_content
 
 
 ACTION_EVALUATE = "action_evaluate"
@@ -61,9 +61,9 @@ def is_connected(show_status=False):
     if S.PROTOCOL and S.PROTOCOL.connected:
         return True
     elif S.PROTOCOL and show_status:
-        sublime.status_message('Xdebug: Waiting for response from debugger engine.')
+        sublime.status_message('GRLD: Waiting for response from debugger engine.')
     elif show_status:
-        sublime.status_message('Xdebug: No Xdebug session running.')
+        sublime.status_message('GRLD: No GRLD session running.')
     return False
 
 def is_execution_broken():
@@ -76,7 +76,7 @@ def connection_error(message):
     Keyword arguments:
     message -- Exception/reason of connection error/loss.
     """
-    sublime.error_message("Please restart Xdebug debugging session.\nDisconnected from Xdebug debugger engine.\n" + message)
+    sublime.error_message("Please restart GRLD debugging session.\nDisconnected from GRLD debugger engine.\n" + message)
     info("Connection lost with debugger engine.")
     debug(message)
     # Reset connection
@@ -95,7 +95,7 @@ def connection_error(message):
         async_session = SocketHandler(ACTION_WATCH)
         async_session.start()
     # Reset layout
-    sublime.active_window().run_command('xdebug_layout')
+    sublime.active_window().run_command('grld_layout')
     # Render breakpoint markers
     render_regions()
 
@@ -104,8 +104,13 @@ def update_socket_loop():
         return
 
     with S.PROTOCOL as protocol:
-        protocol.update()
-            
+        try:
+            protocol.update()
+        except ProtocolConnectionException as e:
+            sublime.set_timeout(lambda: sublime.error_message('The connection to client was lost. Restarting SublimeTextGRLD server.'), 0)
+            sublime.set_timeout(lambda: sublime.active_window().send_command('grld_session_restart'), 0)
+            return
+
     sublime.set_timeout_async(update_socket_loop, 100)
 
 class SocketHandler(threading.Thread):
@@ -207,7 +212,7 @@ class SocketHandler(threading.Thread):
         transformed_response = self.transform_grld_eval_response(response)
         response_str = generate_context_output(transformed_response, values_only=True, multiline=False)
 
-        self.timeout(lambda: view.run_command('xdebug_update_evaluate_line_response', {'response': response_str}))
+        self.timeout(lambda: view.run_command('grld_update_evaluate_line_response', {'response': response_str}))
 
 
     def execute(self, command):
@@ -220,15 +225,15 @@ class SocketHandler(threading.Thread):
         S.BREAKPOINT_ROW = None
         S.CONTEXT_DATA.clear()
         self.watch_expression()
-        
+
 
         # Send command to debugger engine
         with S.PROTOCOL as protocol:
             protocol.send(command)
 
-        self.run_command('xdebug_layout')
+        self.run_command('grld_layout')
         self.timeout(lambda: render_regions())
-       
+
     def get_value(self, grld_id):
         with S.PROTOCOL as protocol:
             protocol.send('getValue')
@@ -259,11 +264,11 @@ class SocketHandler(threading.Thread):
         table_children = self.get_value(id)
         transformed_children = {}
         for i, child in table_children.items():
-            
+
             if self.is_table(child):
                 child_table_ref = child['value']['short']
                 if child_table_ref in parent_table_refs: # special value if table child is a reference to the table itself (avoid infinite recursion)
-                    idx = parent_table_refs.index(child_table_ref) 
+                    idx = parent_table_refs.index(child_table_ref)
                     num_tables_up_from_child = len(parent_table_refs) - idx - 1
                     if num_tables_up_from_child == 0:
                         description = '<circular reference to this table>'
@@ -292,15 +297,15 @@ class SocketHandler(threading.Thread):
         if type(value) == dict:
             value_type = value['type']
             value = value['short']
-        else: 
+        else:
             if type(value) == bool:
                 value_type = 'boolean'
             elif type(value) == int or type(value) == float:
-                value_type = 'number' 
+                value_type = 'number'
             elif type(value) == str:
                 value_type = 'string'
             else:
-                value_type = '?' 
+                value_type = '?'
 
         return {'name': name, 'value': str(value), 'type': value_type}
 
@@ -315,7 +320,7 @@ class SocketHandler(threading.Thread):
                 transformed_item['name'] = name
             else:
                 name = transformed_item['name']
-                 
+
             transformed[i] = transformed_item
 
         return transformed
@@ -339,7 +344,7 @@ class SocketHandler(threading.Thread):
             with S.PROTOCOL as protocol:
                 protocol.send("locals")
                 protocol.send(thread)
-                protocol.send(stack_level)                
+                protocol.send(stack_level)
                 response = protocol.read()
                 properties = self.transform_grld_context_response(response, "local")
                 context.update(properties)
@@ -420,7 +425,7 @@ class SocketHandler(threading.Thread):
             protocol.register_command_cb('synchronize', (lambda: self.handle_synchronize_command()))
             # Connection initialization
             client_name = protocol.read()
-                
+
             # # Set breakpoints for files
             for filename, breakpoint_data in S.BREAKPOINT.items():
                 if breakpoint_data:
@@ -474,7 +479,7 @@ class SocketHandler(threading.Thread):
             response = protocol.read()
 
         # Show response in status bar
-        self.status_message("Xdebug status: " + response.get(dbgp.ATTRIBUTE_REASON) + ' - ' + response.get(dbgp.ATTRIBUTE_STATUS))
+        self.status_message("GRLD status: " + response.get(dbgp.ATTRIBUTE_REASON) + ' - ' + response.get(dbgp.ATTRIBUTE_STATUS))
 
 
     def user_execute(self, command, args=None):
@@ -532,7 +537,7 @@ class SocketHandler(threading.Thread):
             protocol.send('currentthread')
             current_thread = protocol.read()
 
-        # GRLD only passes back co-routines that are NOT 'main'. So, if current_thread is not in the list, then 'main' is the current thread.    
+        # GRLD only passes back co-routines that are NOT 'main'. So, if current_thread is not in the list, then 'main' is the current thread.
         if current_thread not in coroutines_dict.values():
             current_thread = 'main'
 
@@ -554,7 +559,7 @@ class SocketHandler(threading.Thread):
         filename = get_real_path(filename)
 
         # Show debug/status output
-        self.status_message('Xdebug: Break')
+        self.status_message('GRLD: Break')
         info('Break: ' + filename )
         # Store line number of breakpoint for displaying region marker
         S.BREAKPOINT_ROW = { 'filename': filename, 'lineno': str(line) }
@@ -597,7 +602,7 @@ class SocketHandler(threading.Thread):
             protocol.send(False)
 
         S.SESSION_BUSY = False
-            
+
 
 class SessionException(Exception):
     pass

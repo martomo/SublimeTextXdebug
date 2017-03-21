@@ -28,35 +28,24 @@
     <Compile Include="plugin_helpers\__init__.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="xdebug\config.py" />
-    <Compile Include="xdebug\dbgp.py" />
-    <Compile Include="xdebug\elementtree\ElementInclude.py" />
-    <Compile Include="xdebug\elementtree\ElementPath.py" />
-    <Compile Include="xdebug\elementtree\ElementTree.py" />
-    <Compile Include="xdebug\elementtree\HTMLTreeBuilder.py" />
-    <Compile Include="xdebug\elementtree\SgmlopXMLTreeBuilder.py" />
-    <Compile Include="xdebug\elementtree\SimpleXMLTreeBuilder.py" />
-    <Compile Include="xdebug\elementtree\SimpleXMLWriter.py" />
-    <Compile Include="xdebug\elementtree\TidyHTMLTreeBuilder.py" />
-    <Compile Include="xdebug\elementtree\TidyTools.py" />
-    <Compile Include="xdebug\elementtree\XMLTreeBuilder.py" />
-    <Compile Include="xdebug\elementtree\__init__.py" />
-    <Compile Include="xdebug\grld.py">
+    <Compile Include="grld\config.py" />
+    <Compile Include="grld\dbgp.py" />
+    <Compile Include="grld\grld.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="xdebug\helper\helper.py" />
-    <Compile Include="xdebug\helper\helper_26.py" />
-    <Compile Include="xdebug\helper\helper_27.py" />
-    <Compile Include="xdebug\helper\ordereddict.py" />
-    <Compile Include="xdebug\helper\__init__.py" />
-    <Compile Include="xdebug\load.py" />
-    <Compile Include="xdebug\log.py" />
-    <Compile Include="xdebug\protocol.py" />
-    <Compile Include="xdebug\session.py" />
-    <Compile Include="xdebug\settings.py" />
-    <Compile Include="xdebug\util.py" />
-    <Compile Include="xdebug\view.py" />
-    <Compile Include="xdebug\__init__.py" />
+    <Compile Include="grld\helper\helper.py" />
+    <Compile Include="grld\helper\helper_26.py" />
+    <Compile Include="grld\helper\helper_27.py" />
+    <Compile Include="grld\helper\ordereddict.py" />
+    <Compile Include="grld\helper\__init__.py" />
+    <Compile Include="grld\load.py" />
+    <Compile Include="grld\log.py" />
+    <Compile Include="grld\protocol.py" />
+    <Compile Include="grld\session.py" />
+    <Compile Include="grld\settings.py" />
+    <Compile Include="grld\util.py" />
+    <Compile Include="grld\view.py" />
+    <Compile Include="grld\__init__.py" />
   </ItemGroup>
   <ItemGroup>
     <Content Include=".gitignore" />
@@ -71,15 +60,14 @@
     <Content Include="LICENSE" />
     <Content Include="Main.sublime-menu" />
     <Content Include="README.md" />
-    <Content Include="Xdebug.sublime-settings" />
-    <Content Include="Xdebug.tmLanguage" />
+    <Content Include="GRLD.sublime-settings" />
+    <Content Include="GRLD.tmLanguage" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="icons" />
     <Folder Include="plugin_helpers\" />
-    <Folder Include="xdebug" />
-    <Folder Include="xdebug\elementtree" />
-    <Folder Include="xdebug\helper" />
+    <Folder Include="grld" />
+    <Folder Include="grld\helper" />
   </ItemGroup>
   <Import Project="$(PtvsTargetsFile)" Condition="Exists($(PtvsTargetsFile))" />
   <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" Condition="!Exists($(PtvsTargetsFile))" />
