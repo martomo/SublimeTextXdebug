@@ -12,10 +12,10 @@ except:
 from .view import DATA_BREAKPOINT, DATA_CONTEXT, DATA_STACK, DATA_WATCH, TITLE_WINDOW_BREAKPOINT, TITLE_WINDOW_CONTEXT, TITLE_WINDOW_STACK, TITLE_WINDOW_WATCH, has_debug_view, render_regions, show_content
 from .util import load_breakpoint_data, load_watch_data
 from .log import clear_output, debug, info
-from .config import get_window_value, set_window_value, load_package_values, load_project_values
+from .config import get_value, get_window_value, set_window_value, load_package_values, load_project_values
 
 
-def xdebug():
+def grld():
     # Clear log file
     clear_output()
     if not S.PACKAGE_FOLDER:
@@ -25,6 +25,11 @@ def xdebug():
     # Load config in package/project configuration
     load_package_values()
     load_project_values()
+
+    if get_value(S.KEY_DISABLE_SUBLIME_LINTER_GUTTER):
+        sublime.active_window().run_command('sublimelinter_choose_gutter_theme', {'value': 'None'})
+    else:
+        sublime.active_window().run_command('sublimelinter_choose_gutter_theme', {'value': 'Default'}) #TODO: store and restore previous gutter theme settings
 
     # Load breakpoint data
     try:
@@ -45,6 +50,8 @@ def xdebug():
         show_content(DATA_STACK)
     if has_debug_view(TITLE_WINDOW_WATCH):
         show_content(DATA_WATCH)
+
+    sublime.active_window().run_command('grld_layout', {'restore': True})
 
     # Check for conflicting packages
     if S.PACKAGE_FOLDER:
@@ -71,7 +78,7 @@ def xdebug():
         for package in packages:
             if package.endswith(package_extension):
                 package = package[:-len(package_extension)]
-            if (package.lower().count("xdebug") or package.lower().count("moai")) and package != current_package:
+            if (package.lower().count("grld") or package.lower().count("moai")) and package != current_package:
                 conflict.append(package)
         # Show message if conficting packages have been found
         if conflict:

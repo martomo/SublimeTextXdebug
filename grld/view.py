@@ -33,11 +33,15 @@ DATA_BREAKPOINT = 'breakpoint'
 DATA_CONTEXT = 'context'
 DATA_STACK = 'stack'
 DATA_WATCH = 'watch'
+DATA_COROUTINES = 'coroutines'
+DATA_EVALUATE = 'evaluate'
 
-TITLE_WINDOW_BREAKPOINT = "Xdebug Breakpoint"
-TITLE_WINDOW_CONTEXT = "Xdebug Context"
-TITLE_WINDOW_STACK = "Xdebug Stack"
-TITLE_WINDOW_WATCH = "Xdebug Watch"
+TITLE_WINDOW_BREAKPOINT = "Breakpoints"
+TITLE_WINDOW_CONTEXT = "Context"
+TITLE_WINDOW_STACK = "Stack"
+TITLE_WINDOW_WATCH = "Watch"
+TITLE_WINDOW_COROUTINES = "Coroutines"
+TITLE_WINDOW_EVALUATE = "Evaluate"
 
 
 def close_debug_windows():
@@ -49,7 +53,7 @@ def close_debug_windows():
         if is_debug_view(view):
             window.focus_view(view)
             window.run_command('close')
-    window.run_command('hide_panel', {"panel": 'output.xdebug'})
+    window.run_command('hide_panel', {"panel": 'output.grld'})
 
 
 def generate_breakpoint_output():
@@ -85,7 +89,7 @@ def generate_breakpoint_output():
     return values
 
 
-def generate_context_output(context, indent=0):
+def generate_context_output(context, indent=0, values_only=False, multiline=True):
     """
     Generate readable context from dictionary with context data.
 
@@ -93,40 +97,62 @@ def generate_context_output(context, indent=0):
     context -- Dictionary with context data.
     indent -- Indent level.
     """
+
     # Generate output text for values
     values = H.unicode_string('')
     if not isinstance(context, dict):
         return values
-    for variable in context.values():
+
+    # make sure keys are displayed in correct order
+    keys = [int(key) for key in context.keys()]
+    keys.sort()
+    sorted_keys = keys
+
+    for key in sorted_keys:
+        variable = context[key]
+
+        is_last_element = (key == sorted_keys[-1])
+
         has_children = False
         property_text = ''
         # Set indentation
         for i in range(indent): property_text += '\t'
-        # Property with value
-        if variable['value'] is not None:
-            if variable['name']:
-                property_text += '{name} = '
-            property_text += '({type}) {value}\n'
+
         # Property with children
-        elif isinstance(variable['children'], dict) and variable['numchildren'] is not None:
+        if 'children' in variable and isinstance(variable['children'], dict) and variable['numchildren'] is not None:
             has_children = True
             if variable['name']:
                 property_text += '{name} = '
-            property_text += '{type}[{numchildren}]\n'
+            property_text += '{type}[{numchildren}]'
+        # Property with value
+        elif variable['value'] is not None:
+            name = variable['name']
+            if name == '<error>':
+                property_text += '<error> '
+            elif name and not values_only:
+                property_text += '{name} = '
+            #property_text += '({type}) {value}\n'
+            property_text += '{value}'
         # Unknown property
         else:
             if variable['name']:
                 property_text += '{name} = '
-            property_text += '<{type}>\n'
+            property_text += '<{type}>'
 
         # Remove newlines in value to prevent incorrect indentation
         value = ''
         if variable['value'] and len(variable['value']) > 0:
             value = variable['value'].replace("\r\n", "\n").replace("\n", " ")
 
+        if multiline:
+            property_text += '\n'
+        else:
+            if not is_last_element:
+                property_text += ', '
+
         # Format string and append to output
         values += H.unicode_string(property_text \
-                        .format(value=value, type=variable['type'], name=variable['name'], numchildren=variable['numchildren']))
+                        .format(value=value, type=variable['type'], name=variable['name'], numchildren=variable.get('numchildren', 0)))
 
         # Append property children to output
         if has_children:
@@ -144,7 +170,7 @@ def generate_context_output(context, indent=0):
                 values += H.unicode_string('...\n')
     return values
 
-
+#response should be something like: {"1": {"name": <name of thing>, "namewhat": (global|local|method|field|''), "what": (Lua, C, main), "source": @<filename>, "line": line in file}}
 def generate_stack_output(response):
     values = H.unicode_string('')
 
@@ -152,24 +178,42 @@ def generate_stack_output(response):
     if S.BREAKPOINT_EXCEPTION:
         values += H.unicode_string('[{name}] {message}\n' \
                                   .format(name=S.BREAKPOINT_EXCEPTION['name'], message=S.BREAKPOINT_EXCEPTION['message']))
+    has_output = False
+
+    for level, stackData in response.items():
+        stack_level = level
+        stack_type = 'file'#child.get(dbgp.STACK_TYPE)
+        stack_file = get_real_path(H.url_decode(stackData['source']))
+        stack_line = stackData['line']
+        stack_name = stackData.get('name', '') #child.get(dbgp.STACK_WHERE, '{unknown}')
+        stack_namewhat = stackData['namewhat'] #child.get(dbgp.STACK_WHERE, '{unknown}')
+
+        if stack_namewhat != '':
+            values += H.unicode_string('[{level}] {filename}:{lineno} - {name}({namewhat})\n' \
+                                          .format(level=stack_level, type=stack_type, name=stack_name, namewhat = stack_namewhat, lineno=stack_line, filename=stack_file))
+        else:
+            values += H.unicode_string('[{level}] {filename}:{lineno}\n' \
+                                          .format(level=stack_level, type=stack_type, lineno=stack_line, filename=stack_file))
+
+        has_output = True
 
     # Walk through elements in response
-    has_output = False
-    try:
-        for child in response:
-            # Get stack attribute values
-            if child.tag == dbgp.ELEMENT_STACK or child.tag == dbgp.ELEMENT_PATH_STACK:
-                stack_level = child.get(dbgp.STACK_LEVEL, 0)
-                stack_type = child.get(dbgp.STACK_TYPE)
-                stack_file = H.url_decode(child.get(dbgp.STACK_FILENAME))
-                stack_line = child.get(dbgp.STACK_LINENO, 0)
-                stack_where = child.get(dbgp.STACK_WHERE, '{unknown}')
-                # Append values
-                values += H.unicode_string('[{level}] {filename}.{where}:{lineno}\n' \
-                                          .format(level=stack_level, type=stack_type, where=stack_where, lineno=stack_line, filename=stack_file))
-                has_output = True
-    except:
-        pass
+
+    #try:
+    #    for child in response:
+    #        # Get stack attribute values
+    #        if child.tag == dbgp.ELEMENT_STACK or child.tag == dbgp.ELEMENT_PATH_STACK:
+    #            stack_level = child.get(dbgp.STACK_LEVEL, 0)
+    #            stack_type = child.get(dbgp.STACK_TYPE)
+    #            stack_file = H.url_decode(child.get(dbgp.STACK_FILENAME))
+    #            stack_line = child.get(dbgp.STACK_LINENO, 0)
+    #            stack_where = child.get(dbgp.STACK_WHERE, '{unknown}')
+    #            # Append values
+    #            values += H.unicode_string('[{level}] {filename}.{where}:{lineno}\n' \
+    #                                      .format(level=stack_level, type=stack_type, where=stack_where, lineno=stack_line, filename=stack_file))
+    #            has_output = True
+    #except:
+    #    pass
 
     # When no stack use values from exception
     if not has_output and S.BREAKPOINT_EXCEPTION:
@@ -200,12 +244,21 @@ def generate_watch_output():
                 watch_entry += ' "%s"' % watch_data['expression']
             # Evaluated value
             if watch_data['value'] is not None:
-                watch_entry += ' = ' + generate_context_output(watch_data['value'])
+                watch_entry += ' = ' + generate_context_output(watch_data['value'], values_only=True)
             else:
                 watch_entry += "\n"
         values += H.unicode_string(watch_entry)
     return values
 
+def generate_coroutines_output(coroutines_dict, current_thread):
+    coroutines = []
+    for coroutine in coroutines_dict.values():
+        if current_thread == coroutine['id']:
+            coroutines.append("{} <--".format(coroutine['id']))
+        else:
+            coroutines.append(coroutine['id'])
+
+    return '\n'.join(coroutines)
 
 def get_context_variable(context, variable_name):
     """
@@ -244,6 +297,10 @@ def get_debug_index(name=None):
     stack_index = get_value(S.KEY_STACK_INDEX, 0)
     watch_group = get_value(S.KEY_WATCH_GROUP, -1)
     watch_index = get_value(S.KEY_WATCH_INDEX, 0)
+    coroutines_group = get_value(S.KEY_COROUTINES_GROUP, -1)
+    coroutines_index = get_value(S.KEY_COROUTINES_INDEX, 0)
+    evaluate_group = get_value(S.KEY_EVALUATE_GROUP, -1)
+    evaluate_index = get_value(S.KEY_EVALUATE_INDEX, 0)
 
     # Create list with all debug views and sort by group/index
     debug_list = []
@@ -251,6 +308,8 @@ def get_debug_index(name=None):
     debug_list.append((context_group, context_index, TITLE_WINDOW_CONTEXT))
     debug_list.append((stack_group, stack_index, TITLE_WINDOW_STACK))
     debug_list.append((watch_group, watch_index, TITLE_WINDOW_WATCH))
+    debug_list.append((coroutines_group, coroutines_index, TITLE_WINDOW_COROUTINES))
+    debug_list.append((evaluate_group, evaluate_index, TITLE_WINDOW_EVALUATE))
     debug_list.sort(key=operator.itemgetter(0,1))
 
     # Recalculate group/index position within boundaries of active window
@@ -289,78 +348,6 @@ def get_debug_index(name=None):
     return sorted_list
 
 
-def get_response_properties(response, default_key=None):
-    """
-    Return a dictionary with available properties from response.
-
-    Keyword arguments:
-    response -- Response from debugger engine.
-    default_key -- Index key to use when property has no name.
-    """
-    properties = H.new_dictionary()
-    # Walk through elements in response
-    for child in response:
-        # Read property elements
-        if child.tag == dbgp.ELEMENT_PROPERTY or child.tag == dbgp.ELEMENT_PATH_PROPERTY:
-            # Get property attribute values
-            property_name_short = child.get(dbgp.PROPERTY_NAME)
-            property_name = child.get(dbgp.PROPERTY_FULLNAME, property_name_short)
-            property_type = child.get(dbgp.PROPERTY_TYPE)
-            property_children = child.get(dbgp.PROPERTY_CHILDREN)
-            property_numchildren = child.get(dbgp.PROPERTY_NUMCHILDREN)
-            property_classname = child.get(dbgp.PROPERTY_CLASSNAME)
-            property_encoding = child.get(dbgp.PROPERTY_ENCODING)
-            property_value = None
-
-            # Set property value
-            if child.text:
-                property_value = child.text
-                # Try to decode property value when encoded with base64
-                if property_encoding is not None and property_encoding == 'base64':
-                    try:
-                        property_value = H.base64_decode(child.text)
-                    except:
-                        pass
-
-            if property_name is not None and len(property_name) > 0:
-                property_key = property_name
-                # Ignore following properties
-                if property_name == "::":
-                    continue
-
-                # Avoid nasty static functions/variables from turning in an infinitive loop
-                if property_name.count("::") > 1:
-                    continue
-
-                # Filter password values
-                if get_value(S.KEY_HIDE_PASSWORD, True) and property_name.lower().find('password') != -1 and property_value is not None:
-                    property_value = '******'
-            else:
-                property_key = default_key
-
-            # Store property
-            if property_key:
-                properties[property_key] = { 'name': property_name, 'type': property_type, 'value': property_value, 'numchildren': property_numchildren, 'children' : None }
-
-                # Get values for children
-                if property_children:
-                    properties[property_key]['children'] = get_response_properties(child, default_key)
-
-                # Set classname, if available, as type for object
-                if property_classname and property_type == 'object':
-                    properties[property_key]['type'] = property_classname
-        # Handle error elements
-        elif child.tag == dbgp.ELEMENT_ERROR or child.tag == dbgp.ELEMENT_PATH_ERROR:
-            message = 'error'
-            for step_child in child:
-                if step_child.tag == dbgp.ELEMENT_MESSAGE or step_child.tag == dbgp.ELEMENT_PATH_MESSAGE and step_child.text:
-                    message = step_child.text
-                    break
-            if default_key:
-                properties[default_key] = { 'name': None, 'type': message, 'value': None, 'numchildren': None, 'children': None }
-    return properties
-
-
 def has_debug_view(name=None):
     """
     Determine if active window has any or specific debug view(s).
@@ -385,7 +372,13 @@ def is_debug_view(view):
     Keyword arguments:
     view -- View reference which to check if name matches debug name/title.
     """
-    return view.name() == TITLE_WINDOW_BREAKPOINT or view.name() == TITLE_WINDOW_CONTEXT or view.name() == TITLE_WINDOW_STACK or view.name() == TITLE_WINDOW_WATCH
+    return \
+        view.name() == TITLE_WINDOW_BREAKPOINT or \
+        view.name() == TITLE_WINDOW_CONTEXT or \
+        view.name() == TITLE_WINDOW_STACK or \
+        view.name() == TITLE_WINDOW_WATCH or \
+        view.name() == TITLE_WINDOW_COROUTINES or \
+        view.name() == TITLE_WINDOW_EVALUATE
 
 
 def set_layout(layout):
@@ -442,13 +435,13 @@ def set_layout(layout):
     if not previous_active is None:
         window.focus_view(previous_active)
 
-
 def show_content(data, content=None):
     """
     Show content for specific data type in assigned window view.
     Note: When view does not exists, it will create one.
     """
 
+    read_only = True
     # Hande data type
     if data == DATA_BREAKPOINT:
         title = TITLE_WINDOW_BREAKPOINT
@@ -460,6 +453,11 @@ def show_content(data, content=None):
     elif data == DATA_WATCH:
         title = TITLE_WINDOW_WATCH
         content = generate_watch_output()
+    elif data == DATA_COROUTINES:
+        title = TITLE_WINDOW_COROUTINES
+    elif data == DATA_EVALUATE:
+        title = TITLE_WINDOW_EVALUATE
+        read_only = False
     else:
         return
 
@@ -518,7 +516,7 @@ def show_content(data, content=None):
     if not found:
         view = window.new_file()
         view.set_scratch(True)
-        view.set_read_only(True)
+        view.set_read_only(read_only)
         view.set_name(title)
         window.set_view_index(view, group, index)
         # Set focus back to active debug view
@@ -533,10 +531,10 @@ def show_content(data, content=None):
 
     # Configure view settings
     view.settings().set('word_wrap', False)
-    view.settings().set('syntax', 'Packages/' + package + '/Xdebug.tmLanguage')
+    view.settings().set('syntax', 'Packages/' + package + '/GRLD.tmLanguage')
 
     # Set content for view and fold all indendation blocks
-    view.run_command('xdebug_view_update', {'data': content, 'readonly': True})
+    view.run_command('grld_view_update', {'data': content, 'readonly': read_only})
     if data == DATA_CONTEXT or data == DATA_WATCH:
         view.run_command('fold_all')
 
@@ -555,7 +553,7 @@ def show_context_output(view):
     view -- View reference which holds the context window.
     """
     # Check if there is a debug session and context data
-    if S.SESSION and S.SESSION.connected and S.CONTEXT_DATA:
+    if S.PROTOCOL and S.PROTOCOL.connected and S.CONTEXT_DATA:
         try:
             # Get selected point in view
             point = view.sel()[0]
@@ -576,10 +574,10 @@ def show_context_output(view):
                         data = generate_context_output(variables)
                         # Show context variables and children in output panel
                         window = sublime.active_window()
-                        panel = window.get_output_panel('xdebug')
-                        panel.run_command("xdebug_view_update", {'data' : data} )
+                        panel = window.get_output_panel('grld')
+                        panel.run_command("grld_view_update", {'data' : data} )
                         panel.run_command('set_setting', {"setting": 'word_wrap', "value": True})
-                        window.run_command('show_panel', {"panel": 'output.xdebug'})
+                        window.run_command('show_panel', {"panel": 'output.grld'})
         except:
             pass
 
@@ -616,10 +614,10 @@ def show_panel_content(content):
     # Show response data in output panel
     try:
         window = sublime.active_window()
-        panel = window.get_output_panel('xdebug')
-        panel.run_command('xdebug_view_update', {'data': content})
+        panel = window.get_output_panel('grld')
+        panel.run_command('grld_view_update', {'data': content})
         panel.run_command('set_setting', {"setting": 'word_wrap', "value": True})
-        window.run_command('show_panel', {'panel': 'output.xdebug'})
+        window.run_command('show_panel', {'panel': 'output.grld'})
     except:
         print(content)
 
@@ -670,7 +668,7 @@ def rows_to_region(rows):
             # Convert from 1 based to a 0 based row (line) number
             row_number = int(row) - 1
             # Calculate offset point for row
-            offset_point = view.text_point(row_number, 0)
+            offset_point = view.text_point(row_number, 1)
             # Get region for row by offset point
             region_row = view.line(offset_point)
             # Add to list for result
@@ -804,7 +802,7 @@ def toggle_breakpoint(view):
         # Get selected point in view
         point = view.sel()[0]
         # Check if selected point uses breakpoint line scope
-        if point.size() == 3 and sublime.score_selector(view.scope_name(point.a), 'xdebug.output.breakpoint.line'):
+        if point.size() == 3 and sublime.score_selector(view.scope_name(point.a), 'grld.output.breakpoint.line'):
             # Find line number of breakpoint
             line = view.substr(view.line(point))
             pattern = re.compile('^\\s*(?:(\\|\\+\\|)|(\\|-\\|))\\s*(?P<line_number>\\d+)\\s*(?:(--)(.*)|.*)')
@@ -812,7 +810,7 @@ def toggle_breakpoint(view):
             # Check if it has found line number
             if match and match.group('line_number'):
                 # Get all breakpoint filenames
-                breakpoint_file = view.find_by_selector('xdebug.output.breakpoint.file')
+                breakpoint_file = view.find_by_selector('grld.output.breakpoint.file')
                 # Locate line with filename related to selected breakpoint
                 file_line = None
                 for entry in breakpoint_file:
@@ -840,9 +838,9 @@ def toggle_breakpoint(view):
                     # Toggle breakpoint only if it has valid value
                     if enabled is None:
                         return
-                    sublime.active_window().run_command('xdebug_breakpoint', {"enabled": enabled, "rows": [line_number], "filename": filename})
+                    sublime.active_window().run_command('grld_breakpoint', {"enabled": enabled, "rows": [line_number], "filename": filename})
         # Check if selected point uses breakpoint file scope
-        elif point.size() > 3 and sublime.score_selector(view.scope_name(point.a), 'xdebug.output.breakpoint.file'):
+        elif point.size() > 3 and sublime.score_selector(view.scope_name(point.a), 'grld.output.breakpoint.file'):
             # Get filename from selected line in view
             file_line = view.substr(view.line(point))
             file_pattern = re.compile('^\\s*(=>)\\s*(?P<filename>.*)')
@@ -860,10 +858,10 @@ def toggle_stack(view):
         # Get selected point in view
         point = view.sel()[0]
         # Check if selected point uses stack entry scope
-        if point.size() > 3 and sublime.score_selector(view.scope_name(point.a), 'xdebug.output.stack.entry'):
+        if point.size() > 3 and sublime.score_selector(view.scope_name(point.a), 'grld.output.stack.entry'):
             # Get fileuri and line number from selected line in view
             line = view.substr(view.line(point))
-            pattern = re.compile('^(\[\d+\])\s*(?P<fileuri>.*)(\..*)(\s*:.*?(?P<lineno>\d+))\s*(\((.*?):.*\)|$)')
+            pattern = re.compile('^(\[\d+\])\s*(?P<fileuri>.*\..*)(\s*:.*?(?P<lineno>\d+))\s*(\((.*?):.*\)|$)')
             match = pattern.match(line)
             # Show file when it's a valid fileuri
             if match and match.group('fileuri'):
@@ -884,14 +882,14 @@ def toggle_watch(view):
         # Get selected point in view
         point = view.sel()[0]
         # Check if selected point uses watch entry scope
-        if point.size() == 3 and sublime.score_selector(view.scope_name(point.a), 'xdebug.output.watch.entry'):
+        if point.size() == 3 and sublime.score_selector(view.scope_name(point.a), 'grld.output.watch.entry'):
             # Determine if watch entry is enabled or disabled
             line = view.substr(view.line(point))
             pattern = re.compile('^(?:(?P<enabled>\\|\\+\\|)|(?P<disabled>\\|-\\|))\\.*')
             match = pattern.match(line)
             if match and (match.group('enabled') or match.group('disabled')):
                 # Get all entries and determine index by line/point match
-                watch = view.find_by_selector('xdebug.output.watch.entry')
+                watch = view.find_by_selector('grld.output.watch.entry')
                 watch_index = 0
                 for entry in watch:
                     # Stop searching if we have passed selected breakpoint
@@ -909,6 +907,6 @@ def toggle_watch(view):
                 if sublime.score_selector(view.scope_name(point.a), 'keyword') and not S.WATCH[watch_index]['enabled']:
                     S.WATCH[watch_index]['enabled'] = True
                 # Update watch view and save watch data to file
-                sublime.active_window().run_command('xdebug_watch', {"update": True})
+                sublime.active_window().run_command('grld_watch', {"update": True})
     except:
         pass

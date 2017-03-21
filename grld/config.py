@@ -10,8 +10,8 @@ except:
 def load_project_values():
     try:
         settings = sublime.active_window().active_view().settings()
-        # Use 'xdebug' as key which contains dictionary with project values for package
-        S.CONFIG_PROJECT = settings.get(S.KEY_XDEBUG)
+        # Use 'grld' as key which contains dictionary with project values for package
+        S.CONFIG_PROJECT = settings.get(S.KEY_GRLD)
     except:
         pass
 
@@ -93,10 +93,10 @@ def get_window_value(key, default_value=None):
     """
     try:
         settings = sublime.active_window().settings()
-        if settings.has(S.KEY_XDEBUG):
-            xdebug = settings.get(S.KEY_XDEBUG)
-            if isinstance(xdebug, dict) and key in xdebug.keys():
-                return xdebug[key]
+        if settings.has(S.KEY_GRLD):
+            grld = settings.get(S.KEY_GRLD)
+            if isinstance(grld, dict) and key in grld.keys():
+                return grld[key]
     except:
         pass
     return default_value
@@ -131,13 +131,13 @@ def set_project_value(key, value=None):
     # Create settings entries if they are undefined
     if S.KEY_SETTINGS not in project.keys() or not isinstance(project[S.KEY_SETTINGS], dict):
         project[S.KEY_SETTINGS] = {}
-    if S.KEY_XDEBUG not in project[S.KEY_SETTINGS].keys() or not isinstance(project[S.KEY_SETTINGS][S.KEY_XDEBUG], dict):
-        project[S.KEY_SETTINGS][S.KEY_XDEBUG] = {}
-    # Update Xdebug settings
+    if S.KEY_GRLD not in project[S.KEY_SETTINGS].keys() or not isinstance(project[S.KEY_SETTINGS][S.KEY_GRLD], dict):
+        project[S.KEY_SETTINGS][S.KEY_GRLD] = {}
+    # Update GRLD settings
     if value is not None:
-        project[S.KEY_SETTINGS][S.KEY_XDEBUG][key] = value
-    elif key in project[S.KEY_SETTINGS][S.KEY_XDEBUG].keys():
-        del project[S.KEY_SETTINGS][S.KEY_XDEBUG][key]
+        project[S.KEY_SETTINGS][S.KEY_GRLD][key] = value
+    elif key in project[S.KEY_SETTINGS][S.KEY_GRLD].keys():
+        del project[S.KEY_SETTINGS][S.KEY_GRLD][key]
     # Save project data
     sublime.active_window().set_project_data(project)
     return True
@@ -151,14 +151,14 @@ def set_window_value(key, value=None):
     """
     try:
         settings = sublime.active_window().settings()
-        if settings.has(S.KEY_XDEBUG):
-            xdebug = settings.get(S.KEY_XDEBUG)
+        if settings.has(S.KEY_GRLD):
+            grld = settings.get(S.KEY_GRLD)
         else:
-            xdebug = {}
+            grld = {}
         if value is not None:
-            xdebug[key] = value
-        elif key in xdebug.keys():
-            del xdebug[key]
-        settings.set(S.KEY_XDEBUG, xdebug)
+            grld[key] = value
+        elif key in grld.keys():
+            del grld[key]
+        settings.set(S.KEY_GRLD, grld)
     except:
         pass

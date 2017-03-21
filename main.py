@@ -5,11 +5,26 @@ import os
 import sys
 import threading
 
+import sys, imp
+
+BASE_PATH = os.path.abspath(os.path.dirname(__file__))
+CODE_DIRS = [
+  'plugin_helpers',
+  'grld',
+]
+sys.path += [BASE_PATH] + [os.path.join(BASE_PATH, f) for f in CODE_DIRS]
+
+# =======
+# reload plugin files on change
+if 'plugin_helpers.reloader' in sys.modules:
+  imp.reload(sys.modules['plugin_helpers.reloader'])
+import plugin_helpers.reloader
+
 # Load modules
 try:
-    from .xdebug import *
+    from .grld import *
 except:
-    from xdebug import *
+    from grld import *
 
 # Set Python libraries from system installation
 python_path = config.get_value(S.KEY_PYTHON_PATH)
@@ -28,8 +43,7 @@ except:
 
 
 # Initialize package
-sublime.set_timeout(lambda: load.xdebug(), 1000)
-
+sublime.set_timeout(lambda: load.grld(), 1000)
 
 # Define event listener for view(s)
 class EventListener(sublime_plugin.EventListener):
@@ -69,8 +83,28 @@ class EventListener(sublime_plugin.EventListener):
         else:
             pass
 
+    def on_query_context(self, view, key, operator, operand, match_all):
+        if not session.is_connected():
+            return None
 
-class XdebugBreakpointCommand(sublime_plugin.TextCommand):
+        if key == 'evaluate_line':
+            if view.name() != V.TITLE_WINDOW_EVALUATE:
+                return None
+
+            sel = view.sel()
+            if len(sel) > 1: return False #can't evaluate with multiple things selected
+            region = sel[0]
+
+            if region.a != view.size():
+                return False
+
+            return True
+
+        elif key == 'only_while_execution_broken':
+            return session.is_execution_broken()
+
+
+class GrldBreakpointCommand(sublime_plugin.TextCommand):
     """
     Add/Remove breakpoint(s) for rows (line numbers) in selection.
     """
@@ -98,8 +132,8 @@ class XdebugBreakpointCommand(sublime_plugin.TextCommand):
             breakpoint_exists = row in S.BREAKPOINT[filename]
             # Disable/Remove breakpoint
             if breakpoint_exists:
-                if S.BREAKPOINT[filename][row]['id'] is not None and session.is_connected(show_status=True):
-                    async_session = session.SocketHandler(session.ACTION_REMOVE_BREAKPOINT, breakpoint_id=S.BREAKPOINT[filename][row]['id'])
+                if S.BREAKPOINT[filename][row] is not None and session.is_connected(show_status=True):
+                    async_session = session.SocketHandler(session.ACTION_REMOVE_BREAKPOINT, filename=filename, lineno=row)
                     async_session.start()
                 if enabled is False:
                     S.BREAKPOINT[filename][row]['enabled'] = False
@@ -108,7 +142,7 @@ class XdebugBreakpointCommand(sublime_plugin.TextCommand):
             # Add/Enable breakpoint
             if not breakpoint_exists or enabled is True:
                 if row not in S.BREAKPOINT[filename]:
-                    S.BREAKPOINT[filename][row] = { 'id': None, 'enabled': True, 'expression': expression }
+                    S.BREAKPOINT[filename][row] = { 'enabled': True, 'expression': expression }
                 else:
                     S.BREAKPOINT[filename][row]['enabled'] = True
                     if condition is not None:
@@ -133,7 +167,7 @@ class XdebugBreakpointCommand(sublime_plugin.TextCommand):
         util.save_breakpoint_data()
 
 
-class XdebugConditionalBreakpointCommand(sublime_plugin.TextCommand):
+class GrldConditionalBreakpointCommand(sublime_plugin.TextCommand):
     """
     Add conditional breakpoint(s) for rows (line numbers) in selection.
     """
@@ -141,7 +175,7 @@ class XdebugConditionalBreakpointCommand(sublime_plugin.TextCommand):
         self.view.window().show_input_panel('Breakpoint condition', '', self.on_done, self.on_change, self.on_cancel)
 
     def on_done(self, condition):
-        self.view.run_command('xdebug_breakpoint', {'condition': condition, 'enabled': True})
+        self.view.run_command('grld_breakpoint', {'condition': condition, 'enabled': True})
 
     def on_change(self, line):
         pass
@@ -150,7 +184,7 @@ class XdebugConditionalBreakpointCommand(sublime_plugin.TextCommand):
         pass
 
 
-class XdebugClearBreakpointsCommand(sublime_plugin.TextCommand):
+class GrldClearBreakpointsCommand(sublime_plugin.TextCommand):
     """
     Clear breakpoints in selected view.
     """
@@ -158,10 +192,7 @@ class XdebugClearBreakpointsCommand(sublime_plugin.TextCommand):
         filename = self.view.file_name()
         if filename and filename in S.BREAKPOINT:
             rows = H.dictionary_keys(S.BREAKPOINT[filename])
-            self.view.run_command('xdebug_breakpoint', {'rows': rows, 'filename': filename})
-            # Continue debug session when breakpoints are cleared on current script being debugged
-            if S.BREAKPOINT_ROW and self.view.file_name() == S.BREAKPOINT_ROW['filename']:
-                self.view.window().run_command('xdebug_execute', {'command': 'run'})
+            self.view.run_command('grld_breakpoint', {'rows': rows, 'filename': filename})
 
     def is_enabled(self):
         filename = self.view.file_name()
@@ -176,7 +207,7 @@ class XdebugClearBreakpointsCommand(sublime_plugin.TextCommand):
         return False
 
 
-class XdebugClearAllBreakpointsCommand(sublime_plugin.WindowCommand):
+class GrldClearAllBreakpointsCommand(sublime_plugin.WindowCommand):
     """
     Clear breakpoints from all views.
     """
@@ -189,9 +220,7 @@ class XdebugClearAllBreakpointsCommand(sublime_plugin.WindowCommand):
         for filename, breakpoint_data in S.BREAKPOINT.items():
             if breakpoint_data:
                 rows = H.dictionary_keys(breakpoint_data)
-                view.run_command('xdebug_breakpoint', {'rows': rows, 'filename': filename})
-        # Continue debug session when breakpoints are cleared on current script being debugged
-        self.window.run_command('xdebug_execute', {'command': 'run'})
+                view.run_command('grld_breakpoint', {'rows': rows, 'filename': filename})
 
     def is_enabled(self):
         if S.BREAKPOINT:
@@ -208,7 +237,7 @@ class XdebugClearAllBreakpointsCommand(sublime_plugin.WindowCommand):
         return False
 
 
-class XdebugRunToLineCommand(sublime_plugin.WindowCommand):
+class GrldRunToLineCommand(sublime_plugin.WindowCommand):
     """
     Run script to current selected line in view, ignoring all other breakpoints.
     """
@@ -234,8 +263,8 @@ class XdebugRunToLineCommand(sublime_plugin.WindowCommand):
         if not breakpoint_exists:
             S.BREAKPOINT_RUN = { 'filename': filename, 'lineno': lineno }
         # Set breakpoint and run script
-        view.run_command('xdebug_breakpoint', {'rows': [lineno], 'enabled': True, 'filename': filename})
-        self.window.run_command('xdebug_execute', {'command': 'run'})
+        view.run_command('grld_breakpoint', {'rows': [lineno], 'enabled': True, 'filename': filename})
+        self.window.run_command('grld_execute', {'command': 'run'})
 
     def is_enabled(self):
         return S.BREAKPOINT_ROW is not None and session.is_connected()
@@ -243,14 +272,14 @@ class XdebugRunToLineCommand(sublime_plugin.WindowCommand):
     def is_visible(self):
         return S.BREAKPOINT_ROW is not None and session.is_connected()
 
-
-class XdebugSessionStartCommand(sublime_plugin.WindowCommand):
+class GrldSessionStartCommand(sublime_plugin.WindowCommand):
     """
-    Start Xdebug session, listen for request response from debugger engine.
+    Start GRLD session, listen for request response from debugger engine.
     """
-    def run(self, launch_browser=False, restart=False):
+    def run(self, restart=False):
         # Define new session with DBGp protocol
-        S.SESSION = protocol.Protocol()
+
+        S.PROTOCOL = protocol.Protocol()
         S.SESSION_BUSY = False
         S.BREAKPOINT_EXCEPTION = None
         S.BREAKPOINT_ROW = None
@@ -259,71 +288,70 @@ class XdebugSessionStartCommand(sublime_plugin.WindowCommand):
         async_session.start()
         # Remove temporary breakpoint
         if S.BREAKPOINT_RUN is not None and S.BREAKPOINT_RUN['filename'] in S.BREAKPOINT and S.BREAKPOINT_RUN['lineno'] in S.BREAKPOINT[S.BREAKPOINT_RUN['filename']]:
-            self.window.active_view().run_command('xdebug_breakpoint', {'rows': [S.BREAKPOINT_RUN['lineno']], 'filename': S.BREAKPOINT_RUN['filename']})
+            self.window.active_view().run_command('grld_breakpoint', {'rows': [S.BREAKPOINT_RUN['lineno']], 'filename': S.BREAKPOINT_RUN['filename']})
         S.BREAKPOINT_RUN = None
         # Set debug layout
-        self.window.run_command('xdebug_layout')
-        # Launch browser
-        if launch_browser or (config.get_value(S.KEY_LAUNCH_BROWSER) and not restart):
-            util.launch_browser()
+        self.window.run_command('grld_layout')
 
         # Start thread which will run method that listens for response on configured port
         threading.Thread(target=self.listen).start()
 
     def listen(self):
         # Start listening for response from debugger engine
-        S.SESSION.listen()
+        with S.PROTOCOL as protocol:
+            S.PROTOCOL.listen()
+
         # On connect run method which handles connection
-        if S.SESSION and S.SESSION.connected:
+        if S.PROTOCOL and S.PROTOCOL.connected:
             sublime.set_timeout(self.connected, 0)
 
     def connected(self):
-        sublime.set_timeout(lambda: sublime.status_message('Xdebug: Connected'), 100)
+        sublime.set_timeout(lambda: sublime.status_message('GRLD: Connected'), 100)
 
         async_session = session.SocketHandler(session.ACTION_INIT)
         async_session.start()
 
     def is_enabled(self):
-        if S.SESSION:
+        if S.PROTOCOL:
             return False
         return True
 
-    def is_visible(self, launch_browser=False):
-        if S.SESSION:
-            return False
-        if launch_browser and (config.get_value(S.KEY_LAUNCH_BROWSER) or not config.get_value(S.KEY_URL)):
+    def is_visible(self):
+        if S.PROTOCOL:
             return False
         return True
 
 
-class XdebugSessionRestartCommand(sublime_plugin.WindowCommand):
+class GrldSessionRestartCommand(sublime_plugin.WindowCommand):
     def run(self):
-        self.window.run_command('xdebug_session_stop', {'restart': True})
-        self.window.run_command('xdebug_session_start', {'restart': True})
-        sublime.set_timeout(lambda: sublime.status_message('Xdebug: Restarted debugging session. Reload page to continue debugging.'), 100)
+        self.window.run_command('grld_session_stop', {'restart': True})
+        self.window.run_command('grld_session_start', {'restart': True})
+        sublime.set_timeout(lambda: sublime.status_message('GRLD: Restarted debugging session. Reload client to continue debugging.'), 100)
 
     def is_enabled(self):
-        if S.SESSION:
+        if S.PROTOCOL:
             return True
         return False
 
     def is_visible(self):
-        if S.SESSION:
+        if S.PROTOCOL:
             return True
         return False
 
 
-class XdebugSessionStopCommand(sublime_plugin.WindowCommand):
+class GrldSessionStopCommand(sublime_plugin.WindowCommand):
     """
-    Stop Xdebug session, close connection and stop listening to debugger engine.
+    Stop GRLD session, close connection and stop listening to debugger engine.
     """
-    def run(self, close_windows=False, launch_browser=False, restart=False):
+    def run(self, close_windows=False, restart=False):
         try:
-            S.SESSION.clear()
+            S.PROTOCOL.stop_listening_for_incoming_connections()
+            with S.PROTOCOL as protocol:
+                protocol.clear()
         except:
             pass
         finally:
-            S.SESSION = None
+            S.PROTOCOL = None
             S.SESSION_BUSY = False
             S.BREAKPOINT_EXCEPTION = None
             S.BREAKPOINT_ROW = None
@@ -332,38 +360,33 @@ class XdebugSessionStopCommand(sublime_plugin.WindowCommand):
             async_session.start()
             # Remove temporary breakpoint
             if S.BREAKPOINT_RUN is not None and S.BREAKPOINT_RUN['filename'] in S.BREAKPOINT and S.BREAKPOINT_RUN['lineno'] in S.BREAKPOINT[S.BREAKPOINT_RUN['filename']]:
-                self.window.active_view().run_command('xdebug_breakpoint', {'rows': [S.BREAKPOINT_RUN['lineno']], 'filename': S.BREAKPOINT_RUN['filename']})
+                self.window.active_view().run_command('grld_breakpoint', {'rows': [S.BREAKPOINT_RUN['lineno']], 'filename': S.BREAKPOINT_RUN['filename']})
             S.BREAKPOINT_RUN = None
-        # Launch browser
-        if launch_browser or (config.get_value(S.KEY_LAUNCH_BROWSER) and not restart):
-            util.launch_browser()
         # Close or reset debug layout
         if close_windows or config.get_value(S.KEY_CLOSE_ON_STOP):
             if config.get_value(S.KEY_DISABLE_LAYOUT):
-                self.window.run_command('xdebug_layout', {'close_windows': True})
+                self.window.run_command('grld_layout', {'close_windows': True})
             else:
-                self.window.run_command('xdebug_layout', {'restore': True})
+                self.window.run_command('grld_layout', {'restore': True})
         else:
-            self.window.run_command('xdebug_layout')
+            self.window.run_command('grld_layout')
         # Render breakpoint markers
         V.render_regions()
 
     def is_enabled(self):
-        if S.SESSION:
+        if S.PROTOCOL:
             return True
         return False
 
-    def is_visible(self, close_windows=False, launch_browser=False):
-        if S.SESSION:
+    def is_visible(self, close_windows=False):
+        if S.PROTOCOL:
             if close_windows and config.get_value(S.KEY_CLOSE_ON_STOP):
                 return False
-            if launch_browser and (config.get_value(S.KEY_LAUNCH_BROWSER) or not config.get_value(S.KEY_URL)):
-                return False
             return True
         return False
 
 
-class XdebugExecuteCommand(sublime_plugin.WindowCommand):
+class GrldExecuteCommand(sublime_plugin.WindowCommand):
     """
     Execute command, handle breakpoints and reload session when page execution has completed.
 
@@ -378,7 +401,7 @@ class XdebugExecuteCommand(sublime_plugin.WindowCommand):
         return session.is_connected()
 
 
-class XdebugContinueCommand(sublime_plugin.WindowCommand):
+class GrldContinueCommand(sublime_plugin.WindowCommand):
     """
     Continuation commands when on breakpoint, show menu by default if no command has been passed as argument.
 
@@ -386,12 +409,10 @@ class XdebugContinueCommand(sublime_plugin.WindowCommand):
     command -- Continuation command to execute.
     """
     commands = H.new_dictionary()
-    commands[dbgp.RUN] = 'Run'
-    commands[dbgp.STEP_OVER] = 'Step Over'
-    commands[dbgp.STEP_INTO] = 'Step Into'
-    commands[dbgp.STEP_OUT] = 'Step Out'
-    commands[dbgp.STOP] = 'Stop'
-    commands[dbgp.DETACH] = 'Detach'
+    commands[grld.RUN] = 'Run'
+    commands[grld.STEP_OVER] = 'Step Over'
+    commands[grld.STEP_IN] = 'Step In'
+    commands[grld.STEP_OUT] = 'Step Out'
 
     command_index = H.dictionary_keys(commands)
     command_options = H.dictionary_values(commands)
@@ -408,7 +429,7 @@ class XdebugContinueCommand(sublime_plugin.WindowCommand):
         if isinstance(command, int):
             command = self.command_index[command]
 
-        self.window.run_command('xdebug_execute', {'command': command})
+        self.window.run_command('grld_execute', {'command': command})
 
     def is_enabled(self):
         return S.BREAKPOINT_ROW is not None and session.is_connected()
@@ -417,7 +438,7 @@ class XdebugContinueCommand(sublime_plugin.WindowCommand):
         return S.BREAKPOINT_ROW is not None and session.is_connected()
 
 
-class XdebugStatusCommand(sublime_plugin.WindowCommand):
+class GrldStatusCommand(sublime_plugin.WindowCommand):
     """
     Get status from debugger engine.
     """
@@ -431,20 +452,31 @@ class XdebugStatusCommand(sublime_plugin.WindowCommand):
     def is_visible(self):
         return session.is_connected()
 
+class GrldUpdateEvaluateLineResponseCommand(sublime_plugin.TextCommand):
+    def run(self, edit, response):
+        end_of_view_point = self.view.size()
 
-class XdebugEvaluateCommand(sublime_plugin.WindowCommand):
-    def run(self):
-        self.window.show_input_panel('Evaluate', '', self.on_done, self.on_change, self.on_cancel)
+        last_char = self.view.substr(sublime.Region(end_of_view_point - 1, end_of_view_point))
+        if last_char != '\n':
+            format_string  = "\n==> {}\n"
+        else:
+            format_string  = "==> {}\n"
 
-    def on_done(self, expression):
-        async_session = session.SocketHandler(session.ACTION_EVALUATE, expression=expression)
+        self.view.insert(edit, self.view.size(), format_string.format(response))
+
+class GrldEvaluateLineCommand(sublime_plugin.TextCommand):
+    def run(self, edit):
+        #self.window.show_input_panel('Evaluate', '', self.on_done, self.on_change, self.on_cancel)
+        sel = self.view.sel()
+        if len(sel) > 1:
+            self.view.show_popup('cannot evaluate: selection is invalid')
+
+        region = sel[0]
+        line_region = self.view.line(region)
+        line_contents = self.view.substr(line_region)
+
+        async_session = session.SocketHandler(session.ACTION_EVALUATE, expression=line_contents, view=self.view)
         async_session.start()
-
-    def on_change(self, expression):
-        pass
-
-    def on_cancel(self):
-        pass
 
     def is_enabled(self):
         return session.is_connected()
@@ -452,8 +484,25 @@ class XdebugEvaluateCommand(sublime_plugin.WindowCommand):
     def is_visible(self):
         return session.is_connected()
 
+class GrldSetCurrentStackLevelCommand(sublime_plugin.WindowCommand):
+    """
+    Set the current stack level that's being inspected. Important for variable evaluation.
+    """
 
-class XdebugUserExecuteCommand(sublime_plugin.WindowCommand):
+    def run(self, stack_level):
+        async_session = session.SocketHandler(session.ACTION_SET_CURRENT_STACK_LEVEL, stack_level=stack_level)
+        async_session.start()
+
+class GrldSetSelectedThread(sublime_plugin.WindowCommand):
+    """
+    Select a thread we want to inspect.
+    """
+
+    def run(self, selected_thread):
+        async_session = session.SocketHandler(session.ACTION_SET_SELECTED_THREAD, selected_thread=selected_thread)
+        async_session.start()
+
+class GrldUserExecuteCommand(sublime_plugin.WindowCommand):
     """
     Open input panel, allowing user to execute arbitrary command according to DBGp protocol.
     Note: Transaction ID is automatically generated by session module.
@@ -484,7 +533,7 @@ class XdebugUserExecuteCommand(sublime_plugin.WindowCommand):
         return session.is_connected()
 
 
-class XdebugWatchCommand(sublime_plugin.WindowCommand):
+class GrldWatchCommand(sublime_plugin.WindowCommand):
     """
     Add/Edit/Remove watch expression.
     """
@@ -538,7 +587,7 @@ class XdebugWatchCommand(sublime_plugin.WindowCommand):
         # Check if expression is not already defined
         matches = [x for x in S.WATCH if x['expression'] == expression]
         if matches:
-            sublime.status_message('Xdebug: Watch expression already defined.')
+            sublime.status_message('GRLD: Watch expression already defined.')
             return
         # Add/Edit watch expression in session
         watch = {'expression': expression, 'enabled': True, 'value': None, 'type': None}
@@ -574,7 +623,7 @@ class XdebugWatchCommand(sublime_plugin.WindowCommand):
         return True
 
 
-class XdebugViewUpdateCommand(sublime_plugin.TextCommand):
+class GrldViewUpdateCommand(sublime_plugin.TextCommand):
     """
     Update content of sublime.Edit object in view, instead of using begin_edit/end_edit.
 
@@ -592,7 +641,7 @@ class XdebugViewUpdateCommand(sublime_plugin.TextCommand):
             view.set_read_only(True)
 
 
-class XdebugLayoutCommand(sublime_plugin.WindowCommand):
+class GrldLayoutCommand(sublime_plugin.WindowCommand):
     """
     Toggle between debug and default window layouts.
     """
@@ -600,7 +649,7 @@ class XdebugLayoutCommand(sublime_plugin.WindowCommand):
         # Get active window
         window = sublime.active_window()
         # Do not restore layout or close windows while debugging
-        if S.SESSION and (restore or close_windows or keymap):
+        if S.PROTOCOL and (restore or close_windows or keymap):
             return
         # Set layout, unless user disabled debug layout
         if not config.get_value(S.KEY_DISABLE_LAYOUT):
@@ -617,10 +666,19 @@ class XdebugLayoutCommand(sublime_plugin.WindowCommand):
         V.show_content(V.DATA_CONTEXT)
         V.show_content(V.DATA_STACK)
         V.show_content(V.DATA_WATCH)
-        panel = window.get_output_panel('xdebug')
-        panel.run_command("xdebug_view_update")
+        V.show_content(V.DATA_COROUTINES)
+
+        # don't override content of evaluate window automatically
+        evaluate_content = ''
+        for v in window.views():
+            if v.name() == V.TITLE_WINDOW_EVALUATE:
+                evaluate_content = v.substr(sublime.Region(0, v.size()))
+        V.show_content(V.DATA_EVALUATE, evaluate_content)
+
+        panel = window.get_output_panel('grld')
+        panel.run_command("grld_view_update")
         # Close output panel
-        window.run_command('hide_panel', {"panel": 'output.xdebug'})
+        window.run_command('hide_panel', {"panel": 'output.grld'})
 
     def is_enabled(self, restore=False, close_windows=False):
         disable_layout = config.get_value(S.KEY_DISABLE_LAYOUT)
@@ -631,7 +689,7 @@ class XdebugLayoutCommand(sublime_plugin.WindowCommand):
         return True
 
     def is_visible(self, restore=False, close_windows=False):
-        if S.SESSION:
+        if S.PROTOCOL:
             return False
         disable_layout = config.get_value(S.KEY_DISABLE_LAYOUT)
         if close_windows and (not disable_layout or not V.has_debug_view()):
@@ -646,7 +704,7 @@ class XdebugLayoutCommand(sublime_plugin.WindowCommand):
         return True
 
 
-class XdebugSettingsCommand(sublime_plugin.WindowCommand):
+class GrldSettingsCommand(sublime_plugin.WindowCommand):
     """
     Show settings file.
     """
@@ -663,3 +721,5 @@ class XdebugSettingsCommand(sublime_plugin.WindowCommand):
             package = package[:-len(package_extension)]
         # Open settings file
         self.window.run_command('open_file', {'file': '${packages}/' + package + '/' + S.FILE_PACKAGE_SETTINGS });
+
+
