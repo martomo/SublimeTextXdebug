@@ -241,7 +241,7 @@ class Protocol(object):
             try:
                 server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
                 server.settimeout(1)
-                server.bind(('', self.port))
+                server.bind(('0.0.0.0', self.port))
                 server.listen(1)
                 self.listening = True
                 self.socket = None
