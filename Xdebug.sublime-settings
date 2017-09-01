@@ -25,6 +25,11 @@
     // It is merely used when launching the default web browser with the configured URL.
     "ide_key": "sublime.xdebug",
 
+    // Which host address Sublime Text should listen
+    // to connect with debugger engine.
+    // e.g. 0.0.0.0 or localhost
+    "host": "",
+
     // Which port number Sublime Text should listen
     // to connect with debugger engine.
     "port": 9000,
