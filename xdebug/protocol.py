@@ -72,6 +72,8 @@ class Protocol(object):
     read_size = 1024
 
     def __init__(self):
+        # Set host address to listen for response
+        self.host = get_value(S.KEY_HOST, S.DEFAULT_HOST)
         # Set port number to listen for response
         self.port = get_value(S.KEY_PORT, S.DEFAULT_PORT)
         self.clear()
@@ -241,7 +243,7 @@ class Protocol(object):
             try:
                 server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
                 server.settimeout(1)
-                server.bind(('', self.port))
+                server.bind((self.host, self.port))
                 server.listen(1)
                 self.listening = True
                 self.socket = None
