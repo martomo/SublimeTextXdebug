@@ -35,7 +35,7 @@ except ImportError:
     except ImportError:
         from .elementtree import ElementTree as ET
 try:
-    from xml.parsers import expat
+    from xml.parsers import expat  # noqa: F401
     UNESCAPE_RESPONSE_DATA = True
 except ImportError:
     # Module xml.parsers.expat missing, using SimpleXMLTreeBuilder

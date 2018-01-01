@@ -54,19 +54,19 @@ def base64_encode(data):
 
 
 def unicode_chr(code):
-    return unichr(code)
+    return unichr(code)  # noqa: F821
 
 
 def unicode_string(string):
-    if isinstance(string, unicode):
+    if isinstance(string, unicode):  # noqa: F821
         return string
     return string.decode('utf8', 'replace')
 
 
 def is_digit(string):
     # Check if basestring (str, unicode) is digit
-    return isinstance(string, basestring) and string.isdigit()
+    return isinstance(string, basestring) and string.isdigit()  # noqa: F821
 
 
 def is_number(value):
-    return isinstance(value, (int, long))
+    return isinstance(value, (int, long))  # noqa: F821
