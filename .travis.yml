@@ -1,0 +1,14 @@
+language: python
+python:
+  # 2.6.5, Sublime Text 2.0.2 Build 2221 (Windows)
+  # 2.6.6, Sublime Text 2.0.2 Build 2221 (Linux)
+  # 2.6.9, Sublime Text 2.0.2 Build 2221 (macOS Sierra)
+  - "2.6"
+  # 2.7.10, Sublime Text 2.0.2 Build 2221 (macOS High Sierra)
+  - "2.7"
+  # Sublime Text 3.0 Build 3143/3156
+  - "3.3.6"
+install:
+  - "pip install flake8"
+script:
+  - flake8 .
