@@ -145,7 +145,7 @@ class Protocol(object):
         if self.connected:
             # Get result data from debugger engine
             try:
-                while not '\x00' in self.buffer:
+                while '\x00' not in self.buffer:
                     self.buffer += H.data_read(self.socket.recv(self.read_size))
                 data, self.buffer = self.buffer.split('\x00', 1)
                 return data

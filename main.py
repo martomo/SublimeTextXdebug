@@ -397,7 +397,7 @@ class XdebugContinueCommand(sublime_plugin.WindowCommand):
     command_options = H.dictionary_values(commands)
 
     def run(self, command=None):
-        if not command or not command in self.commands:
+        if not command or command not in self.commands:
             self.window.show_quick_panel(self.command_options, self.callback)
         else:
             self.callback(command)

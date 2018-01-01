@@ -441,7 +441,7 @@ def set_layout(layout):
                 window.set_view_index(view, v["group"], v["index"])
 
     # Restore focus to previous active view
-    if not previous_active is None:
+    if previous_active is not None:
         window.focus_view(previous_active)
 
 
@@ -601,7 +601,7 @@ def show_file(filename, row=None):
         # Check if file is already open
         found = False
         view = window.find_open_file(filename)
-        if not view is None:
+        if view is not None:
             found = True
             window.focus_view(view)
             # Set focus to row (line number)
