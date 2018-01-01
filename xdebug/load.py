@@ -78,8 +78,8 @@ def xdebug():
             info("Conflicting packages detected.")
             debug(conflict)
             if not get_window_value('hide_conflict', False):
-                sublime.error_message("The following package(s) could cause conflicts with '{package}':\n\n{other}\n\nPlease consider removing the package(s) above when experiencing any complications." \
-                                        .format(package=S.PACKAGE_FOLDER, other='\n'.join(conflict)))
+                sublime.error_message("The following package(s) could cause conflicts with '{package}':\n\n{other}\n\nPlease consider removing the package(s) above when experiencing any complications."
+                                      .format(package=S.PACKAGE_FOLDER, other='\n'.join(conflict)))
                 set_window_value('hide_conflict', True)
         else:
             set_window_value('hide_conflict', False)

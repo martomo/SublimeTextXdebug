@@ -384,8 +384,8 @@ class SocketHandler(threading.Thread):
             # Stack history
             stack = self.get_stack_values()
             if not stack:
-                stack = H.unicode_string('[{level}] {filename}.{where}:{lineno}\n' \
-                                          .format(level=0, where='{main}', lineno=1, filename=fileuri))
+                stack = H.unicode_string('[{level}] {filename}.{where}:{lineno}\n'
+                                         .format(level=0, where='{main}', lineno=1, filename=fileuri))
             self.timeout(lambda: show_content(DATA_STACK, stack))
 
             # Watch expressions

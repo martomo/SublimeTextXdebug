@@ -101,7 +101,8 @@ def generate_context_output(context, indent=0):
         has_children = False
         property_text = ''
         # Set indentation
-        for i in range(indent): property_text += '\t'
+        for i in range(indent):
+            property_text += '\t'
         # Property with value
         if variable['value'] is not None:
             if variable['name']:
@@ -125,8 +126,8 @@ def generate_context_output(context, indent=0):
             value = variable['value'].replace("\r\n", "\n").replace("\n", " ")
 
         # Format string and append to output
-        values += H.unicode_string(property_text \
-                        .format(value=value, type=variable['type'], name=variable['name'], numchildren=variable['numchildren']))
+        values += H.unicode_string(property_text
+                                   .format(value=value, type=variable['type'], name=variable['name'], numchildren=variable['numchildren']))
 
         # Append property children to output
         if has_children:
@@ -140,7 +141,8 @@ def generate_context_output(context, indent=0):
             elif len(variable['children']) > 0 and not variable['numchildren']:
                 limited = True
             if limited:
-                for i in range(indent + 1): values += H.unicode_string('\t')
+                for i in range(indent + 1):
+                    values += H.unicode_string('\t')
                 values += H.unicode_string('...\n')
     return values
 
@@ -150,8 +152,8 @@ def generate_stack_output(response):
 
     # Display exception name and message
     if S.BREAKPOINT_EXCEPTION:
-        values += H.unicode_string('[{name}] {message}\n' \
-                                  .format(name=S.BREAKPOINT_EXCEPTION['name'], message=S.BREAKPOINT_EXCEPTION['message']))
+        values += H.unicode_string('[{name}] {message}\n'
+                                   .format(name=S.BREAKPOINT_EXCEPTION['name'], message=S.BREAKPOINT_EXCEPTION['message']))
 
     # Walk through elements in response
     has_output = False
@@ -165,16 +167,16 @@ def generate_stack_output(response):
                 stack_line = child.get(dbgp.STACK_LINENO, 0)
                 stack_where = child.get(dbgp.STACK_WHERE, '{unknown}')
                 # Append values
-                values += H.unicode_string('[{level}] {filename}.{where}:{lineno}\n' \
-                                          .format(level=stack_level, type=stack_type, where=stack_where, lineno=stack_line, filename=stack_file))
+                values += H.unicode_string('[{level}] {filename}.{where}:{lineno}\n'
+                                           .format(level=stack_level, type=stack_type, where=stack_where, lineno=stack_line, filename=stack_file))
                 has_output = True
     except:
         pass
 
     # When no stack use values from exception
     if not has_output and S.BREAKPOINT_EXCEPTION:
-        values += H.unicode_string('[{level}] {filename}.{where}:{lineno}\n' \
-                                  .format(level=0, where='{unknown}', lineno=S.BREAKPOINT_EXCEPTION['lineno'], filename=S.BREAKPOINT_EXCEPTION['filename']))
+        values += H.unicode_string('[{level}] {filename}.{where}:{lineno}\n'
+                                   .format(level=0, where='{unknown}', lineno=S.BREAKPOINT_EXCEPTION['lineno'], filename=S.BREAKPOINT_EXCEPTION['filename']))
 
     return values
 

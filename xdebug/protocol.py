@@ -55,9 +55,11 @@ ILLEGAL_XML_UNICODE_CHARACTERS = [
     (0xDFFFE, 0xDFFFF), (0xEFFFE, 0xEFFFF), (0xFFFFE, 0xFFFFF),
     (0x10FFFE, 0x10FFFF)]
 
-ILLEGAL_XML_RANGES = ["%s-%s" % (H.unicode_chr(low), H.unicode_chr(high))
-                  for (low, high) in ILLEGAL_XML_UNICODE_CHARACTERS
-                  if low < sys.maxunicode]
+ILLEGAL_XML_RANGES = [
+    "%s-%s" % (H.unicode_chr(low), H.unicode_chr(high))
+    for (low, high) in ILLEGAL_XML_UNICODE_CHARACTERS
+    if low < sys.maxunicode
+]
 
 ILLEGAL_XML_RE = re.compile(H.unicode_string('[%s]') % H.unicode_string('').join(ILLEGAL_XML_RANGES))
 
