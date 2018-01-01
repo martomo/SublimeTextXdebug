@@ -26,7 +26,7 @@ except:
 from .config import get_value, get_window_value, set_window_value
 
 # Util module
-from .util import get_real_path, get_region_icon, save_watch_data
+from .util import get_real_path, get_region_icon
 
 
 DATA_BREAKPOINT = 'breakpoint'
