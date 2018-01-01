@@ -131,7 +131,7 @@ def generate_context_output(context, indent=0):
         # Append property children to output
         if has_children:
             # Get children for property (no need to convert, already unicode)
-            values += generate_context_output(variable['children'], indent+1)
+            values += generate_context_output(variable['children'], indent + 1)
             # Use ellipsis to indicate that results have been truncated
             limited = False
             if isinstance(variable['numchildren'], int) or H.is_digit(variable['numchildren']):
@@ -140,7 +140,7 @@ def generate_context_output(context, indent=0):
             elif len(variable['children']) > 0 and not variable['numchildren']:
                 limited = True
             if limited:
-                for i in range(indent+1): values += H.unicode_string('\t')
+                for i in range(indent + 1): values += H.unicode_string('\t')
                 values += H.unicode_string('...\n')
     return values
 
@@ -251,11 +251,11 @@ def get_debug_index(name=None):
     debug_list.append((context_group, context_index, TITLE_WINDOW_CONTEXT))
     debug_list.append((stack_group, stack_index, TITLE_WINDOW_STACK))
     debug_list.append((watch_group, watch_index, TITLE_WINDOW_WATCH))
-    debug_list.sort(key=operator.itemgetter(0,1))
+    debug_list.sort(key=operator.itemgetter(0, 1))
 
     # Recalculate group/index position within boundaries of active window
     window = sublime.active_window()
-    group_limit = window.num_groups()-1
+    group_limit = window.num_groups() - 1
     sorted_list = []
     last_group = None
     last_index = 0
@@ -276,7 +276,7 @@ def get_debug_index(name=None):
         # Add debug view with new group/index
         sorted_list.append((group, last_index, title))
     # Sort recalculated list by group/index
-    sorted_list.sort(key=operator.itemgetter(0,1))
+    sorted_list.sort(key=operator.itemgetter(0, 1))
 
     # Find specified view by name/title of debug view
     if name is not None:
@@ -340,7 +340,7 @@ def get_response_properties(response, default_key=None):
 
             # Store property
             if property_key:
-                properties[property_key] = { 'name': property_name, 'type': property_type, 'value': property_value, 'numchildren': property_numchildren, 'children' : None }
+                properties[property_key] = {'name': property_name, 'type': property_type, 'value': property_value, 'numchildren': property_numchildren, 'children': None}
 
                 # Get values for children
                 if property_children:
@@ -357,7 +357,7 @@ def get_response_properties(response, default_key=None):
                     message = step_child.text
                     break
             if default_key:
-                properties[default_key] = { 'name': None, 'type': message, 'value': None, 'numchildren': None, 'children': None }
+                properties[default_key] = {'name': None, 'type': message, 'value': None, 'numchildren': None, 'children': None}
     return properties
 
 
@@ -416,7 +416,7 @@ def set_layout(layout):
             for view in window.views():
                 view_id = "%d" % view.id()
                 group, index = window.get_view_index(view)
-                S.RESTORE_INDEX[view_id] = { "group": group, "index": index }
+                S.RESTORE_INDEX[view_id] = {"group": group, "index": index}
             set_window_value('restore_index', S.RESTORE_INDEX)
             # Set debug layout
             window.set_layout(S.LAYOUT_NORMAL)
@@ -577,7 +577,7 @@ def show_context_output(view):
                         # Show context variables and children in output panel
                         window = sublime.active_window()
                         panel = window.get_output_panel('xdebug')
-                        panel.run_command("xdebug_view_update", {'data' : data} )
+                        panel.run_command("xdebug_view_update", {'data': data})
                         panel.run_command('set_setting', {"setting": 'word_wrap', "value": True})
                         window.run_command('show_panel', {"panel": 'output.xdebug'})
         except:

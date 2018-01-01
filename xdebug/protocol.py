@@ -53,14 +53,13 @@ ILLEGAL_XML_UNICODE_CHARACTERS = [
     (0x7FFFE, 0x7FFFF), (0x8FFFE, 0x8FFFF), (0x9FFFE, 0x9FFFF),
     (0xAFFFE, 0xAFFFF), (0xBFFFE, 0xBFFFF), (0xCFFFE, 0xCFFFF),
     (0xDFFFE, 0xDFFFF), (0xEFFFE, 0xEFFFF), (0xFFFFE, 0xFFFFF),
-    (0x10FFFE, 0x10FFFF) ]
+    (0x10FFFE, 0x10FFFF)]
 
 ILLEGAL_XML_RANGES = ["%s-%s" % (H.unicode_chr(low), H.unicode_chr(high))
                   for (low, high) in ILLEGAL_XML_UNICODE_CHARACTERS
                   if low < sys.maxunicode]
 
 ILLEGAL_XML_RE = re.compile(H.unicode_string('[%s]') % H.unicode_string('').join(ILLEGAL_XML_RANGES))
-
 
 
 class Protocol(object):

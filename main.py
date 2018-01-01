@@ -54,7 +54,7 @@ class EventListener(sublime_plugin.EventListener):
         if filename and (filename.endswith(S.FILE_PACKAGE_SETTINGS) or filename.endswith('.sublime-project')):
             config.load_package_values()
             config.load_project_values()
-        #TODO: Save new location of breakpoints on save
+        # TODO: Save new location of breakpoints on save
 
     def on_selection_modified(self, view):
         # Show details in output panel of selected variable in context window
@@ -108,7 +108,7 @@ class XdebugBreakpointCommand(sublime_plugin.TextCommand):
             # Add/Enable breakpoint
             if not breakpoint_exists or enabled is True:
                 if row not in S.BREAKPOINT[filename]:
-                    S.BREAKPOINT[filename][row] = { 'id': None, 'enabled': True, 'expression': expression }
+                    S.BREAKPOINT[filename][row] = {'id': None, 'enabled': True, 'expression': expression}
                 else:
                     S.BREAKPOINT[filename][row]['enabled'] = True
                     if condition is not None:
@@ -232,7 +232,7 @@ class XdebugRunToLineCommand(sublime_plugin.WindowCommand):
             breakpoint_exists = True
         # Store line number and filename for temporary breakpoint in session
         if not breakpoint_exists:
-            S.BREAKPOINT_RUN = { 'filename': filename, 'lineno': lineno }
+            S.BREAKPOINT_RUN = {'filename': filename, 'lineno': lineno}
         # Set breakpoint and run script
         view.run_command('xdebug_breakpoint', {'rows': [lineno], 'enabled': True, 'filename': filename})
         self.window.run_command('xdebug_execute', {'command': 'run'})
@@ -662,4 +662,4 @@ class XdebugSettingsCommand(sublime_plugin.WindowCommand):
         if package.endswith(package_extension):
             package = package[:-len(package_extension)]
         # Open settings file
-        self.window.run_command('open_file', {'file': '${packages}/' + package + '/' + S.FILE_PACKAGE_SETTINGS });
+        self.window.run_command('open_file', {'file': '${packages}/' + package + '/' + S.FILE_PACKAGE_SETTINGS});

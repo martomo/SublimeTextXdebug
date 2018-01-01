@@ -171,7 +171,6 @@ class SocketHandler(threading.Thread):
         finally:
             S.SESSION_BUSY = False
 
-
     def evaluate(self, expression):
         if not expression or not is_connected():
             return
@@ -186,7 +185,6 @@ class SocketHandler(threading.Thread):
 
         # Show response data in output panel
         self.timeout(lambda: show_panel_content(response))
-
 
     def execute(self, command):
         # Do not execute if no command is set
@@ -216,7 +214,7 @@ class SocketHandler(threading.Thread):
                 if (exception):
                     info(exception + ': ' + child.text)
                     # Remember Exception name and first line of message
-                    S.BREAKPOINT_EXCEPTION = { 'name': exception, 'message': child.text.split('\n')[0], 'filename': fileuri, 'lineno': lineno }
+                    S.BREAKPOINT_EXCEPTION = {'name': exception, 'message': child.text.split('\n')[0], 'filename': fileuri, 'lineno': lineno}
 
                 # Check if temporary breakpoint is set and hit
                 if S.BREAKPOINT_RUN is not None and S.BREAKPOINT_RUN['filename'] == filename and S.BREAKPOINT_RUN['lineno'] == lineno:
@@ -232,7 +230,7 @@ class SocketHandler(threading.Thread):
                 self.status_message('Xdebug: Breakpoint')
                 info('Break: ' + filename + ':' + lineno)
                 # Store line number of breakpoint for displaying region marker
-                S.BREAKPOINT_ROW = { 'filename': filename, 'lineno': lineno }
+                S.BREAKPOINT_ROW = {'filename': filename, 'lineno': lineno}
                 # Focus/Open file window view
                 self.timeout(lambda: show_file(filename, lineno))
 
@@ -257,7 +255,6 @@ class SocketHandler(threading.Thread):
 
         # Render breakpoint markers
         self.timeout(lambda: render_regions())
-
 
     def get_context_values(self):
         """
@@ -287,7 +284,6 @@ class SocketHandler(threading.Thread):
 
         return generate_context_output(context)
 
-
     def get_stack_values(self):
         """
         Get stack information for current context.
@@ -302,7 +298,6 @@ class SocketHandler(threading.Thread):
                 e = sys.exc_info()[1]
                 self.timeout(lambda: connection_error("%s" % e))
         return generate_stack_output(response)
-
 
     def get_watch_values(self):
         """
@@ -325,7 +320,6 @@ class SocketHandler(threading.Thread):
                         pass
 
                     S.WATCH[index]['value'] = watch_value
-
 
     def init(self):
         if not is_connected():
@@ -377,9 +371,9 @@ class SocketHandler(threading.Thread):
             filename = get_real_path(fileuri)
             # Show debug/status output
             self.status_message('Xdebug: Break on start')
-            info('Break on start: ' + filename )
+            info('Break on start: ' + filename)
             # Store line number of breakpoint for displaying region marker
-            S.BREAKPOINT_ROW = { 'filename': filename, 'lineno': 1 }
+            S.BREAKPOINT_ROW = {'filename': filename, 'lineno': 1}
             # Focus/Open file window view
             self.timeout(lambda: show_file(filename, 1))
 
@@ -400,14 +394,12 @@ class SocketHandler(threading.Thread):
             # Tell script to run it's process
             self.run_command('xdebug_execute', {'command': 'run'})
 
-
     def remove_breakpoint(self, breakpoint_id):
         if not breakpoint_id or not is_connected():
             return
 
         S.SESSION.send(dbgp.BREAKPOINT_REMOVE, d=breakpoint_id)
         response = S.SESSION.read()
-
 
     def set_breakpoint(self, filename, lineno, expression=None):
         if not filename or not lineno or not is_connected():
@@ -423,14 +415,12 @@ class SocketHandler(threading.Thread):
         if breakpoint_id:
             S.BREAKPOINT[filename][lineno]['id'] = breakpoint_id
 
-
     def set_exception(self, exception):
         if not is_connected():
             return
 
         S.SESSION.send(dbgp.BREAKPOINT_SET, t='exception', x='"%s"' % exception)
         response = S.SESSION.read()
-
 
     def status(self):
         if not is_connected():
@@ -441,7 +431,6 @@ class SocketHandler(threading.Thread):
         response = S.SESSION.read()
         # Show response in status bar
         self.status_message("Xdebug status: " + response.get(dbgp.ATTRIBUTE_REASON) + ' - ' + response.get(dbgp.ATTRIBUTE_STATUS))
-
 
     def user_execute(self, command, args=None):
         if not command or not is_connected():
@@ -454,13 +443,11 @@ class SocketHandler(threading.Thread):
         # Show response data in output panel
         self.timeout(lambda: show_panel_content(response))
 
-
     def watch_expression(self):
         # Evaluate watch expressions
         self.get_watch_values()
         # Show watch expression
         self.timeout(lambda: self._watch_expression(self.get_option('check_watch_view', False)))
-
 
     def _watch_expression(self, check_watch_view):
         # Do not show if we only want to show content when Watch view is not available
