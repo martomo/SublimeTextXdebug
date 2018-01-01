@@ -103,7 +103,7 @@ xdebug.remote_connect_back = 1
 For details about all available settings for configuring Xdebug, see [here](http://xdebug.org/docs/all_settings).
 
 ## Configuration
-The following settings can be configured in Xdebug.sublime-settings or in *.sublime-project files:
+The following settings can be configured in Xdebug.sublime-settings or in \*.sublime-project files:
 
 *__path_mapping__*  
 For remote debugging to resolve the file locations it is required to configure the path mapping with the server path as key and local path as value.
@@ -188,7 +188,7 @@ Show detailed log information about communication between debugger engine and Su
   
 ---
   
-Below are examples how to configure your Xdebug.sublime-settings and *.sublime-project files.
+Below are examples how to configure your Xdebug.sublime-settings and \*.sublime-project files.
 
 __Xdebug.sublime-settings__
 ```json
@@ -202,7 +202,7 @@ __Xdebug.sublime-settings__
     "close_on_stop": true
 }
 ```
-__*.sublime-project__
+__\*.sublime-project__
 ```json
 {
     "folders":
@@ -312,7 +312,7 @@ Do you still experience any issues, then [create an issue](https://github.com/ma
 - How did you [install](https://github.com/martomo/SublimeTextXdebug#installation) SublimeTextXdebug, Package Control, git clone or download?
 - Are you trying to debug the script remotely or locally, through browser or command line?
 - Which version of Xdebug extension do you have?
-- Can you post your [project/settings file](https://github.com/martomo/SublimeTextXdebug#configuration) and [Xdebug configuration](https://github.com/martomo/SublimeTextXdebug#xdebug) from the *.ini located on your server.
+- Can you post your [project/settings file](https://github.com/martomo/SublimeTextXdebug#configuration) and [Xdebug configuration](https://github.com/martomo/SublimeTextXdebug#xdebug) from the \*.ini located on your server.
 - Does the console window (<kbd>Ctrl+\`</kbd>) show any more information regarding the error?
 
 ## License
