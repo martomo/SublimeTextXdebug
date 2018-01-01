@@ -5,6 +5,8 @@ Xdebug debugger client integration for Sublime Text.
 
 Based on the Xdebug protocol functionality in [SublimeXdebug](https://github.com/Kindari/SublimeXdebug) package by [Kindari](https://github.com/Kindari).
 
+[![Build Status][travis-badge]][travis-link] [![Package Control][package-control-badge]][package-control-link] [![MIT License][license-badge]][license-link]
+
 ## Overview
 * [Features](#features)
 * [Commands](#commands)
@@ -317,4 +319,12 @@ Do you still experience any issues, then [create an issue](https://github.com/ma
 
 ## License
 
-SublimeTextXdebug is released under the [MIT License](http://www.opensource.org/licenses/MIT).
+SublimeTextXdebug is released under the [MIT License](license-link).
+
+
+[travis-badge]: https://travis-ci.org/martomo/SublimeTextXdebug.svg?branch=master
+[travis-link]: https://travis-ci.org/martomo/SublimeTextXdebug
+[package-control-badge]: https://img.shields.io/packagecontrol/dt/Xdebug%20Client.svg
+[package-control-link]: https://packagecontrol.io/packages/Xdebug%20Client
+[license-badge]: https://img.shields.io/badge/license-MIT-007EC7.svg
+[license-link]: LICENSE
