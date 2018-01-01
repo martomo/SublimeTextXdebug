@@ -1,9 +1,9 @@
 """
 Status and feature management commands
 """
-STATUS = 'status';
-FEATURE_GET = 'feature_get';
-FEATURE_SET = 'feature_set';
+STATUS = 'status'
+FEATURE_GET = 'feature_get'
+FEATURE_SET = 'feature_set'
 FEATURE_NAME_MAXCHILDREN = 'max_children'
 FEATURE_NAME_MAXDATA = 'max_data'
 FEATURE_NAME_MAXDEPTH = 'max_depth'
@@ -12,12 +12,12 @@ FEATURE_NAME_MAXDEPTH = 'max_depth'
 """
 Continuation commands
 """
-RUN = 'run';
-STEP_INTO = 'step_into';
-STEP_OVER = 'step_over';
-STEP_OUT = 'step_out';
-STOP = 'stop';
-DETACH = 'detach';
+RUN = 'run'
+STEP_INTO = 'step_into'
+STEP_OVER = 'step_over'
+STEP_OUT = 'step_out'
+STOP = 'stop'
+DETACH = 'detach'
 
 
 """
@@ -55,20 +55,20 @@ EXEC = 'exec'
 """
 Status codes
 """
-STATUS_STARTING = 'starting';
-STATUS_STOPPING = 'stopping';
-STATUS_STOPPED = 'stopped';
-STATUS_RUNNING = 'running';
-STATUS_BREAK = 'break';
+STATUS_STARTING = 'starting'
+STATUS_STOPPING = 'stopping'
+STATUS_STOPPED = 'stopped'
+STATUS_RUNNING = 'running'
+STATUS_BREAK = 'break'
 
 
 """
 Reason codes
 """
-REASON_OK = 'ok';
-REASON_ERROR = 'error';
-REASON_ABORTED = 'aborted';
-REASON_EXCEPTION = 'exception';
+REASON_OK = 'ok'
+REASON_ERROR = 'error'
+REASON_ABORTED = 'aborted'
+REASON_EXCEPTION = 'exception'
 
 
 """

@@ -662,4 +662,4 @@ class XdebugSettingsCommand(sublime_plugin.WindowCommand):
         if package.endswith(package_extension):
             package = package[:-len(package_extension)]
         # Open settings file
-        self.window.run_command('open_file', {'file': '${packages}/' + package + '/' + S.FILE_PACKAGE_SETTINGS});
+        self.window.run_command('open_file', {'file': '${packages}/' + package + '/' + S.FILE_PACKAGE_SETTINGS})
