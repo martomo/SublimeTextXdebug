@@ -210,19 +210,14 @@ def launch_browser():
 def load_breakpoint_data():
     data_path = os.path.join(sublime.packages_path(), 'User', S.FILE_BREAKPOINT_DATA)
     data = {}
-    try:
-        data_file = open(data_path, 'rb')
-    except:
-        e = sys.exc_info()[1]
-        info('Failed to open %s.' % data_path)
-        debug(e)
 
-    try:
-        data = json.loads(H.data_read(data_file.read()))
-    except:
-        e = sys.exc_info()[1]
-        info('Failed to parse %s.' % data_path)
-        debug(e)
+    if os.path.isfile(data_path):
+        try:
+            data_file = open(data_path, 'rb')
+            data = json.loads(H.data_read(data_file.read()))
+        except:
+            info('Failed to open/parse %s.' % data_path)
+            debug(sys.exc_info()[1])
 
     # Do not use deleted files or entries without breakpoints
     if data:
@@ -240,19 +235,14 @@ def load_breakpoint_data():
 def load_watch_data():
     data_path = os.path.join(sublime.packages_path(), 'User', S.FILE_WATCH_DATA)
     data = []
-    try:
-        data_file = open(data_path, 'rb')
-    except:
-        e = sys.exc_info()[1]
-        info('Failed to open %s.' % data_path)
-        debug(e)
 
-    try:
-        data = json.loads(H.data_read(data_file.read()))
-    except:
-        e = sys.exc_info()[1]
-        info('Failed to parse %s.' % data_path)
-        debug(e)
+    if os.path.isfile(data_path):
+        try:
+            data_file = open(data_path, 'rb')
+            data = json.loads(H.data_read(data_file.read()))
+        except:
+            info('Failed to open/parse %s.' % data_path)
+            debug(sys.exc_info()[1])
 
     # Check if expression is not already defined
     duplicates = []
