@@ -894,9 +894,10 @@ def toggle_watch(view):
             if match and (match.group('enabled') or match.group('disabled')):
                 # Get all entries and determine index by line/point match
                 watch = view.find_by_selector('xdebug.output.watch.entry')
+                watch_entries = [watch_entry for watch_region in watch for watch_entry in view.split_by_newlines(watch_region)]
                 watch_index = 0
-                for entry in watch:
-                    # Stop searching if we have passed selected breakpoint
+                for entry in watch_entries:
+                    # Stop searching if we have passed selected expression
                     if entry > point:
                         break
                     # Only increment watch index when it contains expression
