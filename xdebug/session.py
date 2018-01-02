@@ -267,7 +267,7 @@ class SocketHandler(threading.Thread):
         try:
             # Super global variables
             if get_value(S.KEY_SUPER_GLOBALS):
-                S.SESSION.send(dbgp.CONTEXT_GET, c=1)
+                S.SESSION.send(dbgp.CONTEXT_GET, c=dbgp.CONTEXT_ID_SUPERGLOBALS)
                 response = S.SESSION.read()
                 context.update(get_response_properties(response))
 
@@ -335,19 +335,19 @@ class SocketHandler(threading.Thread):
         # Set max children limit
         max_children = get_value(S.KEY_MAX_CHILDREN)
         if max_children is not False and max_children is not True and (H.is_number(max_children) or H.is_digit(max_children)):
-            S.SESSION.send(dbgp.FEATURE_SET, n=dbgp.FEATURE_NAME_MAXCHILDREN, v=max_children)
+            S.SESSION.send(dbgp.FEATURE_SET, n=dbgp.FEATURE_NAME_MAX_CHILDREN, v=max_children)
             S.SESSION.read()
 
         # Set max data limit
         max_data = get_value(S.KEY_MAX_DATA)
         if max_data is not False and max_data is not True and (H.is_number(max_data) or H.is_digit(max_data)):
-            S.SESSION.send(dbgp.FEATURE_SET, n=dbgp.FEATURE_NAME_MAXDATA, v=max_data)
+            S.SESSION.send(dbgp.FEATURE_SET, n=dbgp.FEATURE_NAME_MAX_DATA, v=max_data)
             S.SESSION.read()
 
         # Set max depth limit
         max_depth = get_value(S.KEY_MAX_DEPTH)
         if max_depth is not False and max_depth is not True and (H.is_number(max_depth) or H.is_digit(max_depth)):
-            S.SESSION.send(dbgp.FEATURE_SET, n=dbgp.FEATURE_NAME_MAXDEPTH, v=max_depth)
+            S.SESSION.send(dbgp.FEATURE_SET, n=dbgp.FEATURE_NAME_MAX_DEPTH, v=max_depth)
             S.SESSION.read()
 
         # Set breakpoints for files
