@@ -263,7 +263,7 @@
 				</dict>
 			</dict>
 			<key>match</key>
-			<string>^(?:(\|\+\|)|(\|-\|)|)\s+(\S*)\s+(?:(=)\s+(?:(\(.*?\))\s(.*)|(\S*)(\[.*\])|(&lt;.*&gt;))|.*)</string>
+			<string>^(?:(\|\+\|)|(\|-\|)|)\s+(\".*\")\s+(?:(=)\s+(?:(\(.*?\))\s(.*)|(\S*)(\[.*\])|(&lt;.*&gt;))|.*)</string>
 			<key>name</key>
 			<string>xdebug.output.watch.entry</string>
 		</dict>
