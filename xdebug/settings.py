@@ -16,13 +16,13 @@ KEY_PATH_MAPPING = "path_mapping"
 KEY_URL = "url"
 KEY_IDE_KEY = "ide_key"
 KEY_PORT = "port"
-KEY_SUPER_GLOBALS = "super_globals"
 KEY_MAX_CHILDREN = "max_children"
 KEY_MAX_DATA = "max_data"
 KEY_MAX_DEPTH = "max_depth"
 KEY_BREAK_ON_START = "break_on_start"
 KEY_BREAK_ON_EXCEPTION = "break_on_exception"
 KEY_CLOSE_ON_STOP = "close_on_stop"
+KEY_SUPER_GLOBALS = 'super_globals'
 KEY_HIDE_PASSWORD = "hide_password"
 KEY_PRETTY_OUTPUT = "pretty_output"
 KEY_LAUNCH_BROWSER = "launch_browser"
@@ -86,7 +86,7 @@ WATCH = []
 BREAKPOINT_EXCEPTION = None
 # Breakpoint line number in script being debugged
 BREAKPOINT_ROW = None
-# Placholder for temporary breakpoint filename and line number
+# Placeholder for temporary breakpoint filename and line number
 BREAKPOINT_RUN = None
 # Will hold breakpoint line number to show for file which is being loaded
 SHOW_ROW_ONLOAD = {}

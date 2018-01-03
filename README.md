@@ -26,7 +26,7 @@ Based on the Xdebug protocol functionality in [SublimeXdebug](https://github.com
 * Works on both Sublime Text 2 __and__ 3
 
 ## Commands
-Here is a complete list of commands you can find Command Pallette under the `Xdebug` namespace or in the menu under `Tools / Xdebug`:
+Here is a complete list of commands you can find Command Palette under the `Xdebug` namespace or in the menu under `Tools / Xdebug`:
 
 #### Start/Stop debugging session
 * Start Debugging - <kbd>Ctrl+Shift+F9</kbd> or <kbd>⌘+Shift+F9</kbd>
@@ -72,7 +72,7 @@ Here is a complete list of commands you can find Command Pallette under the `Xde
 ## Installation
 
 #### [Package Control](http://wbond.net/sublime_packages/package_control)
-Execute __"Package Control: Install Package"__ in the Command Pallette to retrieve a list of available packages.
+Execute __"Package Control: Install Package"__ in the Command Palette to retrieve a list of available packages.
 Search in the list and install package `Xdebug Client`.
 
 #### Git
@@ -121,9 +121,6 @@ _This package does not filter sessions by IDE key, it will accept any IDE key, a
 *__port__*  
 Which port number Sublime Text should listen to connect with debugger engine.  
 
-*__super_globals__*  
-Show super globals in context view.  
-
 *__max_children__*  
 Maximum amount of array children and object's properties to return.  
 
@@ -142,11 +139,14 @@ Break on exceptions, suspend execution when the exception name matches an entry 
 *__close_on_stop__*  
 Always close debug windows and restore layout on session stop.  
 
+*__super_globals__*  
+Show information about super globals in context view.  
+
 *__hide_password__*  
-Do not show possible password values in context output.  
+Do not show possible password values in context view.  
 
 *__pretty_output__*  
-Show in output parsed response instead of raw XML.  
+Render evaluated result as parsed output instead of raw XML.  
 
 *__launch_browser__*  
 Always launch browser on session start/stop.

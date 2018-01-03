@@ -73,7 +73,7 @@ def xdebug():
                 package = package[:-len(package_extension)]
             if (package.lower().count("xdebug") or package.lower().count("moai")) and package != current_package:
                 conflict.append(package)
-        # Show message if conficting packages have been found
+        # Show message if conflicting packages have been found
         if conflict:
             info("Conflicting packages detected.")
             debug(conflict)

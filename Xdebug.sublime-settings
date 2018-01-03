@@ -29,9 +29,6 @@
     // to connect with debugger engine.
     "port": 9000,
 
-    // Show super globals in context view.
-    "super_globals": true,
-
     // Maximum amount of array children
     // and object's properties to return.
     "max_children": 32,
@@ -73,10 +70,13 @@
     // Always close debug windows and restore layout on session stop.
     "close_on_stop": false,
 
-    // Do not show possible password values in context output.
+    // Show information about super globals in context view.
+    "super_globals": true,
+
+    // Do not show possible password values in context view.
     "hide_password": false,
 
-    // Show in output parsed response instead of raw XML.
+    // Render evaluated result as parsed output instead of raw XML.
     "pretty_output": false,
 
     // Always launch browser on session start/stop.

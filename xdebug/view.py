@@ -537,7 +537,7 @@ def show_content(data, content=None):
     view.settings().set('word_wrap', False)
     view.settings().set('syntax', 'Packages/' + package + '/Xdebug.tmLanguage')
 
-    # Set content for view and fold all indendation blocks
+    # Set content for view and fold all indentation blocks
     view.run_command('xdebug_view_update', {'data': content, 'readonly': True})
     if data == DATA_CONTEXT or data == DATA_WATCH:
         view.run_command('fold_all')

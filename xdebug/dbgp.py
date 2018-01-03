@@ -66,7 +66,7 @@ CONTEXT_ID_SUPERGLOBALS = 1
 CONTEXT_ID_USER_DEFINED = 2
 
 """
-Extendend commands
+Extended commands
 """
 SOURCE = 'source'
 STDERR = 'stderr'
@@ -149,7 +149,7 @@ INIT_PROTOCOL_VERSION = 'protocol_version'
 INIT_FILEURI = 'fileuri'
 
 """
-Breakpoint atrributes
+Breakpoint attributes
 """
 BREAKPOINT_TYPE = 'type'
 BREAKPOINT_FILENAME = 'filename'

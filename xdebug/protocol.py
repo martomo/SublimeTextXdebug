@@ -199,7 +199,7 @@ class Protocol(object):
         # Expression is used for conditional and watch type breakpoints
         expression = None
 
-        # Seperate 'expression' from kwargs
+        # Separate 'expression' from kwargs
         if 'expression' in kwargs:
             expression = kwargs['expression']
             del kwargs['expression']
