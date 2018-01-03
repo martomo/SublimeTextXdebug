@@ -216,6 +216,8 @@ def get_context_variable(context, variable_name):
     Keyword arguments:
     context -- Dictionary with context data to search.
     variable_name -- Name of variable to find.
+
+    TODO: Retrieving of context variable when using short variable name
     """
     if isinstance(context, dict):
         if variable_name in context:
@@ -305,8 +307,8 @@ def get_response_properties(response, default_key=None):
         # Read property elements
         if child.tag == dbgp.ELEMENT_PROPERTY or child.tag == dbgp.ELEMENT_PATH_PROPERTY:
             # Get property attribute values
-            property_name_short = child.get(dbgp.PROPERTY_NAME)
-            property_name = child.get(dbgp.PROPERTY_FULLNAME, property_name_short)
+            property_name = child.get(dbgp.PROPERTY_NAME)
+            property_fullname = child.get(dbgp.PROPERTY_FULLNAME, property_name)
             property_type = child.get(dbgp.PROPERTY_TYPE)
             property_children = child.get(dbgp.PROPERTY_CHILDREN)
             property_numchildren = child.get(dbgp.PROPERTY_NUMCHILDREN)
@@ -324,18 +326,18 @@ def get_response_properties(response, default_key=None):
                     except:
                         pass
 
-            if property_name is not None and len(property_name) > 0:
-                property_key = property_name
+            if property_fullname is not None and len(property_fullname) > 0:
+                property_key = property_fullname
                 # Ignore following properties
-                if property_name == "::":
+                if property_fullname == "::":
                     continue
 
                 # Avoid nasty static functions/variables from turning in an infinitive loop
-                if property_name.count("::") > 1:
+                if property_fullname.count("::") > 1:
                     continue
 
-                # Filter password values
-                if get_value(S.KEY_HIDE_PASSWORD, True) and property_name.lower().find('password') != -1 and property_value is not None:
+                # Filter potential password values
+                if get_value(S.KEY_HIDE_PASSWORD, True) and property_fullname.lower().find('password') != -1 and property_value is not None:
                     property_value = '******'
             else:
                 property_key = default_key
@@ -343,6 +345,10 @@ def get_response_properties(response, default_key=None):
             # Store property
             if property_key:
                 properties[property_key] = {'name': property_name, 'type': property_type, 'value': property_value, 'numchildren': property_numchildren, 'children': None}
+
+                # Use fullname for property name
+                if get_value(S.KEY_FULLNAME_PROPERTY, True):
+                    properties[property_key]['name'] = property_fullname
 
                 # Get values for children
                 if property_children:
@@ -565,7 +571,7 @@ def show_context_output(view):
             if point.size() == 0 and sublime.score_selector(view.scope_name(point.a), 'variable'):
                 # Find variable in line which contains the point
                 line = view.substr(view.line(point))
-                pattern = re.compile('^\\s*(\\$.*?)\\s+\\=')
+                pattern = re.compile('^(?=\\$|\\s)\\s*(.*?)\\s+=')
                 match = pattern.match(line)
                 if match:
                     # Get variable details from context data

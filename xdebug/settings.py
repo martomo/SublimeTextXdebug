@@ -23,6 +23,7 @@ KEY_BREAK_ON_START = "break_on_start"
 KEY_BREAK_ON_EXCEPTION = "break_on_exception"
 KEY_CLOSE_ON_STOP = "close_on_stop"
 KEY_SUPER_GLOBALS = 'super_globals'
+KEY_FULLNAME_PROPERTY = 'fullname_property'
 KEY_HIDE_PASSWORD = "hide_password"
 KEY_PRETTY_OUTPUT = "pretty_output"
 KEY_LAUNCH_BROWSER = "launch_browser"

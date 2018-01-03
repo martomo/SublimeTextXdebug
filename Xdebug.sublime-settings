@@ -73,6 +73,9 @@
     // Show information about super globals in context view.
     "super_globals": true,
 
+    // Display property by fullname in context view.
+    "fullname_property": true,
+
     // Do not show possible password values in context view.
     "hide_password": false,
 

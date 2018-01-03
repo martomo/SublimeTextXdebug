@@ -142,6 +142,9 @@ Always close debug windows and restore layout on session stop.
 *__super_globals__*  
 Show information about super globals in context view.  
 
+*__fullname_property__*  
+Display property by fullname in context view.  
+
 *__hide_password__*  
 Do not show possible password values in context view.  
 
