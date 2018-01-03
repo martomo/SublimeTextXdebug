@@ -806,7 +806,7 @@ def toggle_breakpoint(view):
         # Get selected point in view
         point = view.sel()[0]
         # Check if selected point uses breakpoint line scope
-        if point.size() == 3 and sublime.score_selector(view.scope_name(point.a), 'xdebug.output.breakpoint.line'):
+        if point.size() == 3 and sublime.score_selector(view.scope_name(point.a), 'meta.xdebug.breakpoint.line'):
             # Find line number of breakpoint
             line = view.substr(view.line(point))
             pattern = re.compile('^\\s*(?:(\\|\\+\\|)|(\\|-\\|))\\s*(?P<line_number>\\d+)\\s*(?:(--)(.*)|.*)')
@@ -814,7 +814,7 @@ def toggle_breakpoint(view):
             # Check if it has found line number
             if match and match.group('line_number'):
                 # Get all breakpoint filenames
-                breakpoint_file = view.find_by_selector('xdebug.output.breakpoint.file')
+                breakpoint_file = view.find_by_selector('meta.xdebug.breakpoint.file')
                 # Locate line with filename related to selected breakpoint
                 file_line = None
                 for entry in breakpoint_file:
@@ -844,7 +844,7 @@ def toggle_breakpoint(view):
                         return
                     sublime.active_window().run_command('xdebug_breakpoint', {"enabled": enabled, "rows": [line_number], "filename": filename})
         # Check if selected point uses breakpoint file scope
-        elif point.size() > 3 and sublime.score_selector(view.scope_name(point.a), 'xdebug.output.breakpoint.file'):
+        elif point.size() > 3 and sublime.score_selector(view.scope_name(point.a), 'meta.xdebug.breakpoint.file'):
             # Get filename from selected line in view
             file_line = view.substr(view.line(point))
             file_pattern = re.compile('^\\s*(=>)\\s*(?P<filename>.*)')
@@ -862,7 +862,7 @@ def toggle_stack(view):
         # Get selected point in view
         point = view.sel()[0]
         # Check if selected point uses stack entry scope
-        if point.size() > 3 and sublime.score_selector(view.scope_name(point.a), 'xdebug.output.stack.entry'):
+        if point.size() > 3 and sublime.score_selector(view.scope_name(point.a), 'meta.xdebug.stack.line'):
             # Get fileuri and line number from selected line in view
             line = view.substr(view.line(point))
             pattern = re.compile('^(\[\d+\])\s*(?P<fileuri>.*)(\..*)(\s*:.*?(?P<lineno>\d+))\s*(\((.*?):.*\)|$)')
@@ -886,14 +886,14 @@ def toggle_watch(view):
         # Get selected point in view
         point = view.sel()[0]
         # Check if selected point uses watch entry scope
-        if point.size() == 3 and sublime.score_selector(view.scope_name(point.a), 'xdebug.output.watch.entry'):
+        if point.size() == 3 and sublime.score_selector(view.scope_name(point.a), 'meta.xdebug.watch.line'):
             # Determine if watch entry is enabled or disabled
             line = view.substr(view.line(point))
             pattern = re.compile('^(?:(?P<enabled>\\|\\+\\|)|(?P<disabled>\\|-\\|))\\.*')
             match = pattern.match(line)
             if match and (match.group('enabled') or match.group('disabled')):
                 # Get all entries and determine index by line/point match
-                watch = view.find_by_selector('xdebug.output.watch.entry')
+                watch = view.find_by_selector('meta.xdebug.watch.line')
                 watch_entries = [watch_entry for watch_region in watch for watch_entry in view.split_by_newlines(watch_region)]
                 watch_index = 0
                 for entry in watch_entries:

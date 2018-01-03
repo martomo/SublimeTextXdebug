@@ -12,28 +12,28 @@
 				<key>1</key>
 				<dict>
 					<key>name</key>
-					<string>variable.other.settings</string>
+					<string>variable.other.xdebug.entry.name</string>
 				</dict>
 				<key>2</key>
 				<dict>
 					<key>name</key>
-					<string>keyword.operator.settings</string>
+					<string>keyword.operator.xdebug.entry.equals</string>
 				</dict>
 				<key>3</key>
 				<dict>
 					<key>name</key>
-					<string>support.type.settings</string>
+					<string>support.type.xdebug.entry.type</string>
 				</dict>
 				<key>4</key>
 				<dict>
 					<key>name</key>
-					<string>variable.parameter.settings</string>
+					<string>variable.parameter.xdebug.entry.numchildren</string>
 				</dict>
 			</dict>
 			<key>match</key>
 			<string>^\s*(\$.*?)\s+(=)\s+(\S*)(\[.*\])</string>
 			<key>name</key>
-			<string>xdebug.output.context.object</string>
+			<string>meta.xdebug.context.object</string>
 		</dict>
 		<dict>
 			<key>captures</key>
@@ -41,28 +41,28 @@
 				<key>1</key>
 				<dict>
 					<key>name</key>
-					<string>variable.other.settings</string>
+					<string>variable.other.xdebug.entry.name</string>
 				</dict>
 				<key>2</key>
 				<dict>
 					<key>name</key>
-					<string>keyword.operator.settings</string>
+					<string>keyword.operator.xdebug.entry.equals</string>
 				</dict>
 				<key>3</key>
 				<dict>
 					<key>name</key>
-					<string>support.type.settings</string>
+					<string>support.type.xdebug.entry.type</string>
 				</dict>
 				<key>4</key>
 				<dict>
 					<key>name</key>
-					<string>string.quoted.settings</string>
+					<string>string.quoted.xdebug.entry.value</string>
 				</dict>
 			</dict>
 			<key>match</key>
 			<string>^\s*(\$.*?)\s+(=)\s+(\(.*?\))\s(.*)</string>
 			<key>name</key>
-			<string>xdebug.output.context.property</string>
+			<string>meta.xdebug.context.property</string>
 		</dict>
 		<dict>
 			<key>captures</key>
@@ -70,23 +70,23 @@
 				<key>1</key>
 				<dict>
 					<key>name</key>
-					<string>variable.other.settings</string>
+					<string>variable.other.xdebug.entry.name</string>
 				</dict>
 				<key>2</key>
 				<dict>
 					<key>name</key>
-					<string>keyword.operator.settings</string>
+					<string>keyword.operator.xdebug.entry.equals</string>
 				</dict>
 				<key>3</key>
 				<dict>
 					<key>name</key>
-					<string>comment.line.settings</string>
+					<string>comment.line.xdebug.entry.unknown</string>
 				</dict>
 			</dict>
 			<key>match</key>
 			<string>^\s*(\$.*?)\s+(=)\s+(&lt;.*&gt;)</string>
 			<key>name</key>
-			<string>xdebug.output.context.unknown</string>
+			<string>meta.xdebug.context.unknown</string>
 		</dict>
 		<dict>
 			<key>captures</key>
@@ -94,13 +94,13 @@
 				<key>1</key>
 				<dict>
 					<key>name</key>
-					<string>constant.other.settings</string>
+					<string>constant.other.xdebug.entry.ellipsis</string>
 				</dict>
 			</dict>
 			<key>match</key>
 			<string>^\s*(\.{3,})</string>
 			<key>name</key>
-			<string>xdebug.output.context.trimmed</string>
+			<string>meta.xdebug.context.trimmed</string>
 		</dict>
 		<dict>
 			<key>captures</key>
@@ -108,28 +108,28 @@
 				<key>1</key>
 				<dict>
 					<key>name</key>
-					<string>keyword.operator.settings</string>
+					<string>keyword.operator.xdebug.stack.level</string>
 				</dict>
 				<key>2</key>
 				<dict>
 					<key>name</key>
-					<string>variable.other.settings</string>
+					<string>variable.other.xdebug.stack.filename</string>
 				</dict>
 				<key>3</key>
 				<dict>
 					<key>name</key>
-					<string>string.quoted.settings</string>
+					<string>string.quoted.xdebug.stack.where</string>
 				</dict>
 				<key>4</key>
 				<dict>
 					<key>name</key>
-					<string>variable.parameter.settings</string>
+					<string>variable.parameter.xdebug.stack.lineno</string>
 				</dict>
 			</dict>
 			<key>match</key>
 			<string>^(\[\d+\])\s*(.*)(\..*)(\s*:.*\d+)</string>
 			<key>name</key>
-			<string>xdebug.output.stack.entry</string>
+			<string>meta.xdebug.stack.line</string>
 		</dict>
 		<dict>
 			<key>captures</key>
@@ -137,18 +137,18 @@
 				<key>1</key>
 				<dict>
 					<key>name</key>
-					<string>support.type.settings</string>
+					<string>support.type.xdebug.exception.name</string>
 				</dict>
 				<key>2</key>
 				<dict>
 					<key>name</key>
-					<string>comment.line.settings</string>
+					<string>comment.line.xdebug.exception.message</string>
 				</dict>
 			</dict>
 			<key>match</key>
 			<string>^(\[.*?\])\s*(.*)</string>
 			<key>name</key>
-			<string>xdebug.output.stack.exception</string>
+			<string>meta.xdebug.stack.exception</string>
 		</dict>
 		<dict>
 			<key>captures</key>
@@ -156,18 +156,18 @@
 				<key>1</key>
 				<dict>
 					<key>name</key>
-					<string>support.type.settings</string>
+					<string>support.type.xdebug.breakpoint.file.indent</string>
 				</dict>
 				<key>2</key>
 				<dict>
 					<key>name</key>
-					<string>comment.line.settings</string>
+					<string>comment.line.xdebug.breakpoint.file.name</string>
 				</dict>
 			</dict>
 			<key>match</key>
 			<string>^\s*(=&gt;)\s*(.*)</string>
 			<key>name</key>
-			<string>xdebug.output.breakpoint.file</string>
+			<string>meta.xdebug.breakpoint.file</string>
 		</dict>
 		<dict>
 			<key>captures</key>
@@ -175,33 +175,33 @@
 				<key>1</key>
 				<dict>
 					<key>name</key>
-					<string>entity.other.attribute-name.anchor.settings</string>
+					<string>entity.other.attribute-name.anchor.xdebug.entry.enabled</string>
 				</dict>
 				<key>2</key>
 				<dict>
 					<key>name</key>
-					<string>keyword.operator.settings</string>
+					<string>keyword.operator.xdebug.entry.disabled</string>
 				</dict>
 				<key>3</key>
 				<dict>
 					<key>name</key>
-					<string>variable.other.settings</string>
+					<string>variable.other.xdebug.breakpoint.line.number</string>
 				</dict>
 				<key>4</key>
 				<dict>
 					<key>name</key>
-					<string>variable.parameter.settings</string>
+					<string>variable.parameter.xdebug.breakpoint.line.separator</string>
 				</dict>
 				<key>5</key>
 				<dict>
 					<key>name</key>
-					<string>string.quoted.settings</string>
+					<string>string.quoted.xdebug.breakpoint.line.expression</string>
 				</dict>
 			</dict>
 			<key>match</key>
 			<string>^\s*(?:(\|\+\|)|(\|-\|))\s*(\d+)\s*(?:(--)(.*)|.*)</string>
 			<key>name</key>
-			<string>xdebug.output.breakpoint.line</string>
+			<string>meta.xdebug.breakpoint.line</string>
 		</dict>
 		<dict>
 			<key>captures</key>
@@ -209,57 +209,57 @@
 				<key>1</key>
 				<dict>
 					<key>name</key>
-					<string>entity.other.attribute-name.anchor.settings</string>
+					<string>entity.other.attribute-name.anchor.xdebug.entry.enabled</string>
 				</dict>
 				<key>2</key>
 				<dict>
 					<key>name</key>
-					<string>keyword.operator.settings</string>
+					<string>keyword.operator.xdebug.entry.disabled</string>
 				</dict>
 				<key>3</key>
 				<dict>
 					<key>name</key>
-					<string>variable.other.settings</string>
+					<string>variable.other.xdebug.entry.name.expression</string>
 				</dict>
 				<key>4</key>
 				<dict>
 					<key>name</key>
-					<string>keyword.operator.settings</string>
+					<string>keyword.operator.xdebug.entry.equals</string>
 				</dict>
 				<key>5</key>
 				<dict>
 					<key>name</key>
-					<string>support.type.settings</string>
+					<string>support.type.xdebug.entry.type</string>
 				</dict>
 				<key>6</key>
 				<dict>
 					<key>name</key>
-					<string>string.quoted.settings</string>
+					<string>string.quoted.xdebug.entry.value</string>
 				</dict>
 				<key>7</key>
 				<dict>
 					<key>name</key>
-					<string>support.type.settings</string>
+					<string>support.type.xdebug.entry.type</string>
 				</dict>
 				<key>8</key>
 				<dict>
 					<key>name</key>
-					<string>variable.parameter.settings</string>
+					<string>variable.parameter.xdebug.entry.numchildren</string>
 				</dict>
 				<key>9</key>
 				<dict>
 					<key>name</key>
-					<string>comment.line.settings</string>
+					<string>comment.line.xdebug.entry.unknown</string>
 				</dict>
 			</dict>
 			<key>match</key>
 			<string>^(?:(\|\+\|)|(\|-\|)|)\s+(\".*\")\s+(?:(=)\s+(?:(\(.*?\))\s(.*)|(\S*)(\[.*\])|(&lt;.*&gt;))|.*)</string>
 			<key>name</key>
-			<string>xdebug.output.watch.entry</string>
+			<string>meta.xdebug.watch.line</string>
 		</dict>
 	</array>
 	<key>scopeName</key>
-	<string>xdebug.output</string>
+	<string>meta.xdebug</string>
 	<key>uuid</key>
 	<string>924fce90-cf0a-4ef6-bf29-b98899924cad</string>
 </dict>
