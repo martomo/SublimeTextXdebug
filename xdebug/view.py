@@ -823,8 +823,21 @@ def toggle_breakpoint(view):
     try:
         # Get selected point in view
         point = view.sel()[0]
+        # Prevent (accidental) opening of file upon multiselection
+        if len(view.split_by_newlines(point)) > 1:
+            return
+        # Check if selected point uses breakpoint file scope
+        if sublime.score_selector(view.scope_name(point.a), 'meta.xdebug.breakpoint.file'):
+            # Get filename from selected line in view
+            file_line = view.substr(view.line(point))
+            file_pattern = re.compile('^\\s*(=>)\\s*(?P<filename>.*)')
+            file_match = file_pattern.match(file_line)
+            # Show file when it's a valid filename
+            if file_match and file_match.group('filename'):
+                filename = file_match.group('filename')
+                show_file(filename)
         # Check if selected point uses breakpoint line scope
-        if point.size() == 3 and sublime.score_selector(view.scope_name(point.a), 'meta.xdebug.breakpoint.line'):
+        elif sublime.score_selector(view.scope_name(point.a), 'meta.xdebug.breakpoint.line'):
             # Find line number of breakpoint
             line = view.substr(view.line(point))
             pattern = re.compile('^\\s*(?:(\\|\\+\\|)|(\\|-\\|))\\s*(?P<line_number>\\d+)\\s*(?:(--)(.*)|.*)')
@@ -850,27 +863,20 @@ def toggle_breakpoint(view):
                 if file_match and file_match.group('filename'):
                     filename = file_match.group('filename')
                     line_number = match.group('line_number')
-                    enabled = None
-                    # Disable breakpoint
-                    if sublime.score_selector(view.scope_name(point.a), 'entity') and S.BREAKPOINT[filename][line_number]['enabled']:
-                        enabled = False
-                    # Enable breakpoint
-                    if sublime.score_selector(view.scope_name(point.a), 'keyword') and not S.BREAKPOINT[filename][line_number]['enabled']:
-                        enabled = True
-                    # Toggle breakpoint only if it has valid value
-                    if enabled is None:
-                        return
-                    sublime.active_window().run_command('xdebug_breakpoint', {"enabled": enabled, "rows": [line_number], "filename": filename})
-        # Check if selected point uses breakpoint file scope
-        elif point.size() > 3 and sublime.score_selector(view.scope_name(point.a), 'meta.xdebug.breakpoint.file'):
-            # Get filename from selected line in view
-            file_line = view.substr(view.line(point))
-            file_pattern = re.compile('^\\s*(=>)\\s*(?P<filename>.*)')
-            file_match = file_pattern.match(file_line)
-            # Show file when it's a valid filename
-            if file_match and file_match.group('filename'):
-                filename = file_match.group('filename')
-                show_file(filename)
+                    if point.size() == 3:
+                        enabled = None
+                        # Disable breakpoint
+                        if sublime.score_selector(view.scope_name(point.a), 'entity') and S.BREAKPOINT[filename][line_number]['enabled']:
+                            enabled = False
+                        # Enable breakpoint
+                        if sublime.score_selector(view.scope_name(point.a), 'keyword') and not S.BREAKPOINT[filename][line_number]['enabled']:
+                            enabled = True
+                        # Toggle breakpoint only if it has valid value
+                        if enabled is None:
+                            return
+                        sublime.active_window().run_command('xdebug_breakpoint', {"enabled": enabled, "rows": [line_number], "filename": filename})
+                    else:
+                        show_file(filename, line_number)
     except:
         pass
 
@@ -879,8 +885,11 @@ def toggle_stack(view):
     try:
         # Get selected point in view
         point = view.sel()[0]
+        # Prevent (accidental) opening of file upon multiselection
+        if len(view.split_by_newlines(point)) > 1:
+            return
         # Check if selected point uses stack entry scope
-        if point.size() > 3 and sublime.score_selector(view.scope_name(point.a), 'meta.xdebug.stack.line'):
+        if sublime.score_selector(view.scope_name(point.a), 'meta.xdebug.stack.line'):
             # Get fileuri and line number from selected line in view
             line = view.substr(view.line(point))
             pattern = re.compile('^\[\d+\]\s(?P<fileuri>.*):(?P<lineno>\d+)')
