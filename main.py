@@ -524,7 +524,12 @@ class XdebugWatchCommand(sublime_plugin.WindowCommand):
             self.watch_index = int(index)
             # Edit watch expression
             if self.edit:
-                self.set_expression()
+                currentValue = ''
+                try:
+                    currentValue = S.WATCH[index]['expression']
+                except (IndexError, KeyError):
+                    pass
+                self.set_expression(currentValue)
             # Remove watch expression
             else:
                 S.WATCH.pop(self.watch_index)
@@ -558,9 +563,9 @@ class XdebugWatchCommand(sublime_plugin.WindowCommand):
     def on_cancel(self):
         pass
 
-    def set_expression(self):
+    def set_expression(self, initialValue=''):
         # Show user input for setting watch expression
-        self.window.show_input_panel('Watch expression', '', self.on_done, self.on_change, self.on_cancel)
+        self.window.show_input_panel('Watch expression', initialValue, self.on_done, self.on_change, self.on_cancel)
 
     def update_view(self):
         async_session = session.SocketHandler(session.ACTION_WATCH, check_watch_view=True)
