@@ -314,6 +314,7 @@ def get_response_properties(response, default_key=None):
             property_numchildren = child.get(dbgp.PROPERTY_NUMCHILDREN)
             property_classname = child.get(dbgp.PROPERTY_CLASSNAME)
             property_encoding = child.get(dbgp.PROPERTY_ENCODING)
+            property_facet = child.get(dbgp.PROPERTY_FACET)
             property_value = None
 
             # Set property value
@@ -335,6 +336,13 @@ def get_response_properties(response, default_key=None):
                 # Avoid nasty static functions/variables from turning in an infinitive loop
                 if property_fullname.count("::") > 1:
                     continue
+
+                # Prevent nested child which is a static public reference to it's parent from showing more than once
+                if property_facet == 'static public' and (response.tag == dbgp.ELEMENT_PROPERTY or response.tag == dbgp.ELEMENT_PATH_PROPERTY):
+                    parent_classname = response.get(dbgp.PROPERTY_CLASSNAME)
+                    parent_fullname = response.get(dbgp.PROPERTY_FULLNAME, response.get(dbgp.PROPERTY_NAME))
+                    if property_fullname == parent_fullname and property_classname == parent_classname:
+                        continue
 
                 # Filter potential password values
                 if get_value(S.KEY_HIDE_PASSWORD, True) and property_fullname.lower().find('password') != -1 and property_value is not None:
