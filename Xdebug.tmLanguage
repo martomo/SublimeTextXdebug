@@ -90,16 +90,16 @@
 				<key>3</key>
 				<dict>
 					<key>name</key>
-					<string>string.quoted.xdebug.stack.where</string>
+					<string>string.quoted.xdebug.stack.lineno</string>
 				</dict>
 				<key>4</key>
 				<dict>
 					<key>name</key>
-					<string>variable.parameter.xdebug.stack.lineno</string>
+					<string>variable.parameter.xdebug.stack.where</string>
 				</dict>
 			</dict>
 			<key>match</key>
-			<string>^(\[\d+\])\s*(.*)(\..*)(\s*:.*\d+)</string>
+			<string>^(\[\d+\])\s(.*)(:\d+),\s(.*\(\))</string>
 			<key>name</key>
 			<string>meta.xdebug.stack.line</string>
 		</dict>
@@ -118,7 +118,7 @@
 				</dict>
 			</dict>
 			<key>match</key>
-			<string>^(\[.*?\])\s*(.*)</string>
+			<string>^(\[\D+\])\s(.*)</string>
 			<key>name</key>
 			<string>meta.xdebug.stack.exception</string>
 		</dict>

@@ -167,7 +167,7 @@ def generate_stack_output(response):
                 stack_line = child.get(dbgp.STACK_LINENO, 0)
                 stack_where = child.get(dbgp.STACK_WHERE, '{unknown}')
                 # Append values
-                values += H.unicode_string('[{level}] {filename}.{where}:{lineno}\n'
+                values += H.unicode_string('[{level}] {filename}:{lineno}, {where}()\n'
                                            .format(level=stack_level, type=stack_type, where=stack_where, lineno=stack_line, filename=stack_file))
                 has_output = True
     except:
@@ -175,7 +175,7 @@ def generate_stack_output(response):
 
     # When no stack use values from exception
     if not has_output and S.BREAKPOINT_EXCEPTION:
-        values += H.unicode_string('[{level}] {filename}.{where}:{lineno}\n'
+        values += H.unicode_string('[{level}] {filename}:{lineno}, {where}()\n'
                                    .format(level=0, where='{unknown}', lineno=S.BREAKPOINT_EXCEPTION['lineno'], filename=S.BREAKPOINT_EXCEPTION['filename']))
 
     return values
@@ -871,7 +871,7 @@ def toggle_stack(view):
         if point.size() > 3 and sublime.score_selector(view.scope_name(point.a), 'meta.xdebug.stack.line'):
             # Get fileuri and line number from selected line in view
             line = view.substr(view.line(point))
-            pattern = re.compile('^(\[\d+\])\s*(?P<fileuri>.*)(\..*)(\s*:.*?(?P<lineno>\d+))\s*(\((.*?):.*\)|$)')
+            pattern = re.compile('^\[\d+\]\s(?P<fileuri>.*):(?P<lineno>\d+)')
             match = pattern.match(line)
             # Show file when it's a valid fileuri
             if match and match.group('fileuri'):
