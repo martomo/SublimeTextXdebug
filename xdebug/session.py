@@ -37,14 +37,14 @@ from .util import get_real_path
 from .view import DATA_CONTEXT, DATA_STACK, DATA_WATCH, TITLE_WINDOW_WATCH, generate_context_output, generate_stack_output, get_response_properties, has_debug_view, render_regions, show_content, show_file, show_panel_content
 
 
-ACTION_EVALUATE = "action_evaluate"
-ACTION_EXECUTE = "action_execute"
-ACTION_INIT = "action_init"
-ACTION_REMOVE_BREAKPOINT = "action_remove_breakpoint"
-ACTION_SET_BREAKPOINT = "action_set_breakpoint"
-ACTION_STATUS = "action_status"
-ACTION_USER_EXECUTE = "action_user_execute"
-ACTION_WATCH = "action_watch"
+ACTION_EVALUATE = 'action_evaluate'
+ACTION_EXECUTE = 'action_execute'
+ACTION_INIT = 'action_init'
+ACTION_REMOVE_BREAKPOINT = 'action_remove_breakpoint'
+ACTION_SET_BREAKPOINT = 'action_set_breakpoint'
+ACTION_STATUS = 'action_status'
+ACTION_USER_EXECUTE = 'action_user_execute'
+ACTION_WATCH = 'action_watch'
 
 
 def is_connected(show_status=False):
@@ -70,8 +70,8 @@ def connection_error(message):
     Keyword arguments:
     message -- Exception/reason of connection error/loss.
     """
-    sublime.error_message("Please restart Xdebug debugging session.\nDisconnected from Xdebug debugger engine.\n" + message)
-    info("Connection lost with debugger engine.")
+    sublime.error_message('Please restart Xdebug debugging session.\nDisconnected from Xdebug debugger engine.\n' + message)
+    info('Connection lost with debugger engine.')
     debug(message)
     # Reset connection
     try:
@@ -167,7 +167,7 @@ class SocketHandler(threading.Thread):
         # Show dialog on connection error
         except ProtocolConnectionException:
             e = sys.exc_info()[1]
-            self.timeout(lambda: connection_error("%s" % e))
+            self.timeout(lambda: connection_error('%s' % e))
         finally:
             S.SESSION_BUSY = False
 
@@ -277,7 +277,7 @@ class SocketHandler(threading.Thread):
             context.update(get_response_properties(response))
         except ProtocolConnectionException:
             e = sys.exc_info()[1]
-            self.timeout(lambda: connection_error("%s" % e))
+            self.timeout(lambda: connection_error('%s' % e))
 
         # Store context variables in session
         S.CONTEXT_DATA = context
@@ -296,7 +296,7 @@ class SocketHandler(threading.Thread):
                 response = S.SESSION.read()
             except ProtocolConnectionException:
                 e = sys.exc_info()[1]
-                self.timeout(lambda: connection_error("%s" % e))
+                self.timeout(lambda: connection_error('%s' % e))
         return generate_stack_output(response)
 
     def get_watch_values(self):
@@ -430,7 +430,7 @@ class SocketHandler(threading.Thread):
         S.SESSION.send(dbgp.STATUS)
         response = S.SESSION.read()
         # Show response in status bar
-        self.status_message("Xdebug status: " + response.get(dbgp.ATTRIBUTE_REASON) + ' - ' + response.get(dbgp.ATTRIBUTE_STATUS))
+        self.status_message('Xdebug status: ' + response.get(dbgp.ATTRIBUTE_REASON) + ' - ' + response.get(dbgp.ATTRIBUTE_STATUS))
 
     def user_execute(self, command, args=None):
         if not command or not is_connected():

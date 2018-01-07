@@ -56,7 +56,7 @@ ILLEGAL_XML_UNICODE_CHARACTERS = [
     (0x10FFFE, 0x10FFFF)]
 
 ILLEGAL_XML_RANGES = [
-    "%s-%s" % (H.unicode_chr(low), H.unicode_chr(high))
+    '%s-%s' % (H.unicode_chr(low), H.unicode_chr(high))
     for (low, high) in ILLEGAL_XML_UNICODE_CHARACTERS
     if low < sys.maxunicode
 ]
@@ -116,9 +116,9 @@ class Protocol(object):
         def convert(matches):
             text = matches.group(0)
             # Character reference
-            if text[:2] == "&#":
+            if text[:2] == '&#':
                 try:
-                    if text[:3] == "&#x":
+                    if text[:3] == '&#x':
                         return H.unicode_chr(int(text[3:-1], 16))
                     else:
                         return H.unicode_chr(int(text[2:-1]))
@@ -128,14 +128,14 @@ class Protocol(object):
             else:
                 try:
                     # Following are not needed to be converted for XML
-                    if text[1:-1] == "amp" or text[1:-1] == "gt" or text[1:-1] == "lt":
+                    if text[1:-1] == 'amp' or text[1:-1] == 'gt' or text[1:-1] == 'lt':
                         pass
                     else:
                         text = H.unicode_chr(name2codepoint[text[1:-1]])
                 except KeyError:
                     pass
             return text
-        return re.sub("&#?\w+;", convert, string)
+        return re.sub('&#?\w+;', convert, string)
 
     def read_until_null(self):
         """
@@ -153,7 +153,7 @@ class Protocol(object):
                 e = sys.exc_info()[1]
                 raise ProtocolConnectionException(e)
         else:
-            raise ProtocolConnectionException("Xdebug is not connected")
+            raise ProtocolConnectionException('Xdebug is not connected')
 
     def read_data(self):
         """
@@ -165,7 +165,7 @@ class Protocol(object):
         if int(length) == len(message):
             return message
         else:
-            raise ProtocolException("Length mismatch encountered while reading the Xdebug message")
+            raise ProtocolException('Length mismatch encountered while reading the Xdebug message')
 
     def read(self, return_string=False):
         """

@@ -77,15 +77,15 @@ def get_real_path(uri, server=False):
                     uri = uri.replace(server_path, local_path)
                     break
     else:
-        sublime.set_timeout(lambda: sublime.status_message("Xdebug: No path mapping defined, returning given path."), 100)
+        sublime.set_timeout(lambda: sublime.status_message('Xdebug: No path mapping defined, returning given path.'), 100)
 
     # Replace slashes
     if not drive_pattern.match(uri):
-        uri = uri.replace("\\", "/")
+        uri = uri.replace('\\', '/')
 
     # Append scheme
     if server:
-        return H.url_encode("file://" + uri)
+        return H.url_encode('file://' + uri)
 
     return uri
 
@@ -109,16 +109,16 @@ def get_region_icon(icon):
     icon_path = None
     if S.PACKAGE_FOLDER is not None:
         # Strip .sublime-package of package name for comparison
-        package_extension = ".sublime-package"
+        package_extension = '.sublime-package'
         current_package = S.PACKAGE_FOLDER
         if current_package.endswith(package_extension):
             current_package = current_package[:-len(package_extension)]
         if sublime.version() == '' or int(sublime.version()) > 3000:
             # ST3: Packages/Xdebug Client/icons/breakpoint_enabled.png
-            icon_path = "Packages/" + current_package + '/icons/{0}.png'
+            icon_path = 'Packages/' + current_package + '/icons/{0}.png'
         else:
             # ST2: ../Xdebug Client/icons/breakpoint_enabled
-            icon_path = "../" + current_package + '/icons/{0}'
+            icon_path = '../' + current_package + '/icons/{0}'
         # Append icon path to package icons
         package_breakpoint_current = icon_path.format(package_breakpoint_current)
         package_breakpoint_disabled = icon_path.format(package_breakpoint_disabled)
@@ -177,7 +177,7 @@ def get_region_icon(icon):
     elif icon == S.KEY_BREAKPOINT_ENABLED:
         return breakpoint_enabled
     else:
-        info("Invalid icon name. (" + icon + ")")
+        info('Invalid icon name. (' + icon + ')')
         return
 
 
@@ -190,7 +190,7 @@ def launch_browser():
     operator = '?'
 
     # Check if url already has query string
-    if url.count("?"):
+    if url.count('?'):
         operator = '&'
 
     # Start debug session

@@ -12,7 +12,7 @@ from collections import OrderedDict
 
 
 def modulename():
-    return "Helper module for Python version 3.0 and above"
+    return 'Helper module for Python version 3.0 and above'
 
 
 def url_decode(uri):

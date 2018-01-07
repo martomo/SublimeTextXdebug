@@ -14,7 +14,7 @@ except:
 # Set Python libraries from system installation
 python_path = config.get_value(S.KEY_PYTHON_PATH)
 if python_path:
-    python_path = os.path.normpath(python_path.replace("\\", "/"))
+    python_path = os.path.normpath(python_path.replace('\\', '/'))
     python_dynload = os.path.join(python_path, 'lib-dynload')
     if python_dynload not in sys.path:
         sys.path.append(python_dynload)
@@ -623,9 +623,9 @@ class XdebugLayoutCommand(sublime_plugin.WindowCommand):
         V.show_content(V.DATA_STACK)
         V.show_content(V.DATA_WATCH)
         panel = window.get_output_panel('xdebug')
-        panel.run_command("xdebug_view_update")
+        panel.run_command('xdebug_view_update')
         # Close output panel
-        window.run_command('hide_panel', {"panel": 'output.xdebug'})
+        window.run_command('hide_panel', {'panel': 'output.xdebug'})
 
     def is_enabled(self, restore=False, close_windows=False):
         disable_layout = config.get_value(S.KEY_DISABLE_LAYOUT)
@@ -661,9 +661,9 @@ class XdebugSettingsCommand(sublime_plugin.WindowCommand):
             package = S.PACKAGE_FOLDER
         # Otherwise show User defined settings
         else:
-            package = "User"
+            package = 'User'
         # Strip .sublime-package of package name for syntax file
-        package_extension = ".sublime-package"
+        package_extension = '.sublime-package'
         if package.endswith(package_extension):
             package = package[:-len(package_extension)]
         # Open settings file

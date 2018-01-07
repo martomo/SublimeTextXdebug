@@ -15,7 +15,7 @@ except:
 
 
 def modulename():
-    return "Helper module for Python version 2.6 and below"
+    return 'Helper module for Python version 2.6 and below'
 
 
 def url_decode(uri):

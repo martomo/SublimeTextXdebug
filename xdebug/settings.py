@@ -12,41 +12,41 @@ FILE_WATCH_DATA = 'Xdebug.expressions'
 KEY_SETTINGS = 'settings'
 KEY_XDEBUG = 'xdebug'
 
-KEY_PATH_MAPPING = "path_mapping"
-KEY_URL = "url"
-KEY_IDE_KEY = "ide_key"
-KEY_PORT = "port"
-KEY_MAX_CHILDREN = "max_children"
-KEY_MAX_DATA = "max_data"
-KEY_MAX_DEPTH = "max_depth"
-KEY_BREAK_ON_START = "break_on_start"
-KEY_BREAK_ON_EXCEPTION = "break_on_exception"
-KEY_CLOSE_ON_STOP = "close_on_stop"
+KEY_PATH_MAPPING = 'path_mapping'
+KEY_URL = 'url'
+KEY_IDE_KEY = 'ide_key'
+KEY_PORT = 'port'
+KEY_MAX_CHILDREN = 'max_children'
+KEY_MAX_DATA = 'max_data'
+KEY_MAX_DEPTH = 'max_depth'
+KEY_BREAK_ON_START = 'break_on_start'
+KEY_BREAK_ON_EXCEPTION = 'break_on_exception'
+KEY_CLOSE_ON_STOP = 'close_on_stop'
 KEY_SUPER_GLOBALS = 'super_globals'
 KEY_FULLNAME_PROPERTY = 'fullname_property'
-KEY_HIDE_PASSWORD = "hide_password"
-KEY_PRETTY_OUTPUT = "pretty_output"
-KEY_LAUNCH_BROWSER = "launch_browser"
-KEY_BROWSER_NO_EXECUTE = "browser_no_execute"
-KEY_DISABLE_LAYOUT = "disable_layout"
-KEY_DEBUG_LAYOUT = "debug_layout"
+KEY_HIDE_PASSWORD = 'hide_password'
+KEY_PRETTY_OUTPUT = 'pretty_output'
+KEY_LAUNCH_BROWSER = 'launch_browser'
+KEY_BROWSER_NO_EXECUTE = 'browser_no_execute'
+KEY_DISABLE_LAYOUT = 'disable_layout'
+KEY_DEBUG_LAYOUT = 'debug_layout'
 
-KEY_BREAKPOINT_GROUP = "breakpoint_group"
-KEY_BREAKPOINT_INDEX = "breakpoint_index"
-KEY_CONTEXT_GROUP = "context_group"
-KEY_CONTEXT_INDEX = "context_index"
-KEY_STACK_GROUP = "stack_group"
-KEY_STACK_INDEX = "stack_index"
-KEY_WATCH_GROUP = "watch_group"
-KEY_WATCH_INDEX = "watch_index"
+KEY_BREAKPOINT_GROUP = 'breakpoint_group'
+KEY_BREAKPOINT_INDEX = 'breakpoint_index'
+KEY_CONTEXT_GROUP = 'context_group'
+KEY_CONTEXT_INDEX = 'context_index'
+KEY_STACK_GROUP = 'stack_group'
+KEY_STACK_INDEX = 'stack_index'
+KEY_WATCH_GROUP = 'watch_group'
+KEY_WATCH_INDEX = 'watch_index'
 
 KEY_BREAKPOINT_CURRENT = 'breakpoint_current'
 KEY_BREAKPOINT_DISABLED = 'breakpoint_disabled'
 KEY_BREAKPOINT_ENABLED = 'breakpoint_enabled'
 KEY_CURRENT_LINE = 'current_line'
 
-KEY_PYTHON_PATH = "python_path"
-KEY_DEBUG = "debug"
+KEY_PYTHON_PATH = 'python_path'
+KEY_DEBUG = 'debug'
 
 # Region scope sources
 REGION_KEY_BREAKPOINT = 'xdebug_breakpoint'
@@ -57,9 +57,9 @@ REGION_SCOPE_CURRENT = 'string.quoted.xdebug.gutter.current'
 
 # Window layout for debugging output
 LAYOUT_DEBUG = {
-    "cols": [0.0, 0.5, 1.0],
-    "rows": [0.0, 0.7, 1.0],
-    "cells": [
+    'cols': [0.0, 0.5, 1.0],
+    'rows': [0.0, 0.7, 1.0],
+    'cells': [
         [0, 0, 2, 1],
         [0, 1, 1, 2],
         [1, 1, 2, 2]
@@ -67,9 +67,9 @@ LAYOUT_DEBUG = {
 }
 # Default single layout (similar to Alt+Shift+1)
 LAYOUT_NORMAL = {
-    "cols": [0.0, 1.0],
-    "rows": [0.0, 1.0],
-    "cells": [
+    'cols': [0.0, 1.0],
+    'rows': [0.0, 1.0],
+    'cells': [
         [0, 0, 1, 1]
     ]
 }

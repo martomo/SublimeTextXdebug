@@ -34,10 +34,10 @@ DATA_CONTEXT = 'context'
 DATA_STACK = 'stack'
 DATA_WATCH = 'watch'
 
-TITLE_WINDOW_BREAKPOINT = "Xdebug Breakpoint"
-TITLE_WINDOW_CONTEXT = "Xdebug Context"
-TITLE_WINDOW_STACK = "Xdebug Stack"
-TITLE_WINDOW_WATCH = "Xdebug Watch"
+TITLE_WINDOW_BREAKPOINT = 'Xdebug Breakpoint'
+TITLE_WINDOW_CONTEXT = 'Xdebug Context'
+TITLE_WINDOW_STACK = 'Xdebug Stack'
+TITLE_WINDOW_WATCH = 'Xdebug Watch'
 
 
 def close_debug_windows():
@@ -51,7 +51,7 @@ def close_debug_windows():
         if is_debug_view(view):
             window.focus_view(view)
             window.run_command('close')
-    window.run_command('hide_panel', {"panel": 'output.xdebug'})
+    window.run_command('hide_panel', {'panel': 'output.xdebug'})
     # Restore focus to current active view
     window.focus_view(current_active_view)
 
@@ -67,7 +67,7 @@ def generate_breakpoint_output():
     for filename, breakpoint_data in sorted(S.BREAKPOINT.items()):
         breakpoint_entry = ''
         if breakpoint_data:
-            breakpoint_entry += "=> %s\n" % filename
+            breakpoint_entry += '=> %s\n' % filename
             # Sort breakpoint data by line number
             for lineno, bp in sorted(breakpoint_data.items(), key=lambda item: (int(item[0]) if isinstance(item[0], int) or H.is_digit(item[0]) else float('inf'), item[0])):
                 # Do not show temporary breakpoint
@@ -84,7 +84,7 @@ def generate_breakpoint_output():
                 # Conditional expression
                 if bp['expression'] is not None:
                     breakpoint_entry += ' -- "%s"' % bp['expression']
-                breakpoint_entry += "\n"
+                breakpoint_entry += '\n'
         values += H.unicode_string(breakpoint_entry)
     return values
 
@@ -127,7 +127,7 @@ def generate_context_output(context, indent=0):
         # Remove newlines in value to prevent incorrect indentation
         value = ''
         if variable['value'] and len(variable['value']) > 0:
-            value = variable['value'].replace("\r\n", "\n").replace("\n", " ")
+            value = variable['value'].replace('\r\n', '\n').replace('\n', ' ')
 
         # Format string and append to output
         values += H.unicode_string(property_text
@@ -208,7 +208,7 @@ def generate_watch_output():
             if watch_data['value'] is not None:
                 watch_entry += ' = ' + generate_context_output(watch_data['value'])
             else:
-                watch_entry += "\n"
+                watch_entry += '\n'
         values += H.unicode_string(watch_entry)
     return values
 
@@ -334,11 +334,11 @@ def get_response_properties(response, default_key=None):
             if property_fullname is not None and len(property_fullname) > 0:
                 property_key = property_fullname
                 # Ignore following properties
-                if property_fullname == "::":
+                if property_fullname == '::':
                     continue
 
                 # Avoid nasty static functions/variables from turning in an infinitive loop
-                if property_fullname.count("::") > 1:
+                if property_fullname.count('::') > 1:
                     continue
 
                 # Prevent nested child which is a static public reference to it's parent from showing more than once
@@ -434,9 +434,9 @@ def set_layout(layout):
             # Remember view indexes
             S.RESTORE_INDEX = H.new_dictionary()
             for view in window.views():
-                view_id = "%d" % view.id()
+                view_id = '%d' % view.id()
                 group, index = window.get_view_index(view)
-                S.RESTORE_INDEX[view_id] = {"group": group, "index": index}
+                S.RESTORE_INDEX[view_id] = {'group': group, 'index': index}
             set_window_value('restore_index', S.RESTORE_INDEX)
             # Set debug layout
             window.set_layout(S.LAYOUT_NORMAL)
@@ -452,11 +452,11 @@ def set_layout(layout):
         window.set_layout(S.LAYOUT_NORMAL)
         window.set_layout(S.RESTORE_LAYOUT)
         for view in window.views():
-            view_id = "%d" % view.id()
+            view_id = '%d' % view.id()
             # Set view indexes
             if view_id in H.dictionary_keys(S.RESTORE_INDEX):
                 v = S.RESTORE_INDEX[view_id]
-                window.set_view_index(view, v["group"], v["index"])
+                window.set_view_index(view, v['group'], v['index'])
 
     # Restore focus to previous active view
     if previous_active is not None:
@@ -546,7 +546,7 @@ def show_content(data, content=None):
             window.focus_view(active_debug)
 
     # Strip .sublime-package of package name for syntax file
-    package_extension = ".sublime-package"
+    package_extension = '.sublime-package'
     package = S.PACKAGE_FOLDER
     if package.endswith(package_extension):
         package = package[:-len(package_extension)]
@@ -597,9 +597,9 @@ def show_context_output(view):
                         # Show context variables and children in output panel
                         window = sublime.active_window()
                         panel = window.get_output_panel('xdebug')
-                        panel.run_command("xdebug_view_update", {'data': data})
-                        panel.run_command('set_setting', {"setting": 'word_wrap', "value": True})
-                        window.run_command('show_panel', {"panel": 'output.xdebug'})
+                        panel.run_command('xdebug_view_update', {'data': data})
+                        panel.run_command('set_setting', {'setting': 'word_wrap', 'value': True})
+                        window.run_command('show_panel', {'panel': 'output.xdebug'})
         except:
             pass
 
@@ -638,7 +638,7 @@ def show_panel_content(content):
         window = sublime.active_window()
         panel = window.get_output_panel('xdebug')
         panel.run_command('xdebug_view_update', {'data': content})
-        panel.run_command('set_setting', {"setting": 'word_wrap', "value": True})
+        panel.run_command('set_setting', {'setting': 'word_wrap', 'value': True})
         window.run_command('show_panel', {'panel': 'output.xdebug'})
     except:
         print(content)
@@ -878,7 +878,7 @@ def toggle_breakpoint(view):
                         # Toggle breakpoint only if it has valid value
                         if enabled is None:
                             return
-                        sublime.active_window().run_command('xdebug_breakpoint', {"enabled": enabled, "rows": [line_number], "filename": filename})
+                        sublime.active_window().run_command('xdebug_breakpoint', {'enabled': enabled, 'rows': [line_number], 'filename': filename})
                     else:
                         show_file(filename, line_number)
     except:
@@ -943,6 +943,6 @@ def toggle_watch(view):
                 if sublime.score_selector(view.scope_name(point.a), 'keyword') and not S.WATCH[watch_index]['enabled']:
                     S.WATCH[watch_index]['enabled'] = True
                 # Update watch view and save watch data to file
-                sublime.active_window().run_command('xdebug_watch', {"update": True})
+                sublime.active_window().run_command('xdebug_watch', {'update': True})
     except:
         pass
