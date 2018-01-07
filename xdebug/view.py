@@ -45,11 +45,15 @@ def close_debug_windows():
     Close all debugging related views in active window.
     """
     window = sublime.active_window()
+    # Remember current active view
+    current_active_view = window.active_view()
     for view in window.views():
         if is_debug_view(view):
             window.focus_view(view)
             window.run_command('close')
     window.run_command('hide_panel', {"panel": 'output.xdebug'})
+    # Restore focus to current active view
+    window.focus_view(current_active_view)
 
 
 def generate_breakpoint_output():
