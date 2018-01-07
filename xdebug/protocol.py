@@ -248,7 +248,7 @@ class Protocol(object):
                 self.socket = None
             except:
                 e = sys.exc_info()[1]
-                raise ProtocolConnectionException(e)
+                raise ProtocolListenException(e)
 
             # Accept incoming connection on configured port
             while self.listening:
@@ -276,7 +276,7 @@ class Protocol(object):
             # Return socket connection
             return self.socket
         else:
-            raise ProtocolConnectionException('Could not create socket server.')
+            raise ProtocolListenException('Could not create socket server.')
 
 
 class ProtocolException(Exception):
@@ -284,4 +284,8 @@ class ProtocolException(Exception):
 
 
 class ProtocolConnectionException(ProtocolException):
+    pass
+
+
+class ProtocolListenException(ProtocolException):
     pass
