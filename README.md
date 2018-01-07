@@ -301,14 +301,6 @@ Some systems do not include specific modules which are required by this package,
 
 Configure the `python_path` setting to the path of your Python installation on your system which is either newer or has all required modules. For example: `"python_path" : "/usr/lib/python2.7"`.
 
-#### How to solve `AttributeError`?
-Upon updating Sublime Text, there were reports that packages stopped working, due to the following error:
-```
-AttributeError: 'module' object has no attribute 'parse'
-```
-In case you are experiencing this error with SublimeTextXdebug, there is a [solution](https://forum.sublimetext.com/t/module-error-when-running-a-plugin/23611/5) that requires you to uninstall Package Control and reinstall it. Before doing so be sure to first create a backup of your *Packages/User/Package Control.sublime-settings*.  
-As it might happen that on uninstall Package Control moves all the packages in *Packages/User/Package Control.sublime-settings* to `ignored_packages` in *Packages/User/Preferences.sublime-settings*, resulting none of the packages to work due to being unmanaged and disabled.
-
 #### What to do when you experience any issues?
 First check following _possible_ solutions that could resolve any issues:
 
