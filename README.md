@@ -118,6 +118,11 @@ An IDE key is used to identify with debugger engine when Sublime Text will start
 
 _This package does not filter sessions by IDE key, it will accept any IDE key, also ones that do not match this configured IDE key. It is merely used when launching the default web browser with the configured URL._
 
+*__host__*  
+Host address of network interface which Sublime Text should listen to connect with debugger engine.
+
+_When specifying host address of network interface, be sure to specify an IPv4 address as Sublime Text will listen for connections through an IPv4 socket._
+
 *__port__*  
 Which port number Sublime Text should listen to connect with debugger engine.  
 
