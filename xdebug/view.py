@@ -42,13 +42,15 @@ TITLE_WINDOW_WATCH = "Xdebug Watch"
 
 def close_debug_windows():
     """
-    Close all debugging related views in active window.
+    Close all debugging related views in active window and ensure active view remains active
     """
     window = sublime.active_window()
+    active_view = window.active_view()
     for view in window.views():
         if is_debug_view(view):
             window.focus_view(view)
             window.run_command('close')
+    window.focus_view(active_view)
     window.run_command('hide_panel', {"panel": 'output.xdebug'})
 
 
