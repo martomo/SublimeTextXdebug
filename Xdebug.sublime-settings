@@ -138,6 +138,7 @@
     // my local project
     // "local_project_path": "/home/User/my_project",
     // if both are empty, nothing happens
+    // on Windows, use this slash "/"
     "local_project_path": "",
     "remote_project_path": "",
 }
