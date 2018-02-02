@@ -131,5 +131,13 @@
     // Show detailed log information about communication
     // between debugger engine and Sublime Text.
     // Log can be found at Packages/User/Xdebug.log
-    "debug": false
+    "debug": false,
+
+    // remote project on server or docker
+    // "remote_project_path": "/usr/local/apache2/htdocs/",
+    // my local project
+    // "local_project_path": "/home/User/my_project",
+    // if both are empty, nothing happens
+    "local_project_path": "",
+    "remote_project_path": "",
 }

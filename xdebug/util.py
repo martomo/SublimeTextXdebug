@@ -85,6 +85,20 @@ def get_real_path(uri, server=False):
 
     # Append scheme
     if server:
+        # convert local project
+        # to server project path
+        # by changing uri
+        # like
+        # /local_project/file.name to /server_project/file.name
+        remote_project_path = get_value(S.KEY_REMOTE_PROJECT_PATH)
+        local_project_path = get_value(S.KEY_LOCAL_PROJECT_PATH)
+        if remote_project_path != '' and local_project_path != '':
+            uri = uri.replace('\\', '/')
+            uri = re.sub(
+                local_project_path,
+                remote_project_path,
+                uri
+            )
         return H.url_encode("file://" + uri)
 
     return uri

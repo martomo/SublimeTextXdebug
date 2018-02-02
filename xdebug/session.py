@@ -2,6 +2,7 @@ import sublime
 
 import sys
 import threading
+import re
 
 # Helper module
 try:
@@ -210,6 +211,22 @@ class SocketHandler(threading.Thread):
             if child.tag == dbgp.ELEMENT_BREAKPOINT or child.tag == dbgp.ELEMENT_PATH_BREAKPOINT:
                 # Get breakpoint attribute values
                 fileuri = child.get(dbgp.BREAKPOINT_FILENAME)
+
+                # convert remote server
+                # to local project
+                # by changing fileuri
+                # like
+                # /server_project/file.name to /local_project/file.name
+                remote_project_path = get_value(S.KEY_REMOTE_PROJECT_PATH)
+                local_project_path = get_value(S.KEY_LOCAL_PROJECT_PATH)
+                if remote_project_path != '' and local_project_path != '':
+                    # substitui
+                    fileuri = re.sub(
+                        r'^file://'+remote_project_path,
+                        local_project_path,
+                        fileuri
+                    )
+
                 lineno = child.get(dbgp.BREAKPOINT_LINENO)
                 exception = child.get(dbgp.BREAKPOINT_EXCEPTION)
                 filename = get_real_path(fileuri)
