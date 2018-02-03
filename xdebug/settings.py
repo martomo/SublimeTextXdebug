@@ -1,6 +1,9 @@
 DEFAULT_PORT = 9000
 DEFAULT_IDE_KEY = 'sublime.xdebug'
 
+KEY_LOCAL_PROJECT_PATH = 'local_project_path'
+KEY_REMOTE_PROJECT_PATH = 'remote_project_path'
+
 PACKAGE_PATH = None
 PACKAGE_FOLDER = None
 
