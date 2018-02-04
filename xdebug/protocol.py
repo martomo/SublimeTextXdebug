@@ -1,3 +1,4 @@
+import errno
 import re
 import socket
 import sys
@@ -250,6 +251,16 @@ class Protocol(object):
                 self.socket = None
             except:
                 e = sys.exc_info()[1]
+                debug('Failed to create socket: %s' % e)
+                # Substitute exception with readable (custom) message
+                if hasattr(e, 'errno'):
+                    address_or_port = 'address (%s:%d)' % (self.host, self.port) if self.host is not '' else 'port (%d)' % self.port
+                    if e.errno == errno.EADDRINUSE:
+                        e = 'Another application is already listening on configured %s.' % address_or_port
+                    elif e.errno == errno.EADDRNOTAVAIL:
+                        e = 'Configured %s is not accessible.' % address_or_port
+                    elif e.errno == errno.ENOEXEC and self.host is not '':
+                        e = 'Hostname (%s) is not specified in hosts file or is an IPv6 address.' % self.host
                 raise ProtocolListenException(e)
 
             # Accept incoming connection on configured port
