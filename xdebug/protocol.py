@@ -254,12 +254,12 @@ class Protocol(object):
                 debug('Failed to create socket: %s' % e)
                 # Substitute exception with readable (custom) message
                 if hasattr(e, 'errno'):
-                    address_or_port = 'address (%s:%d)' % (self.host, self.port) if self.host is not '' else 'port (%d)' % self.port
+                    address_or_port = 'address (%s:%d)' % (self.host, self.port) if self.host != '' else 'port (%d)' % self.port
                     if e.errno == errno.EADDRINUSE:
                         e = 'Another application is already listening on configured %s.' % address_or_port
                     elif e.errno == errno.EADDRNOTAVAIL:
                         e = 'Configured %s is not accessible.' % address_or_port
-                    elif e.errno == errno.ENOEXEC and self.host is not '':
+                    elif e.errno == errno.ENOEXEC and self.host != '':
                         e = 'Hostname (%s) is not specified in hosts file or is an IPv6 address.' % self.host
                 raise ProtocolListenException(e)
 
