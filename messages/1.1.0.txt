@@ -1,0 +1,31 @@
+1.1.0
+-----
+
+  Enhancement:
+   - Display error dialog for connection issues upon debug session start
+   - Reformat stack entry output to improve distinction between file/line and function
+   - Improve navigation from Stack/Breakpoint view to file by breakpoint/entry
+   - Highlight current breakpoint/line by selecting row in file
+   - Use current value when editing an existing watch expression
+   - Rename syntax scope definitions to be in accordance with recommendations
+
+  Feature:
+   - Specify which network interface to listen to with new 'host' setting
+   - With 'fullname_property' setting toggle between short/full name representation of nested properties
+
+  Fix:
+   - Parsing of non-existent files which are expected to contain breakpoint/watch data
+   - Duplicate entries in Watch view of static variables referencing itself
+   - Opening of file upon (accidental) multiselection in Breakpoint/Stack view
+   - Unable to toggle watch expressions by double click when no connection established
+   - Losing focus of active view upon closing debugging windows
+
+  Internal:
+   - Enforcing of coding style by running flake8 with TravisCI
+   - Added issue template to encourage detailed bug reports
+
+  README
+   - Introduce badges for displaying build status and total download count on Package Control
+   - Added documentation for new 'host' and 'fullname_property' settings
+   - Update documentation for 'super_globals', 'hide_password' and 'pretty_output' settings
+   - Properly escape single asterisk character and fixed several typos
