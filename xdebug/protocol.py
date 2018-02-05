@@ -255,14 +255,14 @@ class Protocol(object):
                 # Substitute exception with readable (custom) message
                 if isinstance(e, TypeError) and not H.is_number(self.port):
                     e = 'Configured port is not a valid integer.'
+                elif isinstance(e, socket.gaierror) and self.host != '':
+                    e = 'Hostname (%s) is not specified in hosts file or is an IPv6 address.' % self.host
                 elif hasattr(e, 'errno'):
                     address_or_port = 'address (%s:%d)' % (self.host, self.port) if self.host != '' else 'port (%d)' % self.port
                     if e.errno == errno.EADDRINUSE:
                         e = 'Another application is already listening on configured %s.' % address_or_port
                     elif e.errno == errno.EADDRNOTAVAIL:
                         e = 'Configured %s is not accessible.' % address_or_port
-                    elif e.errno == errno.ENOEXEC and self.host != '':
-                        e = 'Hostname (%s) is not specified in hosts file or is an IPv6 address.' % self.host
                 raise ProtocolListenException(e)
 
             # Accept incoming connection on configured port
