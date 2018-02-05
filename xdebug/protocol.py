@@ -253,7 +253,9 @@ class Protocol(object):
                 e = sys.exc_info()[1]
                 debug('Failed to create socket: %s' % e)
                 # Substitute exception with readable (custom) message
-                if hasattr(e, 'errno'):
+                if isinstance(e, TypeError) and not H.is_number(self.port):
+                    e = 'Configured port is not a valid integer.'
+                elif hasattr(e, 'errno'):
                     address_or_port = 'address (%s:%d)' % (self.host, self.port) if self.host != '' else 'port (%d)' % self.port
                     if e.errno == errno.EADDRINUSE:
                         e = 'Another application is already listening on configured %s.' % address_or_port
