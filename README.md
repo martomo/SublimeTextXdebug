@@ -77,7 +77,10 @@ Search in the list and install package `Xdebug Client`.
 
 #### Git
 Clone the repository by executing the following command in your Packages directory:
-```git clone https://github.com/martomo/SublimeTextXdebug.git "Xdebug Client"```
+
+```bash
+git clone https://github.com/martomo/SublimeTextXdebug.git "Xdebug Client"
+```
 
 #### Download
 Get the latest [source from GitHub](https://github.com/martomo/SublimeTextXdebug/archive/master.zip) and extract the source into your Packages directory.
@@ -201,6 +204,7 @@ Show detailed log information about communication between debugger engine and Su
 Below are examples how to configure your Xdebug.sublime-settings and \*.sublime-project files.
 
 __Xdebug.sublime-settings__
+
 ```json
 {
     "path_mapping": {
@@ -212,7 +216,9 @@ __Xdebug.sublime-settings__
     "close_on_stop": true
 }
 ```
+
 __\*.sublime-project__
+
 ```json
 {
     "folders":
@@ -251,12 +257,15 @@ When you do not configure the URL, the plugin will still listen for debugging co
 If you want to run a start a debugging session from command line, before you run your script, you will need to set the environment variable __XDEBUG_CONFIG__ with the IDE key.
 
 __Windows__
-```
+
+```bash
 set XDEBUG_CONFIG="idekey=sublime.xdebug"
 php myscript.php
 ```
+
 __UNIX__
-```
+
+```bash
 export XDEBUG_CONFIG="idekey=sublime.xdebug"
 php myscript.php
 ```
@@ -277,15 +286,15 @@ Another way is to set the breakpoint in your PHP code with the following functio
 
 #### How to configure or disable breaking on exceptions?
 By default the execution of a debugging session is suspended on each of the following exception names:
-- __"Fatal error"__ - E_ERROR, E_CORE_ERROR, E_COMPILE_ERROR, E_USER_ERROR
-- __"Catchable fatal error"__ - E_RECOVERABLE_ERROR (since PHP 5.2.0)
-- __"Warning"__ - E_WARNING, E_CORE_WARNING, E_COMPILE_WARNING, E_USER_WARNING
-- __"Parse error"__ - E_PARSE
-- __"Notice"__ - E_NOTICE, E_USER_NOTICE
-- __"Strict standards"__ - E_STRICT
-- __"Deprecated"__ - E_DEPRECATED, E_USER_DEPRECATED (since PHP 5.3.0)
-- __"Xdebug"__
-- __"Unknown error"__
+* __"Fatal error"__ - E_ERROR, E_CORE_ERROR, E_COMPILE_ERROR, E_USER_ERROR
+* __"Catchable fatal error"__ - E_RECOVERABLE_ERROR (since PHP 5.2.0)
+* __"Warning"__ - E_WARNING, E_CORE_WARNING, E_COMPILE_WARNING, E_USER_WARNING
+* __"Parse error"__ - E_PARSE
+* __"Notice"__ - E_NOTICE, E_USER_NOTICE
+* __"Strict standards"__ - E_STRICT
+* __"Deprecated"__ - E_DEPRECATED, E_USER_DEPRECATED (since PHP 5.3.0)
+* __"Xdebug"__
+* __"Unknown error"__
 
 In order to specify which exception names to suspend the execution of a debugging session, configure the `break_on_exception` setting with a list of the specific exception names by choice from the list shown above.  
 
@@ -327,7 +336,7 @@ Do you still experience any issues, then [create an issue](https://github.com/ma
 
 ## License
 
-SublimeTextXdebug is released under the [MIT License](license-link).
+SublimeTextXdebug is released under the [MIT License][license-link].
 
 
 [travis-badge]: https://travis-ci.org/martomo/SublimeTextXdebug.svg?branch=master
