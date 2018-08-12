@@ -14,7 +14,7 @@ except:
 # Set Python libraries from system installation
 python_path = config.get_value(S.KEY_PYTHON_PATH)
 if python_path:
-    python_path = os.path.normpath(python_path.replace("\\", "/"))
+    python_path = os.path.normpath(python_path.replace('\\', '/'))
     python_dynload = os.path.join(python_path, 'lib-dynload')
     if python_dynload not in sys.path:
         sys.path.append(python_dynload)
@@ -54,7 +54,7 @@ class EventListener(sublime_plugin.EventListener):
         if filename and (filename.endswith(S.FILE_PACKAGE_SETTINGS) or filename.endswith('.sublime-project')):
             config.load_package_values()
             config.load_project_values()
-        #TODO: Save new location of breakpoints on save
+        # TODO: Save new location of breakpoints on save
 
     def on_selection_modified(self, view):
         # Show details in output panel of selected variable in context window
@@ -108,7 +108,7 @@ class XdebugBreakpointCommand(sublime_plugin.TextCommand):
             # Add/Enable breakpoint
             if not breakpoint_exists or enabled is True:
                 if row not in S.BREAKPOINT[filename]:
-                    S.BREAKPOINT[filename][row] = { 'id': None, 'enabled': True, 'expression': expression }
+                    S.BREAKPOINT[filename][row] = {'id': None, 'enabled': True, 'expression': expression}
                 else:
                     S.BREAKPOINT[filename][row]['enabled'] = True
                     if condition is not None:
@@ -232,7 +232,7 @@ class XdebugRunToLineCommand(sublime_plugin.WindowCommand):
             breakpoint_exists = True
         # Store line number and filename for temporary breakpoint in session
         if not breakpoint_exists:
-            S.BREAKPOINT_RUN = { 'filename': filename, 'lineno': lineno }
+            S.BREAKPOINT_RUN = {'filename': filename, 'lineno': lineno}
         # Set breakpoint and run script
         view.run_command('xdebug_breakpoint', {'rows': [lineno], 'enabled': True, 'filename': filename})
         self.window.run_command('xdebug_execute', {'command': 'run'})
@@ -271,11 +271,14 @@ class XdebugSessionStartCommand(sublime_plugin.WindowCommand):
         threading.Thread(target=self.listen).start()
 
     def listen(self):
-        # Start listening for response from debugger engine
-        S.SESSION.listen()
-        # On connect run method which handles connection
-        if S.SESSION and S.SESSION.connected:
-            sublime.set_timeout(self.connected, 0)
+        try:
+            # Start listening for response from debugger engine
+            S.SESSION.listen()
+            # On connect run method which handles connection
+            if S.SESSION and S.SESSION.connected:
+                sublime.set_timeout(self.connected, 0)
+        except (protocol.ProtocolListenException) as e:
+            sublime.error_message('Unable to start Xdebug debugging session.\n\n%s' % e)
 
     def connected(self):
         sublime.set_timeout(lambda: sublime.status_message('Xdebug: Connected'), 100)
@@ -397,7 +400,7 @@ class XdebugContinueCommand(sublime_plugin.WindowCommand):
     command_options = H.dictionary_values(commands)
 
     def run(self, command=None):
-        if not command or not command in self.commands:
+        if not command or command not in self.commands:
             self.window.show_quick_panel(self.command_options, self.callback)
         else:
             self.callback(command)
@@ -524,7 +527,12 @@ class XdebugWatchCommand(sublime_plugin.WindowCommand):
             self.watch_index = int(index)
             # Edit watch expression
             if self.edit:
-                self.set_expression()
+                currentValue = ''
+                try:
+                    currentValue = S.WATCH[index]['expression']
+                except (IndexError, KeyError):
+                    pass
+                self.set_expression(currentValue)
             # Remove watch expression
             else:
                 S.WATCH.pop(self.watch_index)
@@ -558,9 +566,9 @@ class XdebugWatchCommand(sublime_plugin.WindowCommand):
     def on_cancel(self):
         pass
 
-    def set_expression(self):
+    def set_expression(self, initialValue=''):
         # Show user input for setting watch expression
-        self.window.show_input_panel('Watch expression', '', self.on_done, self.on_change, self.on_cancel)
+        self.window.show_input_panel('Watch expression', initialValue, self.on_done, self.on_change, self.on_cancel)
 
     def update_view(self):
         async_session = session.SocketHandler(session.ACTION_WATCH, check_watch_view=True)
@@ -618,9 +626,9 @@ class XdebugLayoutCommand(sublime_plugin.WindowCommand):
         V.show_content(V.DATA_STACK)
         V.show_content(V.DATA_WATCH)
         panel = window.get_output_panel('xdebug')
-        panel.run_command("xdebug_view_update")
+        panel.run_command('xdebug_view_update')
         # Close output panel
-        window.run_command('hide_panel', {"panel": 'output.xdebug'})
+        window.run_command('hide_panel', {'panel': 'output.xdebug'})
 
     def is_enabled(self, restore=False, close_windows=False):
         disable_layout = config.get_value(S.KEY_DISABLE_LAYOUT)
@@ -656,10 +664,10 @@ class XdebugSettingsCommand(sublime_plugin.WindowCommand):
             package = S.PACKAGE_FOLDER
         # Otherwise show User defined settings
         else:
-            package = "User"
+            package = 'User'
         # Strip .sublime-package of package name for syntax file
-        package_extension = ".sublime-package"
+        package_extension = '.sublime-package'
         if package.endswith(package_extension):
             package = package[:-len(package_extension)]
         # Open settings file
-        self.window.run_command('open_file', {'file': '${packages}/' + package + '/' + S.FILE_PACKAGE_SETTINGS });
+        self.window.run_command('open_file', {'file': '${packages}/' + package + '/' + S.FILE_PACKAGE_SETTINGS})

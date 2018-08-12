@@ -25,12 +25,28 @@
     // It is merely used when launching the default web browser with the configured URL.
     "ide_key": "sublime.xdebug",
 
+    // Host address of network interface which Sublime Text
+    // should listen to connect with debugger engine.
+    //
+    // By specifying "" or "0.0.0.0" as host address, Sublime Text
+    // will listen on all the configured network interfaces.
+    // This is the desired configuration when debugging
+    // a script that is located on a remote server.
+    //
+    // Otherwise it is recommended to use "127.0.0.1" or "localhost"
+    // as configuration, when debugging a script on your local machine.
+    // Due to the fact that by listening on all the configured
+    // network interfaces raises a security concern as anyone
+    // can access Sublime Text through the configured port.
+    //
+    // When specifying host address of network interface,
+    // be sure to specify an IPv4 address as Sublime Text
+    // will listen for connections through an IPv4 socket.
+    "host": "",
+
     // Which port number Sublime Text should listen
     // to connect with debugger engine.
     "port": 9000,
-
-    // Show super globals in context view.
-    "super_globals": true,
 
     // Maximum amount of array children
     // and object's properties to return.
@@ -73,10 +89,16 @@
     // Always close debug windows and restore layout on session stop.
     "close_on_stop": false,
 
-    // Do not show possible password values in context output.
+    // Show information about super globals in context view.
+    "super_globals": true,
+
+    // Display property by fullname in context view.
+    "fullname_property": true,
+
+    // Do not show possible password values in context view.
     "hide_password": false,
 
-    // Show in output parsed response instead of raw XML.
+    // Render evaluated result as parsed output instead of raw XML.
     "pretty_output": false,
 
     // Always launch browser on session start/stop.

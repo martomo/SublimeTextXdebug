@@ -70,7 +70,7 @@ def get_project_value(key, default_value=None):
     """
     Get value from project configuration settings.
     """
-    # Load project coniguration settings
+    # Load project configuration settings
     try:
         load_project_values()
     except RuntimeError:

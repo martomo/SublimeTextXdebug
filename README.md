@@ -5,6 +5,8 @@ Xdebug debugger client integration for Sublime Text.
 
 Based on the Xdebug protocol functionality in [SublimeXdebug](https://github.com/Kindari/SublimeXdebug) package by [Kindari](https://github.com/Kindari).
 
+[![Build Status][travis-badge]][travis-link] [![Package Control][package-control-badge]][package-control-link] [![MIT License][license-badge]][license-link]
+
 ## Overview
 * [Features](#features)
 * [Commands](#commands)
@@ -24,7 +26,7 @@ Based on the Xdebug protocol functionality in [SublimeXdebug](https://github.com
 * Works on both Sublime Text 2 __and__ 3
 
 ## Commands
-Here is a complete list of commands you can find Command Pallette under the `Xdebug` namespace or in the menu under `Tools / Xdebug`:
+Here is a complete list of commands you can find Command Palette under the `Xdebug` namespace or in the menu under `Tools / Xdebug`:
 
 #### Start/Stop debugging session
 * Start Debugging - <kbd>Ctrl+Shift+F9</kbd> or <kbd>⌘+Shift+F9</kbd>
@@ -70,12 +72,15 @@ Here is a complete list of commands you can find Command Pallette under the `Xde
 ## Installation
 
 #### [Package Control](http://wbond.net/sublime_packages/package_control)
-Execute __"Package Control: Install Package"__ in the Command Pallette to retrieve a list of available packages.
+Execute __"Package Control: Install Package"__ in the Command Palette to retrieve a list of available packages.
 Search in the list and install package `Xdebug Client`.
 
 #### Git
 Clone the repository by executing the following command in your Packages directory:
-```git clone https://github.com/martomo/SublimeTextXdebug.git "Xdebug Client"```
+
+```bash
+git clone https://github.com/martomo/SublimeTextXdebug.git "Xdebug Client"
+```
 
 #### Download
 Get the latest [source from GitHub](https://github.com/martomo/SublimeTextXdebug/archive/master.zip) and extract the source into your Packages directory.
@@ -103,7 +108,7 @@ xdebug.remote_connect_back = 1
 For details about all available settings for configuring Xdebug, see [here](http://xdebug.org/docs/all_settings).
 
 ## Configuration
-The following settings can be configured in Xdebug.sublime-settings or in *.sublime-project files:
+The following settings can be configured in Xdebug.sublime-settings or in \*.sublime-project files:
 
 *__path_mapping__*  
 For remote debugging to resolve the file locations it is required to configure the path mapping with the server path as key and local path as value.
@@ -116,11 +121,13 @@ An IDE key is used to identify with debugger engine when Sublime Text will start
 
 _This package does not filter sessions by IDE key, it will accept any IDE key, also ones that do not match this configured IDE key. It is merely used when launching the default web browser with the configured URL._
 
+*__host__*  
+Host address of network interface which Sublime Text should listen to connect with debugger engine.
+
+_When specifying host address of network interface, be sure to specify an IPv4 address as Sublime Text will listen for connections through an IPv4 socket._
+
 *__port__*  
 Which port number Sublime Text should listen to connect with debugger engine.  
-
-*__super_globals__*  
-Show super globals in context view.  
 
 *__max_children__*  
 Maximum amount of array children and object's properties to return.  
@@ -140,11 +147,17 @@ Break on exceptions, suspend execution when the exception name matches an entry 
 *__close_on_stop__*  
 Always close debug windows and restore layout on session stop.  
 
+*__super_globals__*  
+Show information about super globals in context view.  
+
+*__fullname_property__*  
+Display property by fullname in context view.  
+
 *__hide_password__*  
-Do not show possible password values in context output.  
+Do not show possible password values in context view.  
 
 *__pretty_output__*  
-Show in output parsed response instead of raw XML.  
+Render evaluated result as parsed output instead of raw XML.  
 
 *__launch_browser__*  
 Always launch browser on session start/stop.
@@ -188,9 +201,10 @@ Show detailed log information about communication between debugger engine and Su
   
 ---
   
-Below are examples how to configure your Xdebug.sublime-settings and *.sublime-project files.
+Below are examples how to configure your Xdebug.sublime-settings and \*.sublime-project files.
 
 __Xdebug.sublime-settings__
+
 ```json
 {
     "path_mapping": {
@@ -202,7 +216,9 @@ __Xdebug.sublime-settings__
     "close_on_stop": true
 }
 ```
-__*.sublime-project__
+
+__\*.sublime-project__
+
 ```json
 {
     "folders":
@@ -241,12 +257,15 @@ When you do not configure the URL, the plugin will still listen for debugging co
 If you want to run a start a debugging session from command line, before you run your script, you will need to set the environment variable __XDEBUG_CONFIG__ with the IDE key.
 
 __Windows__
-```
+
+```bash
 set XDEBUG_CONFIG="idekey=sublime.xdebug"
 php myscript.php
 ```
+
 __UNIX__
-```
+
+```bash
 export XDEBUG_CONFIG="idekey=sublime.xdebug"
 php myscript.php
 ```
@@ -267,15 +286,15 @@ Another way is to set the breakpoint in your PHP code with the following functio
 
 #### How to configure or disable breaking on exceptions?
 By default the execution of a debugging session is suspended on each of the following exception names:
-- __"Fatal error"__ - E_ERROR, E_CORE_ERROR, E_COMPILE_ERROR, E_USER_ERROR
-- __"Catchable fatal error"__ - E_RECOVERABLE_ERROR (since PHP 5.2.0)
-- __"Warning"__ - E_WARNING, E_CORE_WARNING, E_COMPILE_WARNING, E_USER_WARNING
-- __"Parse error"__ - E_PARSE
-- __"Notice"__ - E_NOTICE, E_USER_NOTICE
-- __"Strict standards"__ - E_STRICT
-- __"Deprecated"__ - E_DEPRECATED, E_USER_DEPRECATED (since PHP 5.3.0)
-- __"Xdebug"__
-- __"Unknown error"__
+* __"Fatal error"__ - E_ERROR, E_CORE_ERROR, E_COMPILE_ERROR, E_USER_ERROR
+* __"Catchable fatal error"__ - E_RECOVERABLE_ERROR (since PHP 5.2.0)
+* __"Warning"__ - E_WARNING, E_CORE_WARNING, E_COMPILE_WARNING, E_USER_WARNING
+* __"Parse error"__ - E_PARSE
+* __"Notice"__ - E_NOTICE, E_USER_NOTICE
+* __"Strict standards"__ - E_STRICT
+* __"Deprecated"__ - E_DEPRECATED, E_USER_DEPRECATED (since PHP 5.3.0)
+* __"Xdebug"__
+* __"Unknown error"__
 
 In order to specify which exception names to suspend the execution of a debugging session, configure the `break_on_exception` setting with a list of the specific exception names by choice from the list shown above.  
 
@@ -308,13 +327,21 @@ First check following _possible_ solutions that could resolve any issues:
 
 Do you still experience any issues, then [create an issue](https://github.com/martomo/SublimeTextXdebug/issues/new) including the following data:
 
-- What operation system(s) and version of Sublime Text are you using?
+- What operating system(s) and version of Sublime Text are you using?
 - How did you [install](https://github.com/martomo/SublimeTextXdebug#installation) SublimeTextXdebug, Package Control, git clone or download?
 - Are you trying to debug the script remotely or locally, through browser or command line?
 - Which version of Xdebug extension do you have?
-- Can you post your [project/settings file](https://github.com/martomo/SublimeTextXdebug#configuration) and [Xdebug configuration](https://github.com/martomo/SublimeTextXdebug#xdebug) from the *.ini located on your server.
+- Can you post your [project/settings file](https://github.com/martomo/SublimeTextXdebug#configuration) and [Xdebug configuration](https://github.com/martomo/SublimeTextXdebug#xdebug) from the \*.ini located on your server.
 - Does the console window (<kbd>Ctrl+\`</kbd>) show any more information regarding the error?
 
 ## License
 
-SublimeTextXdebug is released under the [MIT License](http://www.opensource.org/licenses/MIT).
+SublimeTextXdebug is released under the [MIT License][license-link].
+
+
+[travis-badge]: https://travis-ci.org/martomo/SublimeTextXdebug.svg?branch=master
+[travis-link]: https://travis-ci.org/martomo/SublimeTextXdebug
+[package-control-badge]: https://img.shields.io/packagecontrol/dt/Xdebug%20Client.svg
+[package-control-link]: https://packagecontrol.io/packages/Xdebug%20Client
+[license-badge]: https://img.shields.io/badge/license-MIT-007EC7.svg
+[license-link]: LICENSE

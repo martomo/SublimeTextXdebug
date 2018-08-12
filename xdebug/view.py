@@ -26,7 +26,7 @@ except:
 from .config import get_value, get_window_value, set_window_value
 
 # Util module
-from .util import get_real_path, get_region_icon, save_watch_data
+from .util import get_real_path, get_region_icon
 
 
 DATA_BREAKPOINT = 'breakpoint'
@@ -34,24 +34,27 @@ DATA_CONTEXT = 'context'
 DATA_STACK = 'stack'
 DATA_WATCH = 'watch'
 
-TITLE_WINDOW_BREAKPOINT = "Xdebug Breakpoint"
-TITLE_WINDOW_CONTEXT = "Xdebug Context"
-TITLE_WINDOW_STACK = "Xdebug Stack"
-TITLE_WINDOW_WATCH = "Xdebug Watch"
+TITLE_WINDOW_BREAKPOINT = 'Xdebug Breakpoint'
+TITLE_WINDOW_CONTEXT = 'Xdebug Context'
+TITLE_WINDOW_STACK = 'Xdebug Stack'
+TITLE_WINDOW_WATCH = 'Xdebug Watch'
 
 
 def close_debug_windows():
     """
-    Close all debugging related views in active window and ensure active view remains active
+    Close all debugging related views in active window.
     """
     window = sublime.active_window()
-    active_view = window.active_view()
+    # Remember current active view
+    current_active_view = window.active_view()
     for view in window.views():
         if is_debug_view(view):
             window.focus_view(view)
             window.run_command('close')
-    window.focus_view(active_view)
-    window.run_command('hide_panel', {"panel": 'output.xdebug'})
+    window.run_command('hide_panel', {'panel': 'output.xdebug'})
+    # Restore focus to current active view
+    window.focus_view(current_active_view)
+
 
 def generate_breakpoint_output():
     """
@@ -64,7 +67,7 @@ def generate_breakpoint_output():
     for filename, breakpoint_data in sorted(S.BREAKPOINT.items()):
         breakpoint_entry = ''
         if breakpoint_data:
-            breakpoint_entry += "=> %s\n" % filename
+            breakpoint_entry += '=> %s\n' % filename
             # Sort breakpoint data by line number
             for lineno, bp in sorted(breakpoint_data.items(), key=lambda item: (int(item[0]) if isinstance(item[0], int) or H.is_digit(item[0]) else float('inf'), item[0])):
                 # Do not show temporary breakpoint
@@ -81,7 +84,7 @@ def generate_breakpoint_output():
                 # Conditional expression
                 if bp['expression'] is not None:
                     breakpoint_entry += ' -- "%s"' % bp['expression']
-                breakpoint_entry += "\n"
+                breakpoint_entry += '\n'
         values += H.unicode_string(breakpoint_entry)
     return values
 
@@ -102,7 +105,8 @@ def generate_context_output(context, indent=0):
         has_children = False
         property_text = ''
         # Set indentation
-        for i in range(indent): property_text += '\t'
+        for i in range(indent):
+            property_text += '\t'
         # Property with value
         if variable['value'] is not None:
             if variable['name']:
@@ -123,16 +127,16 @@ def generate_context_output(context, indent=0):
         # Remove newlines in value to prevent incorrect indentation
         value = ''
         if variable['value'] and len(variable['value']) > 0:
-            value = variable['value'].replace("\r\n", "\n").replace("\n", " ")
+            value = variable['value'].replace('\r\n', '\n').replace('\n', ' ')
 
         # Format string and append to output
-        values += H.unicode_string(property_text \
-                        .format(value=value, type=variable['type'], name=variable['name'], numchildren=variable['numchildren']))
+        values += H.unicode_string(property_text
+                                   .format(value=value, type=variable['type'], name=variable['name'], numchildren=variable['numchildren']))
 
         # Append property children to output
         if has_children:
             # Get children for property (no need to convert, already unicode)
-            values += generate_context_output(variable['children'], indent+1)
+            values += generate_context_output(variable['children'], indent + 1)
             # Use ellipsis to indicate that results have been truncated
             limited = False
             if isinstance(variable['numchildren'], int) or H.is_digit(variable['numchildren']):
@@ -141,7 +145,8 @@ def generate_context_output(context, indent=0):
             elif len(variable['children']) > 0 and not variable['numchildren']:
                 limited = True
             if limited:
-                for i in range(indent+1): values += H.unicode_string('\t')
+                for i in range(indent + 1):
+                    values += H.unicode_string('\t')
                 values += H.unicode_string('...\n')
     return values
 
@@ -151,8 +156,8 @@ def generate_stack_output(response):
 
     # Display exception name and message
     if S.BREAKPOINT_EXCEPTION:
-        values += H.unicode_string('[{name}] {message}\n' \
-                                  .format(name=S.BREAKPOINT_EXCEPTION['name'], message=S.BREAKPOINT_EXCEPTION['message']))
+        values += H.unicode_string('[{name}] {message}\n'
+                                   .format(name=S.BREAKPOINT_EXCEPTION['name'], message=S.BREAKPOINT_EXCEPTION['message']))
 
     # Walk through elements in response
     has_output = False
@@ -166,16 +171,16 @@ def generate_stack_output(response):
                 stack_line = child.get(dbgp.STACK_LINENO, 0)
                 stack_where = child.get(dbgp.STACK_WHERE, '{unknown}')
                 # Append values
-                values += H.unicode_string('[{level}] {filename}.{where}:{lineno}\n' \
-                                          .format(level=stack_level, type=stack_type, where=stack_where, lineno=stack_line, filename=stack_file))
+                values += H.unicode_string('[{level}] {filename}:{lineno}, {where}()\n'
+                                           .format(level=stack_level, type=stack_type, where=stack_where, lineno=stack_line, filename=stack_file))
                 has_output = True
     except:
         pass
 
     # When no stack use values from exception
     if not has_output and S.BREAKPOINT_EXCEPTION:
-        values += H.unicode_string('[{level}] {filename}.{where}:{lineno}\n' \
-                                  .format(level=0, where='{unknown}', lineno=S.BREAKPOINT_EXCEPTION['lineno'], filename=S.BREAKPOINT_EXCEPTION['filename']))
+        values += H.unicode_string('[{level}] {filename}:{lineno}, {where}()\n'
+                                   .format(level=0, where='{unknown}', lineno=S.BREAKPOINT_EXCEPTION['lineno'], filename=S.BREAKPOINT_EXCEPTION['filename']))
 
     return values
 
@@ -203,7 +208,7 @@ def generate_watch_output():
             if watch_data['value'] is not None:
                 watch_entry += ' = ' + generate_context_output(watch_data['value'])
             else:
-                watch_entry += "\n"
+                watch_entry += '\n'
         values += H.unicode_string(watch_entry)
     return values
 
@@ -215,6 +220,8 @@ def get_context_variable(context, variable_name):
     Keyword arguments:
     context -- Dictionary with context data to search.
     variable_name -- Name of variable to find.
+
+    TODO: Retrieving of context variable when using short variable name
     """
     if isinstance(context, dict):
         if variable_name in context:
@@ -252,11 +259,11 @@ def get_debug_index(name=None):
     debug_list.append((context_group, context_index, TITLE_WINDOW_CONTEXT))
     debug_list.append((stack_group, stack_index, TITLE_WINDOW_STACK))
     debug_list.append((watch_group, watch_index, TITLE_WINDOW_WATCH))
-    debug_list.sort(key=operator.itemgetter(0,1))
+    debug_list.sort(key=operator.itemgetter(0, 1))
 
     # Recalculate group/index position within boundaries of active window
     window = sublime.active_window()
-    group_limit = window.num_groups()-1
+    group_limit = window.num_groups() - 1
     sorted_list = []
     last_group = None
     last_index = 0
@@ -277,7 +284,7 @@ def get_debug_index(name=None):
         # Add debug view with new group/index
         sorted_list.append((group, last_index, title))
     # Sort recalculated list by group/index
-    sorted_list.sort(key=operator.itemgetter(0,1))
+    sorted_list.sort(key=operator.itemgetter(0, 1))
 
     # Find specified view by name/title of debug view
     if name is not None:
@@ -304,13 +311,14 @@ def get_response_properties(response, default_key=None):
         # Read property elements
         if child.tag == dbgp.ELEMENT_PROPERTY or child.tag == dbgp.ELEMENT_PATH_PROPERTY:
             # Get property attribute values
-            property_name_short = child.get(dbgp.PROPERTY_NAME)
-            property_name = child.get(dbgp.PROPERTY_FULLNAME, property_name_short)
+            property_name = child.get(dbgp.PROPERTY_NAME)
+            property_fullname = child.get(dbgp.PROPERTY_FULLNAME, property_name)
             property_type = child.get(dbgp.PROPERTY_TYPE)
             property_children = child.get(dbgp.PROPERTY_CHILDREN)
             property_numchildren = child.get(dbgp.PROPERTY_NUMCHILDREN)
             property_classname = child.get(dbgp.PROPERTY_CLASSNAME)
             property_encoding = child.get(dbgp.PROPERTY_ENCODING)
+            property_facet = child.get(dbgp.PROPERTY_FACET)
             property_value = None
 
             # Set property value
@@ -323,25 +331,36 @@ def get_response_properties(response, default_key=None):
                     except:
                         pass
 
-            if property_name is not None and len(property_name) > 0:
-                property_key = property_name
+            if property_fullname is not None and len(property_fullname) > 0:
+                property_key = property_fullname
                 # Ignore following properties
-                if property_name == "::":
+                if property_fullname == '::':
                     continue
 
                 # Avoid nasty static functions/variables from turning in an infinitive loop
-                if property_name.count("::") > 1:
+                if property_fullname.count('::') > 1:
                     continue
 
-                # Filter password values
-                if get_value(S.KEY_HIDE_PASSWORD, True) and property_name.lower().find('password') != -1 and property_value is not None:
+                # Prevent nested child which is a static public reference to it's parent from showing more than once
+                if property_facet == 'static public' and (response.tag == dbgp.ELEMENT_PROPERTY or response.tag == dbgp.ELEMENT_PATH_PROPERTY):
+                    parent_classname = response.get(dbgp.PROPERTY_CLASSNAME)
+                    parent_fullname = response.get(dbgp.PROPERTY_FULLNAME, response.get(dbgp.PROPERTY_NAME))
+                    if property_fullname == parent_fullname and property_classname == parent_classname:
+                        continue
+
+                # Filter potential password values
+                if get_value(S.KEY_HIDE_PASSWORD, True) and property_fullname.lower().find('password') != -1 and property_value is not None:
                     property_value = '******'
             else:
                 property_key = default_key
 
             # Store property
             if property_key:
-                properties[property_key] = { 'name': property_name, 'type': property_type, 'value': property_value, 'numchildren': property_numchildren, 'children' : None }
+                properties[property_key] = {'name': property_name, 'type': property_type, 'value': property_value, 'numchildren': property_numchildren, 'children': None}
+
+                # Use fullname for property name
+                if get_value(S.KEY_FULLNAME_PROPERTY, True):
+                    properties[property_key]['name'] = property_fullname
 
                 # Get values for children
                 if property_children:
@@ -358,7 +377,7 @@ def get_response_properties(response, default_key=None):
                     message = step_child.text
                     break
             if default_key:
-                properties[default_key] = { 'name': None, 'type': message, 'value': None, 'numchildren': None, 'children': None }
+                properties[default_key] = {'name': None, 'type': message, 'value': None, 'numchildren': None, 'children': None}
     return properties
 
 
@@ -415,9 +434,9 @@ def set_layout(layout):
             # Remember view indexes
             S.RESTORE_INDEX = H.new_dictionary()
             for view in window.views():
-                view_id = "%d" % view.id()
+                view_id = '%d' % view.id()
                 group, index = window.get_view_index(view)
-                S.RESTORE_INDEX[view_id] = { "group": group, "index": index }
+                S.RESTORE_INDEX[view_id] = {'group': group, 'index': index}
             set_window_value('restore_index', S.RESTORE_INDEX)
             # Set debug layout
             window.set_layout(S.LAYOUT_NORMAL)
@@ -433,14 +452,14 @@ def set_layout(layout):
         window.set_layout(S.LAYOUT_NORMAL)
         window.set_layout(S.RESTORE_LAYOUT)
         for view in window.views():
-            view_id = "%d" % view.id()
+            view_id = '%d' % view.id()
             # Set view indexes
             if view_id in H.dictionary_keys(S.RESTORE_INDEX):
                 v = S.RESTORE_INDEX[view_id]
-                window.set_view_index(view, v["group"], v["index"])
+                window.set_view_index(view, v['group'], v['index'])
 
     # Restore focus to previous active view
-    if not previous_active is None:
+    if previous_active is not None:
         window.focus_view(previous_active)
 
 
@@ -527,7 +546,7 @@ def show_content(data, content=None):
             window.focus_view(active_debug)
 
     # Strip .sublime-package of package name for syntax file
-    package_extension = ".sublime-package"
+    package_extension = '.sublime-package'
     package = S.PACKAGE_FOLDER
     if package.endswith(package_extension):
         package = package[:-len(package_extension)]
@@ -536,7 +555,7 @@ def show_content(data, content=None):
     view.settings().set('word_wrap', False)
     view.settings().set('syntax', 'Packages/' + package + '/Xdebug.tmLanguage')
 
-    # Set content for view and fold all indendation blocks
+    # Set content for view and fold all indentation blocks
     view.run_command('xdebug_view_update', {'data': content, 'readonly': True})
     if data == DATA_CONTEXT or data == DATA_WATCH:
         view.run_command('fold_all')
@@ -564,7 +583,7 @@ def show_context_output(view):
             if point.size() == 0 and sublime.score_selector(view.scope_name(point.a), 'variable'):
                 # Find variable in line which contains the point
                 line = view.substr(view.line(point))
-                pattern = re.compile('^\\s*(\\$.*?)\\s+\\=')
+                pattern = re.compile('^(?=\\$|\\s)\\s*(.*?)\\s+=')
                 match = pattern.match(line)
                 if match:
                     # Get variable details from context data
@@ -578,9 +597,9 @@ def show_context_output(view):
                         # Show context variables and children in output panel
                         window = sublime.active_window()
                         panel = window.get_output_panel('xdebug')
-                        panel.run_command("xdebug_view_update", {'data' : data} )
-                        panel.run_command('set_setting', {"setting": 'word_wrap', "value": True})
-                        window.run_command('show_panel', {"panel": 'output.xdebug'})
+                        panel.run_command('xdebug_view_update', {'data': data})
+                        panel.run_command('set_setting', {'setting': 'word_wrap', 'value': True})
+                        window.run_command('show_panel', {'panel': 'output.xdebug'})
         except:
             pass
 
@@ -600,7 +619,7 @@ def show_file(filename, row=None):
         # Check if file is already open
         found = False
         view = window.find_open_file(filename)
-        if not view is None:
+        if view is not None:
             found = True
             window.focus_view(view)
             # Set focus to row (line number)
@@ -619,7 +638,7 @@ def show_panel_content(content):
         window = sublime.active_window()
         panel = window.get_output_panel('xdebug')
         panel.run_command('xdebug_view_update', {'data': content})
-        panel.run_command('set_setting', {"setting": 'word_wrap', "value": True})
+        panel.run_command('set_setting', {'setting': 'word_wrap', 'value': True})
         window.run_command('show_panel', {'panel': 'output.xdebug'})
     except:
         print(content)
@@ -639,8 +658,12 @@ def show_at_row(view, row=None):
             row_region = rows_to_region(row)[0].a
             # Scroll the view to row
             view.show_at_center(row_region)
-        except:
-            # When defining row_region index could be out of bounds
+            # Highlight row by selection
+            selection = view.sel()
+            selection.clear()
+            selection.add(sublime.Region(row_region, row_region))
+        except IndexError:
+            # In case rows_to_region returns empty list
             pass
 
 
@@ -804,8 +827,21 @@ def toggle_breakpoint(view):
     try:
         # Get selected point in view
         point = view.sel()[0]
+        # Prevent (accidental) opening of file upon multiselection
+        if len(view.split_by_newlines(point)) > 1:
+            return
+        # Check if selected point uses breakpoint file scope
+        if sublime.score_selector(view.scope_name(point.a), 'meta.xdebug.breakpoint.file'):
+            # Get filename from selected line in view
+            file_line = view.substr(view.line(point))
+            file_pattern = re.compile('^\\s*(=>)\\s*(?P<filename>.*)')
+            file_match = file_pattern.match(file_line)
+            # Show file when it's a valid filename
+            if file_match and file_match.group('filename'):
+                filename = file_match.group('filename')
+                show_file(filename)
         # Check if selected point uses breakpoint line scope
-        if point.size() == 3 and sublime.score_selector(view.scope_name(point.a), 'xdebug.output.breakpoint.line'):
+        elif sublime.score_selector(view.scope_name(point.a), 'meta.xdebug.breakpoint.line'):
             # Find line number of breakpoint
             line = view.substr(view.line(point))
             pattern = re.compile('^\\s*(?:(\\|\\+\\|)|(\\|-\\|))\\s*(?P<line_number>\\d+)\\s*(?:(--)(.*)|.*)')
@@ -813,7 +849,7 @@ def toggle_breakpoint(view):
             # Check if it has found line number
             if match and match.group('line_number'):
                 # Get all breakpoint filenames
-                breakpoint_file = view.find_by_selector('xdebug.output.breakpoint.file')
+                breakpoint_file = view.find_by_selector('meta.xdebug.breakpoint.file')
                 # Locate line with filename related to selected breakpoint
                 file_line = None
                 for entry in breakpoint_file:
@@ -831,27 +867,20 @@ def toggle_breakpoint(view):
                 if file_match and file_match.group('filename'):
                     filename = file_match.group('filename')
                     line_number = match.group('line_number')
-                    enabled = None
-                    # Disable breakpoint
-                    if sublime.score_selector(view.scope_name(point.a), 'entity') and S.BREAKPOINT[filename][line_number]['enabled']:
-                        enabled = False
-                    # Enable breakpoint
-                    if sublime.score_selector(view.scope_name(point.a), 'keyword') and not S.BREAKPOINT[filename][line_number]['enabled']:
-                        enabled = True
-                    # Toggle breakpoint only if it has valid value
-                    if enabled is None:
-                        return
-                    sublime.active_window().run_command('xdebug_breakpoint', {"enabled": enabled, "rows": [line_number], "filename": filename})
-        # Check if selected point uses breakpoint file scope
-        elif point.size() > 3 and sublime.score_selector(view.scope_name(point.a), 'xdebug.output.breakpoint.file'):
-            # Get filename from selected line in view
-            file_line = view.substr(view.line(point))
-            file_pattern = re.compile('^\\s*(=>)\\s*(?P<filename>.*)')
-            file_match = file_pattern.match(file_line)
-            # Show file when it's a valid filename
-            if file_match and file_match.group('filename'):
-                filename = file_match.group('filename')
-                show_file(filename)
+                    if point.size() == 3:
+                        enabled = None
+                        # Disable breakpoint
+                        if sublime.score_selector(view.scope_name(point.a), 'entity') and S.BREAKPOINT[filename][line_number]['enabled']:
+                            enabled = False
+                        # Enable breakpoint
+                        if sublime.score_selector(view.scope_name(point.a), 'keyword') and not S.BREAKPOINT[filename][line_number]['enabled']:
+                            enabled = True
+                        # Toggle breakpoint only if it has valid value
+                        if enabled is None:
+                            return
+                        sublime.active_window().run_command('xdebug_breakpoint', {'enabled': enabled, 'rows': [line_number], 'filename': filename})
+                    else:
+                        show_file(filename, line_number)
     except:
         pass
 
@@ -860,11 +889,14 @@ def toggle_stack(view):
     try:
         # Get selected point in view
         point = view.sel()[0]
+        # Prevent (accidental) opening of file upon multiselection
+        if len(view.split_by_newlines(point)) > 1:
+            return
         # Check if selected point uses stack entry scope
-        if point.size() > 3 and sublime.score_selector(view.scope_name(point.a), 'xdebug.output.stack.entry'):
+        if sublime.score_selector(view.scope_name(point.a), 'meta.xdebug.stack.line'):
             # Get fileuri and line number from selected line in view
             line = view.substr(view.line(point))
-            pattern = re.compile('^(\[\d+\])\s*(?P<fileuri>.*)(\..*)(\s*:.*?(?P<lineno>\d+))\s*(\((.*?):.*\)|$)')
+            pattern = re.compile('^\[\d+\]\s(?P<fileuri>.*):(?P<lineno>\d+)')
             match = pattern.match(line)
             # Show file when it's a valid fileuri
             if match and match.group('fileuri'):
@@ -885,17 +917,18 @@ def toggle_watch(view):
         # Get selected point in view
         point = view.sel()[0]
         # Check if selected point uses watch entry scope
-        if point.size() == 3 and sublime.score_selector(view.scope_name(point.a), 'xdebug.output.watch.entry'):
+        if point.size() == 3 and sublime.score_selector(view.scope_name(point.a), 'meta.xdebug.watch.line'):
             # Determine if watch entry is enabled or disabled
             line = view.substr(view.line(point))
             pattern = re.compile('^(?:(?P<enabled>\\|\\+\\|)|(?P<disabled>\\|-\\|))\\.*')
             match = pattern.match(line)
             if match and (match.group('enabled') or match.group('disabled')):
                 # Get all entries and determine index by line/point match
-                watch = view.find_by_selector('xdebug.output.watch.entry')
+                watch = view.find_by_selector('meta.xdebug.watch.line')
+                watch_entries = [watch_entry for watch_region in watch for watch_entry in view.split_by_newlines(watch_region)]
                 watch_index = 0
-                for entry in watch:
-                    # Stop searching if we have passed selected breakpoint
+                for entry in watch_entries:
+                    # Stop searching if we have passed selected expression
                     if entry > point:
                         break
                     # Only increment watch index when it contains expression
@@ -910,6 +943,6 @@ def toggle_watch(view):
                 if sublime.score_selector(view.scope_name(point.a), 'keyword') and not S.WATCH[watch_index]['enabled']:
                     S.WATCH[watch_index]['enabled'] = True
                 # Update watch view and save watch data to file
-                sublime.active_window().run_command('xdebug_watch', {"update": True})
+                sublime.active_window().run_command('xdebug_watch', {'update': True})
     except:
         pass

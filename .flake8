@@ -1,0 +1,16 @@
+[flake8]
+ignore =
+    # E501: line too long (line-length > max-line-length characters)
+    E501,
+    # E722: do not use bare except
+    E722,
+    # F403: ‘from module import *’ used; unable to detect undefined names
+    F403,
+    # F405: name may be undefined, or defined from star imports: module
+    F405
+exclude =
+    # No need to traverse our git directory
+    .git,
+    # External libraries/classes
+    xdebug/elementtree,
+    xdebug/helper/ordereddict.py

@@ -37,14 +37,14 @@ from .util import get_real_path
 from .view import DATA_CONTEXT, DATA_STACK, DATA_WATCH, TITLE_WINDOW_WATCH, generate_context_output, generate_stack_output, get_response_properties, has_debug_view, render_regions, show_content, show_file, show_panel_content
 
 
-ACTION_EVALUATE = "action_evaluate"
-ACTION_EXECUTE = "action_execute"
-ACTION_INIT = "action_init"
-ACTION_REMOVE_BREAKPOINT = "action_remove_breakpoint"
-ACTION_SET_BREAKPOINT = "action_set_breakpoint"
-ACTION_STATUS = "action_status"
-ACTION_USER_EXECUTE = "action_user_execute"
-ACTION_WATCH = "action_watch"
+ACTION_EVALUATE = 'action_evaluate'
+ACTION_EXECUTE = 'action_execute'
+ACTION_INIT = 'action_init'
+ACTION_REMOVE_BREAKPOINT = 'action_remove_breakpoint'
+ACTION_SET_BREAKPOINT = 'action_set_breakpoint'
+ACTION_STATUS = 'action_status'
+ACTION_USER_EXECUTE = 'action_user_execute'
+ACTION_WATCH = 'action_watch'
 
 
 def is_connected(show_status=False):
@@ -70,8 +70,8 @@ def connection_error(message):
     Keyword arguments:
     message -- Exception/reason of connection error/loss.
     """
-    sublime.error_message("Please restart Xdebug debugging session.\nDisconnected from Xdebug debugger engine.\n" + message)
-    info("Connection lost with debugger engine.")
+    sublime.error_message('Please restart Xdebug debugging session.\nDisconnected from Xdebug debugger engine.\n' + message)
+    info('Connection lost with debugger engine.')
     debug(message)
     # Reset connection
     try:
@@ -167,10 +167,9 @@ class SocketHandler(threading.Thread):
         # Show dialog on connection error
         except ProtocolConnectionException:
             e = sys.exc_info()[1]
-            self.timeout(lambda: connection_error("%s" % e))
+            self.timeout(lambda: connection_error('%s' % e))
         finally:
             S.SESSION_BUSY = False
-
 
     def evaluate(self, expression):
         if not expression or not is_connected():
@@ -186,7 +185,6 @@ class SocketHandler(threading.Thread):
 
         # Show response data in output panel
         self.timeout(lambda: show_panel_content(response))
-
 
     def execute(self, command):
         # Do not execute if no command is set
@@ -216,7 +214,7 @@ class SocketHandler(threading.Thread):
                 if (exception):
                     info(exception + ': ' + child.text)
                     # Remember Exception name and first line of message
-                    S.BREAKPOINT_EXCEPTION = { 'name': exception, 'message': child.text.split('\n')[0], 'filename': fileuri, 'lineno': lineno }
+                    S.BREAKPOINT_EXCEPTION = {'name': exception, 'message': child.text.split('\n')[0], 'filename': fileuri, 'lineno': lineno}
 
                 # Check if temporary breakpoint is set and hit
                 if S.BREAKPOINT_RUN is not None and S.BREAKPOINT_RUN['filename'] == filename and S.BREAKPOINT_RUN['lineno'] == lineno:
@@ -232,7 +230,7 @@ class SocketHandler(threading.Thread):
                 self.status_message('Xdebug: Breakpoint')
                 info('Break: ' + filename + ':' + lineno)
                 # Store line number of breakpoint for displaying region marker
-                S.BREAKPOINT_ROW = { 'filename': filename, 'lineno': lineno }
+                S.BREAKPOINT_ROW = {'filename': filename, 'lineno': lineno}
                 # Focus/Open file window view
                 self.timeout(lambda: show_file(filename, lineno))
 
@@ -258,7 +256,6 @@ class SocketHandler(threading.Thread):
         # Render breakpoint markers
         self.timeout(lambda: render_regions())
 
-
     def get_context_values(self):
         """
         Get variables in current context.
@@ -270,7 +267,7 @@ class SocketHandler(threading.Thread):
         try:
             # Super global variables
             if get_value(S.KEY_SUPER_GLOBALS):
-                S.SESSION.send(dbgp.CONTEXT_GET, c=1)
+                S.SESSION.send(dbgp.CONTEXT_GET, c=dbgp.CONTEXT_ID_SUPERGLOBALS)
                 response = S.SESSION.read()
                 context.update(get_response_properties(response))
 
@@ -280,13 +277,12 @@ class SocketHandler(threading.Thread):
             context.update(get_response_properties(response))
         except ProtocolConnectionException:
             e = sys.exc_info()[1]
-            self.timeout(lambda: connection_error("%s" % e))
+            self.timeout(lambda: connection_error('%s' % e))
 
         # Store context variables in session
         S.CONTEXT_DATA = context
 
         return generate_context_output(context)
-
 
     def get_stack_values(self):
         """
@@ -300,9 +296,8 @@ class SocketHandler(threading.Thread):
                 response = S.SESSION.read()
             except ProtocolConnectionException:
                 e = sys.exc_info()[1]
-                self.timeout(lambda: connection_error("%s" % e))
+                self.timeout(lambda: connection_error('%s' % e))
         return generate_stack_output(response)
-
 
     def get_watch_values(self):
         """
@@ -326,7 +321,6 @@ class SocketHandler(threading.Thread):
 
                     S.WATCH[index]['value'] = watch_value
 
-
     def init(self):
         if not is_connected():
             return
@@ -336,25 +330,25 @@ class SocketHandler(threading.Thread):
 
         # More detailed internal information on properties
         S.SESSION.send(dbgp.FEATURE_SET, n='show_hidden', v=1)
-        response = S.SESSION.read()
+        S.SESSION.read()
 
         # Set max children limit
         max_children = get_value(S.KEY_MAX_CHILDREN)
         if max_children is not False and max_children is not True and (H.is_number(max_children) or H.is_digit(max_children)):
-            S.SESSION.send(dbgp.FEATURE_SET, n=dbgp.FEATURE_NAME_MAXCHILDREN, v=max_children)
-            response = S.SESSION.read()
+            S.SESSION.send(dbgp.FEATURE_SET, n=dbgp.FEATURE_NAME_MAX_CHILDREN, v=max_children)
+            S.SESSION.read()
 
         # Set max data limit
         max_data = get_value(S.KEY_MAX_DATA)
         if max_data is not False and max_data is not True and (H.is_number(max_data) or H.is_digit(max_data)):
-            S.SESSION.send(dbgp.FEATURE_SET, n=dbgp.FEATURE_NAME_MAXDATA, v=max_data)
-            response = S.SESSION.read()
+            S.SESSION.send(dbgp.FEATURE_SET, n=dbgp.FEATURE_NAME_MAX_DATA, v=max_data)
+            S.SESSION.read()
 
         # Set max depth limit
         max_depth = get_value(S.KEY_MAX_DEPTH)
         if max_depth is not False and max_depth is not True and (H.is_number(max_depth) or H.is_digit(max_depth)):
-            S.SESSION.send(dbgp.FEATURE_SET, n=dbgp.FEATURE_NAME_MAXDEPTH, v=max_depth)
-            response = S.SESSION.read()
+            S.SESSION.send(dbgp.FEATURE_SET, n=dbgp.FEATURE_NAME_MAX_DEPTH, v=max_depth)
+            S.SESSION.read()
 
         # Set breakpoints for files
         for filename, breakpoint_data in S.BREAKPOINT.items():
@@ -377,9 +371,9 @@ class SocketHandler(threading.Thread):
             filename = get_real_path(fileuri)
             # Show debug/status output
             self.status_message('Xdebug: Break on start')
-            info('Break on start: ' + filename )
+            info('Break on start: ' + filename)
             # Store line number of breakpoint for displaying region marker
-            S.BREAKPOINT_ROW = { 'filename': filename, 'lineno': 1 }
+            S.BREAKPOINT_ROW = {'filename': filename, 'lineno': 1}
             # Focus/Open file window view
             self.timeout(lambda: show_file(filename, 1))
 
@@ -390,8 +384,8 @@ class SocketHandler(threading.Thread):
             # Stack history
             stack = self.get_stack_values()
             if not stack:
-                stack = H.unicode_string('[{level}] {filename}.{where}:{lineno}\n' \
-                                          .format(level=0, where='{main}', lineno=1, filename=fileuri))
+                stack = H.unicode_string('[{level}] {filename}.{where}:{lineno}\n'
+                                         .format(level=0, where='{main}', lineno=1, filename=fileuri))
             self.timeout(lambda: show_content(DATA_STACK, stack))
 
             # Watch expressions
@@ -400,14 +394,12 @@ class SocketHandler(threading.Thread):
             # Tell script to run it's process
             self.run_command('xdebug_execute', {'command': 'run'})
 
-
     def remove_breakpoint(self, breakpoint_id):
         if not breakpoint_id or not is_connected():
             return
 
         S.SESSION.send(dbgp.BREAKPOINT_REMOVE, d=breakpoint_id)
-        response = S.SESSION.read()
-
+        S.SESSION.read()
 
     def set_breakpoint(self, filename, lineno, expression=None):
         if not filename or not lineno or not is_connected():
@@ -423,14 +415,12 @@ class SocketHandler(threading.Thread):
         if breakpoint_id:
             S.BREAKPOINT[filename][lineno]['id'] = breakpoint_id
 
-
     def set_exception(self, exception):
         if not is_connected():
             return
 
         S.SESSION.send(dbgp.BREAKPOINT_SET, t='exception', x='"%s"' % exception)
-        response = S.SESSION.read()
-
+        S.SESSION.read()
 
     def status(self):
         if not is_connected():
@@ -440,8 +430,7 @@ class SocketHandler(threading.Thread):
         S.SESSION.send(dbgp.STATUS)
         response = S.SESSION.read()
         # Show response in status bar
-        self.status_message("Xdebug status: " + response.get(dbgp.ATTRIBUTE_REASON) + ' - ' + response.get(dbgp.ATTRIBUTE_STATUS))
-
+        self.status_message('Xdebug status: ' + response.get(dbgp.ATTRIBUTE_REASON) + ' - ' + response.get(dbgp.ATTRIBUTE_STATUS))
 
     def user_execute(self, command, args=None):
         if not command or not is_connected():
@@ -454,13 +443,11 @@ class SocketHandler(threading.Thread):
         # Show response data in output panel
         self.timeout(lambda: show_panel_content(response))
 
-
     def watch_expression(self):
         # Evaluate watch expressions
         self.get_watch_values()
         # Show watch expression
         self.timeout(lambda: self._watch_expression(self.get_option('check_watch_view', False)))
-
 
     def _watch_expression(self, check_watch_view):
         # Do not show if we only want to show content when Watch view is not available

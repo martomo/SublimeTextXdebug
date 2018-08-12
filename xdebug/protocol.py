@@ -1,3 +1,4 @@
+import errno
 import re
 import socket
 import sys
@@ -35,7 +36,7 @@ except ImportError:
     except ImportError:
         from .elementtree import ElementTree as ET
 try:
-    from xml.parsers import expat
+    from xml.parsers import expat  # noqa: F401
     UNESCAPE_RESPONSE_DATA = True
 except ImportError:
     # Module xml.parsers.expat missing, using SimpleXMLTreeBuilder
@@ -53,14 +54,15 @@ ILLEGAL_XML_UNICODE_CHARACTERS = [
     (0x7FFFE, 0x7FFFF), (0x8FFFE, 0x8FFFF), (0x9FFFE, 0x9FFFF),
     (0xAFFFE, 0xAFFFF), (0xBFFFE, 0xBFFFF), (0xCFFFE, 0xCFFFF),
     (0xDFFFE, 0xDFFFF), (0xEFFFE, 0xEFFFF), (0xFFFFE, 0xFFFFF),
-    (0x10FFFE, 0x10FFFF) ]
+    (0x10FFFE, 0x10FFFF)]
 
-ILLEGAL_XML_RANGES = ["%s-%s" % (H.unicode_chr(low), H.unicode_chr(high))
-                  for (low, high) in ILLEGAL_XML_UNICODE_CHARACTERS
-                  if low < sys.maxunicode]
+ILLEGAL_XML_RANGES = [
+    '%s-%s' % (H.unicode_chr(low), H.unicode_chr(high))
+    for (low, high) in ILLEGAL_XML_UNICODE_CHARACTERS
+    if low < sys.maxunicode
+]
 
 ILLEGAL_XML_RE = re.compile(H.unicode_string('[%s]') % H.unicode_string('').join(ILLEGAL_XML_RANGES))
-
 
 
 class Protocol(object):
@@ -72,6 +74,8 @@ class Protocol(object):
     read_size = 1024
 
     def __init__(self):
+        # Set host address to listen for response
+        self.host = get_value(S.KEY_HOST, S.DEFAULT_HOST)
         # Set port number to listen for response
         self.port = get_value(S.KEY_PORT, S.DEFAULT_PORT)
         self.clear()
@@ -115,9 +119,9 @@ class Protocol(object):
         def convert(matches):
             text = matches.group(0)
             # Character reference
-            if text[:2] == "&#":
+            if text[:2] == '&#':
                 try:
-                    if text[:3] == "&#x":
+                    if text[:3] == '&#x':
                         return H.unicode_chr(int(text[3:-1], 16))
                     else:
                         return H.unicode_chr(int(text[2:-1]))
@@ -127,14 +131,14 @@ class Protocol(object):
             else:
                 try:
                     # Following are not needed to be converted for XML
-                    if text[1:-1] == "amp" or text[1:-1] == "gt" or text[1:-1] == "lt":
+                    if text[1:-1] == 'amp' or text[1:-1] == 'gt' or text[1:-1] == 'lt':
                         pass
                     else:
                         text = H.unicode_chr(name2codepoint[text[1:-1]])
                 except KeyError:
                     pass
             return text
-        return re.sub("&#?\w+;", convert, string)
+        return re.sub('&#?\w+;', convert, string)
 
     def read_until_null(self):
         """
@@ -144,7 +148,7 @@ class Protocol(object):
         if self.connected:
             # Get result data from debugger engine
             try:
-                while not '\x00' in self.buffer:
+                while '\x00' not in self.buffer:
                     self.buffer += H.data_read(self.socket.recv(self.read_size))
                 data, self.buffer = self.buffer.split('\x00', 1)
                 return data
@@ -152,7 +156,7 @@ class Protocol(object):
                 e = sys.exc_info()[1]
                 raise ProtocolConnectionException(e)
         else:
-            raise ProtocolConnectionException("Xdebug is not connected")
+            raise ProtocolConnectionException('Xdebug is not connected')
 
     def read_data(self):
         """
@@ -164,7 +168,7 @@ class Protocol(object):
         if int(length) == len(message):
             return message
         else:
-            raise ProtocolException("Length mismatch encountered while reading the Xdebug message")
+            raise ProtocolException('Length mismatch encountered while reading the Xdebug message')
 
     def read(self, return_string=False):
         """
@@ -198,7 +202,7 @@ class Protocol(object):
         # Expression is used for conditional and watch type breakpoints
         expression = None
 
-        # Seperate 'expression' from kwargs
+        # Separate 'expression' from kwargs
         if 'expression' in kwargs:
             expression = kwargs['expression']
             del kwargs['expression']
@@ -241,13 +245,25 @@ class Protocol(object):
             try:
                 server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
                 server.settimeout(1)
-                server.bind(('', self.port))
+                server.bind((self.host, self.port))
                 server.listen(1)
                 self.listening = True
                 self.socket = None
             except:
                 e = sys.exc_info()[1]
-                raise ProtocolConnectionException(e)
+                debug('Failed to create socket: %s' % e)
+                # Substitute exception with readable (custom) message
+                if isinstance(e, TypeError) and not H.is_number(self.port):
+                    e = 'Configured port is not a valid integer.'
+                elif isinstance(e, socket.gaierror) and self.host != '':
+                    e = 'Hostname (%s) is not specified in hosts file or is an IPv6 address.' % self.host
+                elif hasattr(e, 'errno'):
+                    address_or_port = 'address (%s:%d)' % (self.host, self.port) if self.host != '' else 'port (%d)' % self.port
+                    if e.errno == errno.EADDRINUSE:
+                        e = 'Another application is already listening on configured %s.' % address_or_port
+                    elif e.errno == errno.EADDRNOTAVAIL:
+                        e = 'Configured %s is not accessible.' % address_or_port
+                raise ProtocolListenException(e)
 
             # Accept incoming connection on configured port
             while self.listening:
@@ -275,7 +291,7 @@ class Protocol(object):
             # Return socket connection
             return self.socket
         else:
-            raise ProtocolConnectionException('Could not create socket server.')
+            raise ProtocolListenException('Could not create socket server.')
 
 
 class ProtocolException(Exception):
@@ -283,4 +299,8 @@ class ProtocolException(Exception):
 
 
 class ProtocolConnectionException(ProtocolException):
+    pass
+
+
+class ProtocolListenException(ProtocolException):
     pass
