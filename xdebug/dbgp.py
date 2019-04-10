@@ -116,7 +116,7 @@ ELEMENT_MESSAGE = 'message'
 ELEMENT_PROPERTY = 'property'
 ELEMENT_STACK = 'stack'
 
-ELEMENT_PATH_BREAKPOINT = '{http://xdebug.org/dbgp/xdebug}message'
+ELEMENT_PATH_BREAKPOINT = '{https://xdebug.org/dbgp/xdebug}message'
 ELEMENT_PATH_ERROR = '{urn:debugger_protocol_v1}error'
 ELEMENT_PATH_MESSAGE = '{urn:debugger_protocol_v1}message'
 ELEMENT_PATH_PROPERTY = '{urn:debugger_protocol_v1}property'
@@ -129,7 +129,7 @@ NOTIFY_NAME = 'name'
 NOTIFY_ENCODING = 'encoding'
 
 NOTIFY_ELEMENT_MESSAGE = 'xdebug:message'
-NOTIFY_ELEMENT_PATH_MESSAGE = '{http://xdebug.org/dbgp/xdebug}message'
+NOTIFY_ELEMENT_PATH_MESSAGE = '{https://xdebug.org/dbgp/xdebug}message'
 
 NOTIFY_MESSAGE_FILENAME = 'filename'
 NOTIFY_MESSAGE_LINENO = 'lineno'
