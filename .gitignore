@@ -1,2 +1,4 @@
 *.pyc
 *.tmLanguage.cache
+/tests/server/logs/*
+!/tests/server/logs/.gitkeep

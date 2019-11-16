@@ -1,0 +1,7 @@
+{
+    "async": false,
+    "deferred": true,
+    "capture_console": true,
+    "pattern": "test_*.py",
+    "tests_dir": "tests/integration"
+}

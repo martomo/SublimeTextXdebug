@@ -1,13 +1,164 @@
+env:
+  global:
+    - PACKAGE="SublimeTextXdebug"
+    - SUBLIME_TEXT_VERSION="3"
+    # Disable accessibility bridge to prevent following warning upon starting Sublime Text:
+    # "Error retrieving accessibility bus address: org.freedesktop.DBus.Error.ServiceUnknown: The name org.a11y.Bus was not provided by any .service files"
+    - NO_AT_BRIDGE=1
 language: python
-python:
-  # 2.6.5, Sublime Text 2.0.2 Build 2221 (Windows)
-  # 2.6.6, Sublime Text 2.0.2 Build 2221 (Linux)
-  # 2.6.9, Sublime Text 2.0.2 Build 2221 (macOS Sierra)
-  # 2.7.10, Sublime Text 2.0.2 Build 2221 (macOS High Sierra)
-  - "2.7"
-  # Sublime Text 3.0 Build 3143/3156
-  - "3.3.6"
-install:
-  - "pip install flake8 flake8-quotes"
-script:
-  - flake8 .
+notifications:
+    email: false
+stages:
+  - coding style
+  - unit tests
+  - integration tests
+jobs:
+  exclude:
+    - &python-27
+      name: Python 2.7.16
+      dist: xenial
+      python: 2.7.16
+    - &python-33
+      name: Python 3.3.6
+      dist: trusty
+      python: 3.3.6
+    - &python-flake8
+      stage: coding style
+      install:
+        - pip install flake8==3.5.0
+        - pip install flake8-quotes==2.1.1
+      script: flake8 --verbose .
+    - &python-unittest
+      stage: unit tests
+      script: python -m unittest discover -v -p 'test_*.py' -s tests/unit
+    - &sublime-text-unittesting
+      stage: integration tests
+      before_install:
+        - export XDEBUG_REMOTE_LOG=${TRAVIS_BUILD_DIR}/tests/server/logs/xdebug_${XDEBUG_VERSION}_${PHP_VERSION}.log
+        # Create log file in order for Xdebug to open remote debug file
+        - touch $XDEBUG_REMOTE_LOG && chmod 666 $XDEBUG_REMOTE_LOG
+        - curl -OL https://raw.githubusercontent.com/SublimeText/UnitTesting/master/sbin/travis.sh
+      before_script:
+        # Verify test server is running and using correct version before executing tests
+        - |
+          SERVER_VERSION=$(curl http://127.0.0.1:8090/version.php)
+          if [ "${SERVER_VERSION}" != "${PHP_VERSION}_${XDEBUG_VERSION}" ]
+          then
+            >&2 echo "Test server is not running or using wrong version (${SERVER_VERSION})."
+            exit 1
+          else
+            echo "Test server is running and using correct version (${SERVER_VERSION})."
+          fi
+        # Install Sublime Text and testing suite
+        - sh travis.sh bootstrap
+      script: sh travis.sh run_tests
+    - &sublime-text-unittesting-linux
+      <<: *sublime-text-unittesting
+      os: linux
+      services:
+        - docker
+        - xvfb
+      install:
+        # Start test server with PHP/Xdebug available at http://127.0.0.1:8090/
+        - tests/php-server start
+        # Wait couple seconds for Docker container to spin up before continuing
+        - sleep 5
+      after_failure:
+        - docker ps -a
+        - docker logs php-server --tail 1000 || echo "No logs available for test server."
+        - cat $XDEBUG_REMOTE_LOG || echo "No logs available for Xdebug extension."
+    - &sublime-text-unittesting-osx
+      <<: *sublime-text-unittesting
+      os: osx
+      osx_image: xcode9.4
+      language: generic
+      addons:
+        homebrew:
+          update: true
+      install:
+        # Using Homebrew because Docker is not supported on macOS
+        - brew install httpd php@${PHP_VERSION}
+        # Install Xdebug extension
+        - sudo $(brew --prefix php@${PHP_VERSION})/bin/pecl channel-update pecl.php.net
+        - sudo $(brew --prefix php@${PHP_VERSION})/bin/pecl install xdebug-${XDEBUG_VERSION}
+        # Set configuration for Xdebug extension
+        - |
+          XDEBUG_INI_FILE=/usr/local/etc/php/${PHP_VERSION}/conf.d/ext-xdebug.ini
+          echo "xdebug.remote_enable=1" >> $XDEBUG_INI_FILE
+          echo "xdebug.remote_host=127.0.0.1" >> $XDEBUG_INI_FILE
+          echo "xdebug.remote_port=9000" >> $XDEBUG_INI_FILE
+          echo "xdebug.remote_handler=dbgp" >> $XDEBUG_INI_FILE
+          echo "xdebug.remote_log=${XDEBUG_REMOTE_LOG}" >> $XDEBUG_INI_FILE
+        # Configure Apache web server
+        - |
+          APACHE_CONFIGURATION_FILE=/usr/local/etc/httpd/httpd.conf
+          NEWLINE=$'\n'
+          # Change document root and host settings
+          sed -i "" "s|/usr/local/var/www|${TRAVIS_BUILD_DIR}/tests/server/public|g" $APACHE_CONFIGURATION_FILE
+          sed -i "" "s|Listen 8080|Listen 8090|g" $APACHE_CONFIGURATION_FILE
+          # Enable rewrite and PHP modules
+          sed -i "" -e "s|#LoadModule rewrite_module|LoadModule php7_module $(brew --prefix php@${PHP_VERSION})/lib/httpd/modules/libphp7.so\\${NEWLINE}LoadModule rewrite_module|g" $APACHE_CONFIGURATION_FILE
+          sed -i "" "s|AllowOverride None|AllowOverride All|g" $APACHE_CONFIGURATION_FILE
+          sed -i "" "s|DirectoryIndex index.html|DirectoryIndex index.html index.php|g" $APACHE_CONFIGURATION_FILE
+          # Ensure PHP files are executed as code
+          echo '<IfModule mod_mime.c>' >> $APACHE_CONFIGURATION_FILE
+          echo '    AddType application/x-httpd-php .php' >> $APACHE_CONFIGURATION_FILE
+          echo '</IfModule>' >> $APACHE_CONFIGURATION_FILE
+          echo '<FilesMatch \.php$>' >> $APACHE_CONFIGURATION_FILE
+          echo '    SetHandler application/x-httpd-php' >> $APACHE_CONFIGURATION_FILE
+          echo '</FilesMatch>' >> $APACHE_CONFIGURATION_FILE
+        # Start test server with PHP/Xdebug available at http://127.0.0.1:8090/
+        - sudo apachectl -k start
+      after_failure:
+        - cat /usr/local/etc/httpd/httpd.conf || echo "Missing configuration for Apache installation."
+        - $(brew --prefix php@${PHP_VERSION})/bin/php --ini || echo "Unable to show configuration file names for PHP."
+        - $(brew --prefix php@${PHP_VERSION})/bin/php -m | grep -iq "xdebug" && echo "Xdebug extension is enabled." || echo "Xdebug extension is not enabled."
+        - tail -n 1000 /usr/local/var/log/httpd/* || echo "No logs available for test server."
+        - cat $XDEBUG_REMOTE_LOG || echo "No logs available for Xdebug extension."
+  include:
+    # 2.6.5, Sublime Text 2.0.2 Build 2221 (Windows)
+    # 2.6.6, Sublime Text 2.0.2 Build 2221 (Linux)
+    # 2.6.9, Sublime Text 2.0.2 Build 2221 (macOS Sierra)
+    # 2.7.10, Sublime Text 2.0.2 Build 2221 (macOS High Sierra)
+    # 2.7.16, Sublime Text 2.0.2 Build 2221 (macOS Mojave)
+    - <<: *python-27
+      <<: *python-flake8
+    - <<: *python-27
+      <<: *python-unittest
+    # 3.3.6, Sublime Text 3.0 Build 3143/3156
+    # 3.3.6, Sublime Text 3.2.2 Build 3210/3211
+    - <<: *python-33
+      <<: *python-flake8
+    - <<: *python-33
+      <<: *python-unittest
+    - name: Linux (Sublime Text 3, Xdebug 2.5.0, PHP 7.0)
+      env:
+        - PHP_VERSION="7.0"
+        - XDEBUG_VERSION="2.5.0"
+      <<: *sublime-text-unittesting-linux
+    - name: Linux (Sublime Text 3, Xdebug 2.5.5, PHP 7.1)
+      env:
+        - PHP_VERSION="7.1"
+        - XDEBUG_VERSION="2.5.5"
+      <<: *sublime-text-unittesting-linux
+    - name: Linux (Sublime Text 3, Xdebug 2.7.2, PHP 7.2)
+      env:
+        - PHP_VERSION="7.2"
+        - XDEBUG_VERSION="2.7.2"
+      <<: *sublime-text-unittesting-linux
+    - name: Linux (Sublime Text 3, Xdebug 2.8.0, PHP 7.3)
+      env:
+        - PHP_VERSION="7.3"
+        - XDEBUG_VERSION="2.8.0"
+      <<: *sublime-text-unittesting-linux
+    # Keep macOS jobs to a minimum as Homebrew setup significantly increases total test time
+    - name: macOS (Sublime Text 3, Xdebug 2.5.5, PHP 7.1)
+      env:
+        - PHP_VERSION="7.1"
+        - XDEBUG_VERSION="2.5.5"
+      <<: *sublime-text-unittesting-osx
+    - name: macOS (Sublime Text 3, Xdebug 2.8.0, PHP 7.3)
+      env:
+        - PHP_VERSION="7.3"
+        - XDEBUG_VERSION="2.8.0"
+      <<: *sublime-text-unittesting-osx
