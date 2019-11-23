@@ -131,7 +131,7 @@ class Protocol(object):
             else:
                 try:
                     # Following are not needed to be converted for XML
-                    if text[1:-1] == 'amp' or text[1:-1] == 'gt' or text[1:-1] == 'lt':
+                    if text[1:-1] in ('amp', 'apos', 'gt', 'lt', 'quot'):
                         pass
                     else:
                         text = H.unicode_chr(name2codepoint[text[1:-1]])
