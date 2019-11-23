@@ -1,13 +1,33 @@
 language: python
-python:
-  # 2.6.5, Sublime Text 2.0.2 Build 2221 (Windows)
-  # 2.6.6, Sublime Text 2.0.2 Build 2221 (Linux)
-  # 2.6.9, Sublime Text 2.0.2 Build 2221 (macOS Sierra)
-  # 2.7.10, Sublime Text 2.0.2 Build 2221 (macOS High Sierra)
-  - "2.7"
-  # Sublime Text 3.0 Build 3143/3156
-  - "3.3.6"
-install:
-  - "pip install flake8 flake8-quotes"
-script:
-  - flake8 .
+notifications:
+    email: false
+stages:
+  - coding style
+jobs:
+  exclude:
+    - &python-27
+      name: Python 2.7.16
+      dist: xenial
+      python: 2.7.16
+    - &python-33
+      name: Python 3.3.6
+      dist: trusty
+      python: 3.3.6
+    - &python-flake8
+      stage: coding style
+      install:
+        - pip install flake8==3.5.0
+        - pip install flake8-quotes==2.1.1
+      script: flake8 --verbose .
+  include:
+    # 2.6.5, Sublime Text 2.0.2 Build 2221 (Windows)
+    # 2.6.6, Sublime Text 2.0.2 Build 2221 (Linux)
+    # 2.6.9, Sublime Text 2.0.2 Build 2221 (macOS Sierra)
+    # 2.7.10, Sublime Text 2.0.2 Build 2221 (macOS High Sierra)
+    # 2.7.16, Sublime Text 2.0.2 Build 2221 (macOS Mojave)
+    - <<: *python-27
+      <<: *python-flake8
+    # 3.3.6, Sublime Text 3.0 Build 3143/3156
+    # 3.3.6, Sublime Text 3.2.2 Build 3210/3211
+    - <<: *python-33
+      <<: *python-flake8
