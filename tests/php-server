@@ -1,0 +1,89 @@
+#!/bin/bash
+set -eu -o pipefail
+
+# Use polyfill for unsupported -e/-f operator in OSX
+readlink-polyfill() {
+    local target=$1
+    [ -f "$target" ] || return 1
+
+    cd $(dirname $target)
+    target=$(basename $target)
+
+    while [ -L "$target" ]
+    do
+        target=$(readlink $target)
+        cd $(dirname $target)
+        target=$(basename $target)
+    done
+
+    local physical_directory=$(pwd -P)
+    echo $physical_directory/$target
+}
+
+usage() {
+    cat <<EOF
+Usage: $0 start|stop|restart|status
+    start      Start PHP server
+    stop       Stop PHP server
+    restart    Restart PHP server
+    status     PHP server status
+EOF
+    exit 1
+}
+
+# Show usage when no arguments or --help specified
+if [[ $# -eq 0 || "$@" == "--help" ]]
+then
+    usage
+    exit 1
+fi
+
+PACKAGE_DIRECTORY=${TRAVIS_BUILD_DIR:-$(dirname $(dirname $(readlink-polyfill $0)))}
+LOGS_DIRECTORY=${PACKAGE_DIRECTORY}/tests/server/logs
+SOURCE_DIRECTORY=${PACKAGE_DIRECTORY}/tests/server/public
+
+PHP_VERSION="${PHP_VERSION:-7.1}"
+XDEBUG_VERSION="${XDEBUG_VERSION:-2.5.5}"
+XDEBUG_LOGFILE=xdebug_${XDEBUG_VERSION}_${PHP_VERSION}.log
+
+DOCKER_CONTAINER_NAME=php-server
+DOCKER_IMAGE_NAME=php-xdebug:${PHP_VERSION}-${XDEBUG_VERSION}
+
+status() {
+    docker inspect -f '{{.State.Running}}' $DOCKER_CONTAINER_NAME >/dev/null 2>&1 && echo "running" || echo "stopped"
+}
+
+stop() {
+    docker rm --force $DOCKER_CONTAINER_NAME || true
+}
+
+start() {
+    # Build image with specified PHP/Xdebug versions
+    docker build -t $DOCKER_IMAGE_NAME \
+                 --build-arg PHP_VERSION=${PHP_VERSION} \
+                 --build-arg XDEBUG_VERSION=${XDEBUG_VERSION} \
+                 ${PACKAGE_DIRECTORY}/tests/php-xdebug
+
+    # Set remote host based on OS, considering Linux does not support 'host.docker.internal' (https://github.com/docker/for-linux/issues/264)
+    [[ "$OSTYPE" == "darwin"* || "$OSTYPE" == "msys" ]] && XDEBUG_REMOTE_HOST="host.docker.internal" || XDEBUG_REMOTE_HOST="$(ip -4 addr show docker0 | grep -Po 'inet \K[\d.]+')"
+
+    # Remove any running containers to avoid container name conflict
+    stop
+
+    # Start container with PHP/Xdebug image
+    docker run --detach --rm -p 8090:80 \
+               --name $DOCKER_CONTAINER_NAME \
+               --volume ${LOGS_DIRECTORY}:/var/www/logs \
+               --volume ${SOURCE_DIRECTORY}:/var/www/html \
+               --env XDEBUG_CONFIG="remote_log=/var/www/logs/${XDEBUG_LOGFILE} remote_host=${XDEBUG_REMOTE_HOST}" \
+               $DOCKER_IMAGE_NAME
+}
+
+restart() {
+    start
+}
+
+COMMAND=${1:-}
+# Execute command or display usage when invalid command specified
+declare -F $COMMAND >/dev/null || usage
+$COMMAND
