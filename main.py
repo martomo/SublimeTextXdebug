@@ -7,9 +7,15 @@ import threading
 
 # Load modules
 try:
-    from .xdebug import *
+    from .xdebug import config, dbgp, load, protocol, session, util
+    from .xdebug.helper import H
+    from .xdebug import settings as S
+    from .xdebug import view as V
 except:
-    from xdebug import *
+    from xdebug import config, dbgp, load, protocol, session, util
+    from xdebug.helper import H
+    from xdebug import settings as S
+    from xdebug import view as V
 
 # Set Python libraries from system installation
 python_path = config.get_value(S.KEY_PYTHON_PATH)

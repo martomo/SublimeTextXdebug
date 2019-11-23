@@ -3,6 +3,7 @@ notifications:
     email: false
 stages:
   - coding style
+  - unit tests
 jobs:
   exclude:
     - &python-27
@@ -19,6 +20,9 @@ jobs:
         - pip install flake8==3.5.0
         - pip install flake8-quotes==2.1.1
       script: flake8 --verbose .
+    - &python-unittest
+      stage: unit tests
+      script: python -m unittest discover -v -p 'test_*.py' -s tests/unit
   include:
     # 2.6.5, Sublime Text 2.0.2 Build 2221 (Windows)
     # 2.6.6, Sublime Text 2.0.2 Build 2221 (Linux)
@@ -27,7 +31,11 @@ jobs:
     # 2.7.16, Sublime Text 2.0.2 Build 2221 (macOS Mojave)
     - <<: *python-27
       <<: *python-flake8
+    - <<: *python-27
+      <<: *python-unittest
     # 3.3.6, Sublime Text 3.0 Build 3143/3156
     # 3.3.6, Sublime Text 3.2.2 Build 3210/3211
     - <<: *python-33
       <<: *python-flake8
+    - <<: *python-33
+      <<: *python-unittest
