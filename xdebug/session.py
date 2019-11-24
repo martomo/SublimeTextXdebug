@@ -205,7 +205,7 @@ class SocketHandler(threading.Thread):
 
         # Handle breakpoint hit
         for child in response:
-            if child.tag == dbgp.ELEMENT_BREAKPOINT or child.tag == dbgp.ELEMENT_PATH_BREAKPOINT:
+            if child.tag == dbgp.ELEMENT_BREAKPOINT or child.tag == dbgp.ELEMENT_PATH_BREAKPOINT or child.tag == dbgp.ELEMENT_PATH_SECURE_BREAKPOINT:
                 # Get breakpoint attribute values
                 fileuri = child.get(dbgp.BREAKPOINT_FILENAME)
                 lineno = child.get(dbgp.BREAKPOINT_LINENO)
