@@ -135,14 +135,19 @@ jobs:
         - PHP_VERSION="7.1"
         - XDEBUG_VERSION="2.5.5"
       <<: *sublime-text-unittesting-linux
-    - name: Linux (Sublime Text 3, Xdebug 2.7.2, PHP 7.2)
+    - name: Linux (Sublime Text 3, Xdebug 2.6.1, PHP 7.2)
       env:
         - PHP_VERSION="7.2"
-        - XDEBUG_VERSION="2.7.2"
+        - XDEBUG_VERSION="2.6.1"
       <<: *sublime-text-unittesting-linux
-    - name: Linux (Sublime Text 3, Xdebug 2.8.0, PHP 7.3)
+    - name: Linux (Sublime Text 3, Xdebug 2.7.2, PHP 7.3)
       env:
         - PHP_VERSION="7.3"
+        - XDEBUG_VERSION="2.7.2"
+      <<: *sublime-text-unittesting-linux
+    - name: Linux (Sublime Text 3, Xdebug 2.8.0, PHP 7.4)
+      env:
+        - PHP_VERSION="7.4"
         - XDEBUG_VERSION="2.8.0"
       <<: *sublime-text-unittesting-linux
     # Keep macOS jobs to a minimum as Homebrew setup significantly increases total testing time
