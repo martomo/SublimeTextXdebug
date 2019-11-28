@@ -82,6 +82,7 @@ jobs:
         - |
           XDEBUG_INI_FILE=/usr/local/etc/php/${PHP_VERSION}/conf.d/ext-xdebug.ini
           echo "xdebug.remote_enable=1" >> $XDEBUG_INI_FILE
+          echo "xdebug.remote_autostart=1" >> $XDEBUG_INI_FILE
           echo "xdebug.remote_host=127.0.0.1" >> $XDEBUG_INI_FILE
           echo "xdebug.remote_port=9000" >> $XDEBUG_INI_FILE
           echo "xdebug.remote_handler=dbgp" >> $XDEBUG_INI_FILE

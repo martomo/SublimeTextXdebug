@@ -140,7 +140,7 @@ class XdebugDeferrableTestCase(DeferrableTestCase):
     def run_command(self, *args, **kwargs):
         sublime.active_window().run_command(*args, **kwargs)
 
-    def send_server_request(self, path='', params='XDEBUG_SESSION_START=1'):
+    def send_server_request(self, path='', params=''):
         if isinstance(params, dict):
             params = urlencode(params)
         query_string = '?' + params if len(params) else ''
