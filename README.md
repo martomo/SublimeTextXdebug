@@ -92,7 +92,7 @@ Get the latest [source from GitHub](https://github.com/martomo/SublimeTextXdebug
 In order to be able to debug your PHP scripts, you will need have Xdebug extension installed on your server.
 [See here for installation instructions](http://xdebug.org/docs/install)
 
-Below is a configuration template for php.ini/xdebug.ini, be warned if you are on a Live environment, __remote_connect_back__ allows every debug request from any source to be accepted.
+Below is a configuration template for php.ini/xdebug.ini, be warned if you are on a Live environment, __remote\_connect\_back__ allows every debug request from any source to be accepted.
 
 ```ini
 [xdebug]
@@ -110,13 +110,13 @@ For details about all available settings for configuring Xdebug, see [here](http
 ## Configuration
 The following settings can be configured in Xdebug.sublime-settings or in \*.sublime-project files:
 
-*__path_mapping__*  
+*__path\_mapping__*  
 For remote debugging to resolve the file locations it is required to configure the path mapping with the server path as key and local path as value.
 
 *__url__*  
 Determine which URL to launch in the default web browser when starting/stopping a session.
 
-*__ide_key__*  
+*__ide\_key__*  
 An IDE key is used to identify with debugger engine when Sublime Text will start or stop a debugging session.
 
 _This package does not filter sessions by IDE key, it will accept any IDE key, also ones that do not match this configured IDE key. It is merely used when launching the default web browser with the configured URL._
@@ -129,70 +129,70 @@ _When specifying host address of network interface, be sure to specify an IPv4 a
 *__port__*  
 Which port number Sublime Text should listen to connect with debugger engine.  
 
-*__max_children__*  
+*__max\_children__*  
 Maximum amount of array children and object's properties to return.  
 
-*__max_data__*  
+*__max\_data__*  
 Maximum amount of variable data to initially retrieve.  
 
-*__max_depth__*  
+*__max\_depth__*  
 Maximum amount of nested levels to retrieve of array elements and object properties.  
 
-*__break_on_start__*  
+*__break\_on\_start__*  
 Break at first line on session start, when debugger engine has connected.  
 
-*__break_on_exception__*  
+*__break\_on\_exception__*  
 Break on exceptions, suspend execution when the exception name matches an entry in this list value.  
 
-*__close_on_stop__*  
+*__close\_on\_stop__*  
 Always close debug windows and restore layout on session stop.  
 
-*__super_globals__*  
+*__super\_globals__*  
 Show information about super globals in context view.  
 
-*__fullname_property__*  
+*__fullname\_property__*  
 Display property by fullname in context view.  
 
-*__hide_password__*  
+*__hide\_password__*  
 Do not show possible password values in context view.  
 
-*__pretty_output__*  
+*__pretty\_output__*  
 Render evaluated result as parsed output instead of raw XML.  
 
-*__launch_browser__*  
+*__launch\_browser__*  
 Always launch browser on session start/stop.
 
 *This will only work if you have the '__url__' setting configured.*  
 
-*__browser_no_execute__*  
+*__browser\_no\_execute__*  
 When launching browser on session stop do not execute script.  
-By using parameter XDEBUG_SESSION_STOP_NO_EXEC instead of XDEBUG_SESSION_STOP.  
+By using parameter XDEBUG\_SESSION\_STOP\_NO\_EXEC instead of XDEBUG\_SESSION\_STOP.  
 
-*__disable_layout__*  
+*__disable\_layout__*  
 Do not use the debugging window layout.
 
-*__debug_layout__*  
+*__debug\_layout__*  
 Window layout that is being used when debugging.  
 
-*__breakpoint_group__*  
-*__breakpoint_index__*  
-*__context_group__*  
-*__context_index__*  
-*__stack_group__*  
-*__stack_index__*  
-*__watch_group__*  
-*__watch_index__*  
+*__breakpoint\_group__*  
+*__breakpoint\_index__*  
+*__context\_group__*  
+*__context\_index__*  
+*__stack\_group__*  
+*__stack\_index__*  
+*__watch\_group__*  
+*__watch\_index__*  
 Group and index positions for debug views.  
 
-*__breakpoint_enabled__*  
-*__breakpoint_disabled__*  
-*__breakpoint_current__*  
-*__current_line__*  
+*__breakpoint\_enabled__*  
+*__breakpoint\_disabled__*  
+*__breakpoint\_current__*  
+*__current\_line__*  
 Custom gutter icons for indicating current line or enabled/disabled breakpoints.
 
 _Do not use same icon for above values, because Sublime Text is unable to use the same icon for different scopes, in case there are duplicate icons detected it will fall back to the corresponding icon in the package._
 
-*__python_path__*  
+*__python\_path__*  
 Path to Python installation on your system.  
 Which is being used to load missing modules.  
 
@@ -254,7 +254,7 @@ SublimeTextXdebug can [start or stop a debugging session](#startstop-debugging-s
 
 When you do not configure the URL, the plugin will still listen for debugging connections from Xdebug, but you will need to trigger Xdebug [for a remote session](http://xdebug.org/docs/remote#starting).
 
-If you want to run a start a debugging session from command line, before you run your script, you will need to set the environment variable __XDEBUG_CONFIG__ with the IDE key.
+If you want to run a start a debugging session from command line, before you run your script, you will need to set the environment variable __XDEBUG\_CONFIG__ with the IDE key.
 
 __Windows__
 
@@ -271,7 +271,7 @@ php myscript.php
 ```
 
 Make sure before defining the environment variable you have switched to the proper user environment.  
-As example you would set the environment variable as __guest__ and execute the script as __root__ _(sudo)_, then __root__ will not have the environment variable XDEBUG_CONFIG that was defined by __guest__.
+As example you would set the environment variable as __guest__ and execute the script as __root__ _(sudo)_, then __root__ will not have the environment variable XDEBUG\_CONFIG that was defined by __guest__.
 
 #### How do I set a breakpoint and/or watch expression?
 With SublimeTextXdebug you can easily [add/remove breakpoints](#breakpoints), which are send on session start.  
@@ -286,13 +286,13 @@ Another way is to set the breakpoint in your PHP code with the following functio
 
 #### How to configure or disable breaking on exceptions?
 By default the execution of a debugging session is suspended on each of the following exception names:
-* __"Fatal error"__ - E_ERROR, E_CORE_ERROR, E_COMPILE_ERROR, E_USER_ERROR
-* __"Catchable fatal error"__ - E_RECOVERABLE_ERROR (since PHP 5.2.0)
-* __"Warning"__ - E_WARNING, E_CORE_WARNING, E_COMPILE_WARNING, E_USER_WARNING
-* __"Parse error"__ - E_PARSE
-* __"Notice"__ - E_NOTICE, E_USER_NOTICE
-* __"Strict standards"__ - E_STRICT
-* __"Deprecated"__ - E_DEPRECATED, E_USER_DEPRECATED (since PHP 5.3.0)
+* __"Fatal error"__ \- E\_ERROR, E\_CORE\_ERROR, E\_COMPILE\_ERROR, E\_USER\_ERROR
+* __"Catchable fatal error"__ \- E\_RECOVERABLE\_ERROR (since PHP 5.2.0)
+* __"Warning"__ \- E\_WARNING, E\_CORE\_WARNING, E\_COMPILE\_WARNING, E\_USER\_WARNING
+* __"Parse error"__ \- E\_PARSE
+* __"Notice"__ \- E\_NOTICE, E\_USER\_NOTICE
+* __"Strict standards"__ \- E\_STRICT
+* __"Deprecated"__ \- E\_DEPRECATED, E\_USER\_DEPRECATED (since PHP 5.3.0)
 * __"Xdebug"__
 * __"Unknown error"__
 
