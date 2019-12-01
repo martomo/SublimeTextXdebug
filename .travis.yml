@@ -2,6 +2,7 @@ env:
   global:
     - PACKAGE="SublimeTextXdebug"
     - SUBLIME_TEXT_VERSION="3"
+    - UNITTESTING_TAG="1.4.0"
     # Disable accessibility bridge to prevent following warning upon starting Sublime Text:
     # "Error retrieving accessibility bus address: org.freedesktop.DBus.Error.ServiceUnknown: The name org.a11y.Bus was not provided by any .service files"
     - NO_AT_BRIDGE=1
@@ -27,14 +28,16 @@ jobs:
       python: 3.8.0
     - &python-flake8
       stage: coding style
+      env:
+        - FLAKE8_VERSION="3.5.0"
       install:
-        - pip install flake8==3.5.0
+        - pip install flake8==${FLAKE8_VERSION}
         - pip install flake8-quotes==2.1.1
       script: flake8 --verbose .
     - &sublime-text-unittesting
       stage: integration tests
       before_install:
-        - curl -OL https://raw.githubusercontent.com/SublimeText/UnitTesting/master/sbin/travis.sh
+        - curl -OL https://raw.githubusercontent.com/SublimeText/UnitTesting/${UNITTESTING_TAG}/sbin/travis.sh
         # Create log file in order for Xdebug to open remote debug file
         - export XDEBUG_REMOTE_LOG=${TRAVIS_BUILD_DIR}/tests/server/logs/xdebug_${XDEBUG_VERSION}_${PHP_VERSION}.log
         - touch $XDEBUG_REMOTE_LOG && chmod 666 $XDEBUG_REMOTE_LOG
@@ -168,6 +171,5 @@ jobs:
     # 3.8.0, Sublime Text 4 Build 4050/4057
     - <<: *python-38
       <<: *python-flake8
-      install:
-        - pip install flake8==3.7.9
-        - pip install flake8-quotes==2.1.1
+      env:
+        - FLAKE8_VERSION="3.7.9"
