@@ -21,6 +21,10 @@ jobs:
       name: Python 3.3.6
       dist: trusty
       python: 3.3.6
+    - &python-38
+      name: Python 3.8.0
+      dist: xenial
+      python: 3.8.0
     - &python-flake8
       stage: coding style
       install:
@@ -161,3 +165,9 @@ jobs:
         - PHP_VERSION="7.3"
         - XDEBUG_VERSION="2.8.0"
       <<: *sublime-text-unittesting-osx
+    # 3.8.0, Sublime Text 4 Build 4050/4057
+    - <<: *python-38
+      <<: *python-flake8
+      install:
+        - pip install flake8==3.7.9
+        - pip install flake8-quotes==2.1.1
