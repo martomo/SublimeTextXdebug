@@ -138,7 +138,7 @@ class Protocol(object):
                 except KeyError:
                     pass
             return text
-        return re.sub('&#?\w+;', convert, string)
+        return re.sub(r'&#?\w+;', convert, string)
 
     def read_until_null(self):
         """

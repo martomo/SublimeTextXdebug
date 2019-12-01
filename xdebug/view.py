@@ -583,7 +583,7 @@ def show_context_output(view):
             if point.size() == 0 and sublime.score_selector(view.scope_name(point.a), 'variable'):
                 # Find variable in line which contains the point
                 line = view.substr(view.line(point))
-                pattern = re.compile('^(?=\\$|\\s)\\s*(.*?)\\s+=')
+                pattern = re.compile(r'^(?=\$|\s)\s*(.*?)\s+=')
                 match = pattern.match(line)
                 if match:
                     # Get variable details from context data
@@ -834,7 +834,7 @@ def toggle_breakpoint(view):
         if sublime.score_selector(view.scope_name(point.a), 'meta.xdebug.breakpoint.file'):
             # Get filename from selected line in view
             file_line = view.substr(view.line(point))
-            file_pattern = re.compile('^\\s*(=>)\\s*(?P<filename>.*)')
+            file_pattern = re.compile(r'^\s*(=>)\s*(?P<filename>.*)')
             file_match = file_pattern.match(file_line)
             # Show file when it's a valid filename
             if file_match and file_match.group('filename'):
@@ -844,7 +844,7 @@ def toggle_breakpoint(view):
         elif sublime.score_selector(view.scope_name(point.a), 'meta.xdebug.breakpoint.line'):
             # Find line number of breakpoint
             line = view.substr(view.line(point))
-            pattern = re.compile('^\\s*(?:(\\|\\+\\|)|(\\|-\\|))\\s*(?P<line_number>\\d+)\\s*(?:(--)(.*)|.*)')
+            pattern = re.compile(r'^\s*(?:(\|\+\|)|(\|-\|))\s*(?P<line_number>\d+)\s*(?:(--)(.*)|.*)')
             match = pattern.match(line)
             # Check if it has found line number
             if match and match.group('line_number'):
@@ -861,7 +861,7 @@ def toggle_breakpoint(view):
                 if file_line is None:
                     return
                 # Remove unnecessary text from line to get filename
-                file_pattern = re.compile('^\\s*(=>)\\s*(?P<filename>.*)')
+                file_pattern = re.compile(r'^\s*(=>)\s*(?P<filename>.*)')
                 file_match = file_pattern.match(file_line)
                 # Check if it is a valid filename
                 if file_match and file_match.group('filename'):
@@ -896,7 +896,7 @@ def toggle_stack(view):
         if sublime.score_selector(view.scope_name(point.a), 'meta.xdebug.stack.line'):
             # Get fileuri and line number from selected line in view
             line = view.substr(view.line(point))
-            pattern = re.compile('^\[\d+\]\s(?P<fileuri>.*):(?P<lineno>\d+)')
+            pattern = re.compile(r'^\[\d+\]\s(?P<fileuri>.*):(?P<lineno>\d+)')
             match = pattern.match(line)
             # Show file when it's a valid fileuri
             if match and match.group('fileuri'):
@@ -920,7 +920,7 @@ def toggle_watch(view):
         if point.size() == 3 and sublime.score_selector(view.scope_name(point.a), 'meta.xdebug.watch.line'):
             # Determine if watch entry is enabled or disabled
             line = view.substr(view.line(point))
-            pattern = re.compile('^(?:(?P<enabled>\\|\\+\\|)|(?P<disabled>\\|-\\|))\\.*')
+            pattern = re.compile(r'^(?:(?P<enabled>\|\+\|)|(?P<disabled>\|-\|)).*')
             match = pattern.match(line)
             if match and (match.group('enabled') or match.group('disabled')):
                 # Get all entries and determine index by line/point match
