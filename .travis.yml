@@ -55,10 +55,15 @@ jobs:
         # Install Sublime Text and testing suite
         - sh travis.sh bootstrap
       script:
-        - sh travis.sh run_tests
+        - sh travis.sh run_tests --coverage
+      after_success:
+        - pip3 install codecov
+        - TRAVIS_PYTHON_VERSION='' codecov -e PHP_VERSION,XDEBUG_VERSION -F integration || echo "Codecov did not collect coverage reports"
     - &sublime-text-unittesting-linux
       <<: *sublime-text-unittesting
       os: linux
+      dist: xenial
+      python: 3.6.7
       services:
         - docker
         - xvfb

@@ -2,6 +2,7 @@
     "async": false,
     "deferred": true,
     "capture_console": true,
+    "legacy_runner": false,
     "pattern": "test_*.py",
     "tests_dir": "tests/integration"
 }
