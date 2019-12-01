@@ -132,42 +132,42 @@ jobs:
     # 3.3.6, Sublime Text 3.2.2 Build 3210/3211
     - <<: *python-33
       <<: *python-flake8
-    - name: Linux (Sublime Text 3, Xdebug 2.5.0, PHP 7.0)
+    - <<: *sublime-text-unittesting-linux
+      name: Linux (Sublime Text 3, Xdebug 2.5.0, PHP 7.0)
       env:
         - PHP_VERSION="7.0"
         - XDEBUG_VERSION="2.5.0"
-      <<: *sublime-text-unittesting-linux
-    - name: Linux (Sublime Text 3, Xdebug 2.5.5, PHP 7.1)
+    - <<: *sublime-text-unittesting-linux
+      name: Linux (Sublime Text 3, Xdebug 2.5.5, PHP 7.1)
       env:
         - PHP_VERSION="7.1"
         - XDEBUG_VERSION="2.5.5"
-      <<: *sublime-text-unittesting-linux
-    - name: Linux (Sublime Text 3, Xdebug 2.6.1, PHP 7.2)
+    - <<: *sublime-text-unittesting-linux
+      name: Linux (Sublime Text 3, Xdebug 2.6.1, PHP 7.2)
       env:
         - PHP_VERSION="7.2"
         - XDEBUG_VERSION="2.6.1"
-      <<: *sublime-text-unittesting-linux
-    - name: Linux (Sublime Text 3, Xdebug 2.7.2, PHP 7.3)
+    - <<: *sublime-text-unittesting-linux
+      name: Linux (Sublime Text 3, Xdebug 2.7.2, PHP 7.3)
       env:
         - PHP_VERSION="7.3"
         - XDEBUG_VERSION="2.7.2"
-      <<: *sublime-text-unittesting-linux
-    - name: Linux (Sublime Text 3, Xdebug 2.8.0, PHP 7.4)
+    - <<: *sublime-text-unittesting-linux
+      name: Linux (Sublime Text 3, Xdebug 2.8.0, PHP 7.4)
       env:
         - PHP_VERSION="7.4"
         - XDEBUG_VERSION="2.8.0"
-      <<: *sublime-text-unittesting-linux
     # Keep macOS jobs to a minimum as Homebrew setup significantly increases total testing time
-    - name: macOS (Sublime Text 3, Xdebug 2.5.5, PHP 7.1)
+    - <<: *sublime-text-unittesting-osx
+      name: macOS (Sublime Text 3, Xdebug 2.5.5, PHP 7.1)
       env:
         - PHP_VERSION="7.1"
         - XDEBUG_VERSION="2.5.5"
-      <<: *sublime-text-unittesting-osx
-    - name: macOS (Sublime Text 3, Xdebug 2.8.0, PHP 7.3)
+    - <<: *sublime-text-unittesting-osx
+      name: macOS (Sublime Text 3, Xdebug 2.8.0, PHP 7.3)
       env:
         - PHP_VERSION="7.3"
         - XDEBUG_VERSION="2.8.0"
-      <<: *sublime-text-unittesting-osx
     # 3.8.0, Sublime Text 4 Build 4050/4057
     - <<: *python-38
       <<: *python-flake8
