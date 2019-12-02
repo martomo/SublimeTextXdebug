@@ -59,23 +59,27 @@ def get_real_path(uri, server=False):
     if not drive_pattern.match(uri) and not os.path.isabs(uri):
         uri = os.path.normpath('/' + uri)
 
+    mapped_paths = []
     path_mapping = get_value(S.KEY_PATH_MAPPING)
-    if isinstance(path_mapping, dict):
-        # Go through path mappings
-        for server_path, local_path in path_mapping.items():
-            server_path = os.path.normpath(server_path)
-            local_path = os.path.normpath(local_path)
-            # Replace path if mapping available
-            if server:
-                # Map local path to server path
-                if local_path in uri:
-                    uri = uri.replace(local_path, server_path)
-                    break
-            else:
-                # Map server path to local path
-                if server_path in uri:
-                    uri = uri.replace(server_path, local_path)
-                    break
+    if isinstance(path_mapping, list):
+        mapped_paths.extend(path_mapping)
+    elif isinstance(path_mapping, dict):
+        mapped_paths.extend(path_mapping.items())
+    # Go through path mappings
+    for server_path, local_path in mapped_paths:
+        server_path = os.path.normpath(server_path)
+        local_path = os.path.normpath(local_path)
+        # Replace path if mapping available
+        if server:
+            # Map local path to server path
+            if local_path in uri:
+                uri = uri.replace(local_path, server_path)
+                break
+        else:
+            # Map server path to local path
+            if server_path in uri:
+                uri = uri.replace(server_path, local_path)
+                break
     else:
         sublime.set_timeout(lambda: sublime.status_message('Xdebug: No path mapping defined, returning given path.'), 100)
 
