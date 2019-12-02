@@ -199,7 +199,6 @@ class SocketHandler(threading.Thread):
         S.BREAKPOINT_EXCEPTION = None
         S.BREAKPOINT_ROW = None
         S.CONTEXT_DATA.clear()
-        self.watch_expression()
         # Set debug layout
         self.run_command('xdebug_layout')
 
