@@ -2,3 +2,6 @@
 omit =
     /*/tests/*
     /*/xdebug/unittesting.py
+
+[report]
+ignore_errors = True
