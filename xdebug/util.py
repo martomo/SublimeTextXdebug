@@ -53,7 +53,7 @@ def get_real_path(uri, server=False):
     uri = os.path.normpath(filename)
 
     # Pattern for checking if uri is a windows path
-    drive_pattern = re.compile(r'^[a-zA-Z]:[\\/]')
+    drive_pattern = re.compile(r'^(?:[a-zA-Z]:[\\/]|\\\\)')
 
     # Append leading slash if filesystem is not Windows
     if not drive_pattern.match(uri) and not os.path.isabs(uri):
