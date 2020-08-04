@@ -803,6 +803,8 @@ def _escape_cdata(text, encoding=None, replace=string.replace):
             except UnicodeError:
                 return _encode_entity(text)
         text = replace(text, "&", "&amp;")
+        text = replace(text, "'", "&apos;")
+        text = replace(text, "\"", "&quot;")
         text = replace(text, "<", "&lt;")
         text = replace(text, ">", "&gt;")
         return text
@@ -818,7 +820,7 @@ def _escape_attrib(text, encoding=None, replace=string.replace):
             except UnicodeError:
                 return _encode_entity(text)
         text = replace(text, "&", "&amp;")
-        text = replace(text, "'", "&apos;") # FIXME: overkill
+        text = replace(text, "'", "&apos;")
         text = replace(text, "\"", "&quot;")
         text = replace(text, "<", "&lt;")
         text = replace(text, ">", "&gt;")

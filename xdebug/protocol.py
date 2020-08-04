@@ -165,10 +165,15 @@ class Protocol(object):
         # Verify length of response data
         length = self.read_until_null()
         message = self.read_until_null()
-        if int(length) == len(message):
-            return message
-        else:
-            raise ProtocolException('Length mismatch encountered while reading the Xdebug message')
+
+        return message
+        
+        # Verification disabled due to incorrect length bug
+
+        # if int(length) == len(message):
+        #     return message
+        # else:
+        #     raise ProtocolException('Length mismatch encountered while reading the Xdebug message')
 
     def read(self, return_string=False):
         """
