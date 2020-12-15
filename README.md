@@ -200,6 +200,21 @@ Which is being used to load missing modules.
 Show detailed log information about communication between debugger engine and Sublime Text.  
   
 ---
+
+## Upgrading from Xdebug 2 to 3 [See here for upgrade_guide](https://xdebug.org/docs/upgrade_guide)
+
+```ini
+[xdebug]
+zend_extension = /absolute/path/to/your/xdebug-extension.so
+;zend_extension = "C:\Program Files (x86)\PHP\ext\php_xdebug.dll"
+xdebug.mode = debug
+xdebug.client_host = 127.0.0.1
+xdebug.client_port = 9000
+xdebug.remote_handler = dbgp
+xdebug.start_with_request = trigger
+xdebug.discover_client_host = 1
+xdebug.log="C:\laragon\tmp\xdebug\xdebug.log"
+```
   
 Below are examples how to configure your Xdebug.sublime-settings and \*.sublime-project files.
 
