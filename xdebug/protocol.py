@@ -165,7 +165,7 @@ class Protocol(object):
         # Verify length of response data
         length = self.read_until_null()
         message = self.read_until_null()
-        if int(length) == len(message):
+        if int(length) == len(bytes(message, 'utf8')):
             return message
         else:
             raise ProtocolException('Length mismatch encountered while reading the Xdebug message')
