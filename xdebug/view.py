@@ -102,6 +102,8 @@ def generate_context_output(context, indent=0):
     if not isinstance(context, dict):
         return values
     for variable in context.values():
+        if variable['name'] == '$this' and get_value(S.KEY_OMIT_THIS):
+            continue
         has_children = False
         property_text = ''
         # Set indentation

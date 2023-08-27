@@ -33,6 +33,8 @@ KEY_BROWSER_NO_EXECUTE = 'browser_no_execute'
 KEY_DISABLE_LAYOUT = 'disable_layout'
 KEY_DEBUG_LAYOUT = 'debug_layout'
 
+KEY_OMIT_THIS = 'omit_this'
+
 KEY_BREAKPOINT_GROUP = 'breakpoint_group'
 KEY_BREAKPOINT_INDEX = 'breakpoint_index'
 KEY_CONTEXT_GROUP = 'context_group'
@@ -116,6 +118,7 @@ CONFIG_KEYS = [
     KEY_BROWSER_NO_EXECUTE,
     KEY_DISABLE_LAYOUT,
     KEY_DEBUG_LAYOUT,
+    KEY_OMIT_THIS,
     KEY_BREAKPOINT_GROUP,
     KEY_BREAKPOINT_INDEX,
     KEY_CONTEXT_GROUP,
