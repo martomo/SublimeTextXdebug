@@ -119,6 +119,9 @@
         "cells": [[0, 0, 2, 1], [0, 1, 1, 2], [1, 1, 2, 2]]
     },
 
+    // Omit $this from context view when debugging.
+    "omit_this": false,
+
     // Group and index positions for debug views.
     "breakpoint_group": 2,
     "breakpoint_index": 1,
